@@ -1,0 +1,10 @@
+#!/bin/sh
+for F in "$@"
+do
+    if [ -d "${F}" ] ; then
+	echo "cleaning directory $F"
+	rm "$F"/*_jalangi_*
+    else
+	echo "$F is not a directory, ignored"
+    fi
+done
