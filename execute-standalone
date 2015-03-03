@@ -1,2 +1,6 @@
 #!/bin/sh
-node /users/amoeller/casa01/jalangi2/src/js/commands/direct.js --analysis src/ValueLogger.js $1 | sort | uniq > $1.log
+for F in "$@"
+do
+    echo "$F"
+    node /users/amoeller/casa01/jalangi2/src/js/commands/direct.js --analysis src/ValueLogger.js "$F" | sort | uniq > "$F".log
+done
