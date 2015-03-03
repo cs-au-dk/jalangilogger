@@ -1,0 +1,2 @@
+#!/bin/sh
+node /users/amoeller/casa01/jalangi2/src/js/commands/esnstrument_cli.js --inlineIID --inlineSource $1
