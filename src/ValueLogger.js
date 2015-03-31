@@ -4,7 +4,6 @@
 	function MyAnalysis () {
 
 		var info = {};
-		var reservedWords = {}
 		
 		function p(val) {
 			var t = typeof val;
@@ -101,47 +100,47 @@
 		 * Checks whether the given string is a reserved name.
 		 */
 		function isReservedName(s) {
-			if (s.isEmpty())
+			if (s = "")
 				return false;
 			switch (s.charAt(0)) {
 			case 'a':
-				return s.equals("abstract"); 
+				return s == "abstract"; 
 			case 'b':
-				return s.equals("boolean") || s.equals("break") || s.equals("byte");
+				return s == "boolean" || s == "break" || s == "byte";
 			case 'c':
-				return s.equals("case") || s.equals("catch") || s.equals("char") || s.equals("class") 
-				|| s.equals("const") || s.equals("continue");
+				return s == "case" || s == "catch" || s == "char" || s == "class" 
+				|| s == "const" || s == "continue";
 			case 'd':
-				return s.equals("debugger") || s.equals("default") || s.equals("delete") || s.equals("do") 
-				|| s.equals("double");
+				return s == "debugger" || s == "default" || s == "delete" || s == "do" 
+				|| s == "double";
 			case 'e':
-				return s.equals("else") || s.equals("enum") || s.equals("export") || s.equals("extends"); 
+				return s == "else" || s == "enum" || s == "export" || s == "extends"; 
 			case 'f':
-				return s.equals("false") || s.equals("final") || s.equals("finally") || s.equals("float") 
-				|| s.equals("for") || s.equals("function");
+				return s == "false" || s == "final" || s == "finally" || s == "float" 
+				|| s == "for" || s == "function";
 			case 'g':
-				return s.equals("goto");
+				return s == "goto";
 			case 'i':
-				return s.equals("if") || s.equals("implements") || s.equals("import") || s.equals("in") 
-				|| s.equals("instanceof") || s.equals("int") || s.equals("interface");
+				return s == "if" || s == "implements" || s == "import" || s == "in" 
+				|| s == "instanceof" || s == "int" || s == "interface";
 			case 'l':
-				return s.equals("long");
+				return s == "long";
 			case 'n':
-				return s.equals("native") || s.equals("new") || s.equals("null");
+				return s == "native" || s == "new" || s == "null";
 			case 'p':
-				return s.equals("package") || s.equals("private") || s.equals("protected") || s.equals("public");
+				return s == "package" || s == "private" || s == "protected" || s == "public";
 			case 'r':
-				return s.equals("return");
+				return s == "return";
 			case 's':
-				return s.equals("short") || s.equals("static") || s.equals("super") || s.equals("switch") 
-				|| s.equals("synchronized");
+				return s == "short" || s == "static" || s == "super" || s == "switch" 
+				|| s == "synchronized";
 			case 't':
-				return s.equals("this") || s.equals("throw") || s.equals("throws") || s.equals("transient") 
-				|| s.equals("true") || s.equals("try") || s.equals("typeof");
+				return s == "this" || s == "throw" || s == "throws" || s == "transient" 
+				|| s == "true" || s == "try" || s == "typeof";
 			case 'v':
-				return s.equals("var") || s.equals("void") || s.equals("volatile");
+				return s == "var" || s == "void" || s == "volatile";
 			case 'w':
-				return s.equals("while") || s.equals("with");
+				return s == "while" || s == "with";
 			default:
 				return false;
 			}
