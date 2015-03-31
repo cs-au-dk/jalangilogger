@@ -28,11 +28,11 @@
 				if(!isNaN(intVal) || val == "Infinity" || val == "-Infinity" || val == "NaN"){
 					return "STR_OTHERNUM"
 				}
-				if(val.match("^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*$)" && !isReservedName(val))){ 
+				if(val.match("^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*$" && !isReservedName(val))){ 
 					//identifiers - Not precise - See http://stackoverflow.com/questions/2008279/validate-a-javascript-function-name/2008444#2008444
 					return "STR_IDENTIFIER";
 				}
-				if(val.match("^[_$a-zA-Z0-9\xA0-\uFFFF]*$)")){ 
+				if(val.match("^[_$a-zA-Z0-9\xA0-\uFFFF]*$")){ 
 					//identifierParts - Not precise - See http://stackoverflow.com/questions/2008279/validate-a-javascript-function-name/2008444#2008444
 					return "STR_IDENTIFIERPARTS";
 				}
