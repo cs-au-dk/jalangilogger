@@ -28,7 +28,7 @@
 				if(!isNaN(intVal) || val == "Infinity" || val == "-Infinity" || val == "NaN"){
 					return "STR_OTHERNUM"
 				}
-				if(val.match("^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*$" && !isReservedName(val))){ 
+				if(val.match("^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*$") && !isReservedName(val)){ 
 					//identifiers - Not precise - See http://stackoverflow.com/questions/2008279/validate-a-javascript-function-name/2008444#2008444
 					return "STR_IDENTIFIER";
 				}
@@ -69,23 +69,23 @@
 		}
 
 		this.read = function(iid, name, val, isGlobal, isScriptLocal) {
-			log(iid, "read-variable:" + p(name) + ":" + p(val));
+			log(iid, "read-variable:" + s(name) + ":" + p(val));
 		};
 
 		this.write = function(iid, name, val, lhs, isGlobal, isScriptLocal) {
-			log(iid, "write-variable:" + p(name) + ":" + p(val));
+			log(iid, "write-variable:" + s(name) + ":" + p(val));
 		};
 
 		this.getField = function(iid, base, offset, val, isComputed, isOpAssign, isMethodCall) {
-			log(iid, "read-property:" + p(offset) + ":" + p(val));
+			log(iid, "read-property:" + s(offset) + ":" + p(val));
 		};
 
 		this.putField = function(iid, base, offset, val, isComputed, isOpAssign) {
-			log(iid, "write-property:" + p(offset) + ":" + p(val));
+			log(iid, "write-property:" + s(offset) + ":" + p(val));
 		};
 
 		this.invokeFunPre = function(iid, f, base, args, isConstructor, isMethod) {
-			log(iid, "call:" + p(f) + ":" + p(base) + pa(args));
+			log(iid, "call:" + s(f) + ":" + p(base) + pa(args));
 		};
 
 		this.functionEnter = function(iid, f, dis, args) {
@@ -95,6 +95,14 @@
 		this.functionExit = function(iid, returnVal, wrappedExceptionVal) {
 			log(iid, "function-exit:" + p(returnVal) + ":" + p(wrappedExceptionVal));
 		};
+		
+		function s(val) {
+			if (typeof val == "string") {
+				return JSON.stringify(val);
+			} else {
+				return p(val);
+			}
+		}
 		
 		/**
 		 * Checks whether the given string is a reserved name.
