@@ -142,7 +142,7 @@
 		};
 
 		this.invokeFunPre = function(iid, f, base, args, isConstructor, isMethod) {
-			log(iid, "call:" + s(f) + ":" + p(base) + pa(args));
+			log(iid, "call:" + s(f) + ":" + p(base) + ":" + pa(args));
 		};
 
         this.invokeFun = function (iid, f, base, args, result, isConstructor, isMethod, functionIid) {
