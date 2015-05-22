@@ -113,7 +113,7 @@
 		function pa(args) {
 			var s = "[";
 			for (var i = 0; i < args.length; i++)
-				s += ":" + p(args[i]);
+				s += ((i === 0)? "": ":") + p(args[i]);
 			return s + "]";
 		}
 
