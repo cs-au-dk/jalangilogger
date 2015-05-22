@@ -48,14 +48,14 @@
 
         function describeNonPrimitive(val){
             if(allocationSites.has(val)){
-                return "allocation:" + getFullLocation(allocationSites.get(val));
+                return "ALLOCATION-" + getFullLocation(allocationSites.get(val));
             }
 
             if(builtins.has(val)){
-                return "builtin:" + builtins.get(val);
+                return "BUILTIN-" + builtins.get(val);
             }
 
-            return "other";
+            return "OTHER-";
         }
 
 		function p(val) {
