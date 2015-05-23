@@ -74,12 +74,11 @@
 				return "NUM_OTHER";
 			}
 			if (t == "string") {
-				var intVal = parseInt(val);
-				if(!isNaN(intVal) && intVal >= 0 && intVal < 4294967295 && (intVal % 1) == 0){
+				if(!isNaN(val) && val >= 0 && val < 4294967295 && (val % 1) == 0){
 					return "STR_UINT";
 				}
-				if(!isNaN(intVal) || val == "Infinity" || val == "-Infinity" || val == "NaN"){
-					return "STR_OTHERNUM"
+				if(!isNaN(val)){
+					return "STR_OTHERNUM";
 				}
 				if(val.match("^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*$") && !isReservedName(val)){ 
 					//identifiers - Not precise - See http://stackoverflow.com/questions/2008279/validate-a-javascript-function-name/2008444#2008444
