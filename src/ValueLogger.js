@@ -3,9 +3,9 @@
 
 	function MyAnalysis () {
 
-		var info = {};
         var allocationSites = new Map/*<Object, IID>*/();
         var builtins = makeBuiltinsMap();
+		var nextFunctionEnterIsConstructorCall = false;
 
         /**
          * Builds a map from some builtin objects to their canonical path
@@ -140,17 +140,26 @@
 			log(iid, "write-property:" + s(offset) + ":" + p(val));
 		};
 
-		this.invokeFunPre = function(iid, f, base, args, isConstructor, isMethod) {
+		this.invokeFunPre = function(iid, f, base, args, isConstructor, isMethod, functionIid) {
+			var isUserConstructorCall = isConstructor && (functionIid !== undefined);
+            if(isUserConstructorCall){
+				nextFunctionEnterIsConstructorCall = true;
+			}
 			log(iid, "call:" + s(f) + ":" + p(base) + ":" + pa(args));
 		};
 
         this.invokeFun = function (iid, f, base, args, result, isConstructor, isMethod, functionIid) {
-            if(isConstructor && !allocationSites.has(result) /* the constructor could create and return its own result... */){
-                registerAllocation(iid, result);
+			var isBuiltinConstructorCall = isConstructor && !allocationSites.has(f) /* ex. new String()*/;
+            if(isBuiltinConstructorCall){
+				registerAllocation(iid, result);
             }
         };
 
         this.functionEnter = function(iid, f, dis, args) {
+			if(nextFunctionEnterIsConstructorCall){
+				nextFunctionEnterIsConstructorCall = false;
+				registerAllocation(iid, dis);
+			}
             log(iid, "function-entry:" + p(dis) + pa(args));
 		};
 
