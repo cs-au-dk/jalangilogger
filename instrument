@@ -1,6 +1,10 @@
 #!/bin/sh
+if [ -z ${JALANGI+x} ]; then
+    >&2 echo '$JALANGI is not defined?! Set to e.g. "/users/amoeller/casa01/jalangi2"';
+    exit 1;
+fi
 for F in "$@"
 do
     echo "$F"
-    node /users/amoeller/casa01/jalangi2/src/js/commands/esnstrument_cli.js --inlineIID --inlineSource "$F"
+    node ${JALANGI}/src/js/commands/esnstrument_cli.js --inlineIID --inlineSource "$F"
 done
