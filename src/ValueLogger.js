@@ -13,36 +13,45 @@
         function makeBuiltinsMap(){
             var map = new Map/*<Object, Path>*/();
 
-            var roots = {
-                Object: Object,
-                Function: Function,
-                Array: Array,
-                RegExp: RegExp,
-                Date: Date,
-                'Object.prototype': Object.prototype,
-                'Function.prototype': Function.prototype,
-                'Array.prototype': Array.prototype,
-                'RegExp.prototype': RegExp,
-                'Date.prototype': Date.prototype
-            };
-
-            map.set(Object, 'Object');
-            map.set(Function, 'Function');
-            map.set(Array, 'Array');
-            map.set(RegExp, 'RegExp');
-            map.set(Date, 'Date');
-            for(var prefix in roots){
-                var root = roots[prefix];
-                Object.getOwnPropertyNames(root).forEach(
-                    function(propertyName){
-                        var propertyValue = root[propertyName];
-                        if(typeof propertyValue === 'function' || typeof propertyValue === 'object'){
-                            var path = prefix + '.' + propertyName;
-                            map.set(propertyValue, path);
-                        }
-                    }
-                );
+            function register(k, v) {
+                if (k === null
+                    || (typeof k !== 'object' && typeof k !== 'function')
+                    || map.has(k)) {
+                    return;
+                }
+                map.set(k, v);
             }
+
+			var roots = {
+				Object: Object,
+				Function: Function,
+				Array: Array,
+				RegExp: RegExp,
+				Date: Date,
+				'Object.prototype': Object.prototype,
+				'Function.prototype': Function.prototype,
+				'Array.prototype': Array.prototype,
+				'RegExp.prototype': RegExp,
+				'Date.prototype': Date.prototype
+			};
+
+			register(Object, 'Object');
+			register(Function, 'Function');
+			register(Array, 'Array');
+			register(RegExp, 'RegExp');
+			register(Date, 'Date');
+			for (var prefix in roots) {
+				var root = roots[prefix];
+				Object.getOwnPropertyNames(root).forEach(
+					function (propertyName) {
+						var propertyValue = root[propertyName];
+						if (typeof propertyValue === 'function' || typeof propertyValue === 'object') {
+							var path = prefix + '.' + propertyName;
+							register(propertyValue, path);
+						}
+					}
+				);
+			}
             return map;
         }
 
@@ -80,7 +89,7 @@
 				if(!isNaN(val)){
 					return "STR_OTHERNUM";
 				}
-				if(val.match("^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*$") && !isReservedName(val)){ 
+				if(val.match("^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*$") && !isReservedName(val)){
 					//identifiers - Not precise - See http://stackoverflow.com/questions/2008279/validate-a-javascript-function-name/2008444#2008444
 					return "STR_IDENTIFIER";
 				}
