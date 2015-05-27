@@ -55,25 +55,32 @@
             return map;
         }
 
-        function describeNonPrimitive(val){
+        function describeObject(val){
             if(allocationSites.has(val)){
-                return "ALLOCATION-" + getFullLocation(allocationSites.get(val));
+                return {objectKind: "allocation-site", allocationSite: getFullLocation(allocationSites.get(val))};
             }
 
             if(builtins.has(val)){
-                return "BUILTIN-" + builtins.get(val);
+                return {objectKind: "builtin", canonicalName: builtins.get(val)};
             }
 
-            return "OTHER-";
+            return {objectKind: "other"};
         }
 
 		function p(val) {
+			if (typeof val === "function" || (typeof val === "object" && val !== null)) {
+				return {valueKind: "abstract-object", value: describeObject(val)};
+			}
+			return {valueKind: "abstract-primitive", value: describePrimitive(val)};
+		}
+
+		function describePrimitive(val){
 			var t = typeof val;
-			if (t == "undefined" || t == "boolean")
-				return val;
+			if (t == "undefined" || t == "boolean" || val === null)
+				return val + '';
 			if (t == "number") {
 				if (val == 0 || val == 1)
-					return val;
+					return val + '';
 				if (isNaN(val))
 					return "NUM_NAN";
 				if (!isFinite(val))
@@ -102,51 +109,53 @@
 					return "STR_PREFIX"
 				}
 				//if()
-					//return "STR_JSON" //TODO STR_JSON abstraction
+				//return "STR_JSON" //TODO STR_JSON abstraction
 
 				return "STR_OTHER"
 
 			}
-			if (val === null)
-				return "null";
-			if (t == "function") {
-				return "Function[" + describeNonPrimitive(val) + "]"
-			}
-			if (t == "object") {
-				return "Object["+ describeNonPrimitive(val) +"]";
-			}
 			return "???";
 		}
-
 		function pa(args) {
-			var s = "[";
+			var result = [];
 			for (var i = 0; i < args.length; i++)
-				s += ((i === 0)? "": ":") + p(args[i]);
-			return s + "]";
+				result.push(p(args[i]));
+			return result;
 		}
 
         function getFullLocation(iid){
-            return sandbox.iidToLocation(sandbox.getGlobalIID(iid));
+			var location = sandbox.iidToLocation(sandbox.getGlobalIID(iid));
+			location = location.slice(1, location.length - 1);
+			var components = location.split(":");
+			var lineNumber = components[1];
+			var columnNumber = components[2];
+			if(typeof lineNumber === 'string' && lineNumber.indexOf('iid') === 0){
+				lineNumber = -1;
+				columnNumber = -1;
+			}
+            return {fileName: components[0], lineNumber: lineNumber, columnNumber: columnNumber};
         }
 
-		function log(iid, m) {
-			console.log(getFullLocation(iid) + ":" + m);
+		function log(iid, entry) {
+			entry.sourceLocation = getFullLocation(iid);
+			console.log(JSON.stringify(entry));
+			//console.log(getFullLocation(iid) + ":" + m);
 		}
 
 		this.read = function(iid, name, val, isGlobal, isScriptLocal) {
-			log(iid, "read-variable:" + s(name) + ":" + p(val));
+			log(iid, {entryKind: "read-variable", name: s(name), value: p(val)});
 		};
 
 		this.write = function(iid, name, val, lhs, isGlobal, isScriptLocal) {
-			log(iid, "write-variable:" + s(name) + ":" + p(val));
+			log(iid, {entryKind: "write-variable", name: s(name), value: p(val)});
 		};
 
 		this.getField = function(iid, base, offset, val, isComputed, isOpAssign, isMethodCall) {
-			log(iid, "read-property:" + s(offset) + ":" + p(val));
+			log(iid, {entryKind: "read-property", name: s(offset), value: p(val)});
 		};
 
 		this.putField = function(iid, base, offset, val, isComputed, isOpAssign) {
-			log(iid, "write-property:" + s(offset) + ":" + p(val));
+			log(iid, {entryKind: "write-property", name: s(offset), value: p(val)});
 		};
 
 		this.invokeFunPre = function(iid, f, base, args, isConstructor, isMethod, functionIid) {
@@ -154,7 +163,7 @@
             if(isUserConstructorCall){
 				nextFunctionEnterIsConstructorCall = true;
 			}
-			log(iid, "call:" + s(f) + ":" + p(base) + ":" + pa(args));
+			log(iid, {entryKind: "call", function: p(f), base: p(base), arguments: pa(args)});
 		};
 
         this.invokeFun = function (iid, f, base, args, result, isConstructor, isMethod, functionIid) {
@@ -169,11 +178,17 @@
 				nextFunctionEnterIsConstructorCall = false;
 				registerAllocation(iid, dis);
 			}
-            log(iid, "function-entry:" + p(dis) + pa(args));
+            log(iid, {entryKind: "function-entry", base: p(dis), arguments: pa(args)});
 		};
 
 		this.functionExit = function(iid, returnVal, wrappedExceptionVal) {
-			log(iid, "function-exit:" + p(returnVal) + ":" + p(wrappedExceptionVal));
+			var entry = {entryKind: "function-exit"};
+			if(wrappedExceptionVal){
+				entry.exceptionValue = wrappedExceptionVal.exception;
+			}else{
+				entry.returnValue = returnVal;
+			}
+            log(iid, entry);
 		};
 
         this.literal = function (iid, val, hasGetterSetter) {
@@ -188,7 +203,7 @@
 
 		function s(val) {
 			if (typeof val == "string") {
-				return JSON.stringify(val);
+				return {valueKind: "concrete-string", value: val};
 			} else {
 				return p(val);
 			}
