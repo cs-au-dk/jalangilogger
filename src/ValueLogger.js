@@ -6,6 +6,8 @@
         var allocationSites = new Map/*<Object, IID>*/();
         var builtins = makeBuiltinsMap();
 		var nextFunctionEnterIsConstructorCall = false;
+		var nativeCall = Function.prototype.call;
+		var nativeApply = Function.prototype.apply;
 
         /**
          * Builds a map from some builtin objects to their canonical path
@@ -28,6 +30,7 @@
 				Array: Array,
 				RegExp: RegExp,
 				Date: Date,
+				Math: Math,
 				'Object.prototype': Object.prototype,
 				'Function.prototype': Function.prototype,
 				'Array.prototype': Array.prototype,
@@ -40,6 +43,7 @@
 			register(Array, 'Array');
 			register(RegExp, 'RegExp');
 			register(Date, 'Date');
+			register(Math, 'Math');
 			for (var prefix in roots) {
 				var root = roots[prefix];
 				Object.getOwnPropertyNames(root).forEach(
@@ -164,6 +168,14 @@
 				nextFunctionEnterIsConstructorCall = true;
 			}
 			log(iid, {entryKind: "call", function: p(f), base: p(base), arguments: pa(args)});
+
+			if((f === nativeCall || f === nativeApply) && f){
+				// if Function.prototype.apply/call is used, register an extra call entry
+				var newF = base;
+				var newBase = args[0];
+				var newArgs = f === nativeCall? Array.prototype.slice.call(args, 1, args.length): args[1];
+                this.invokeFunPre(iid, newF, newBase, newArgs, false, newBase !== undefined, allocationSites.get(newF));
+			}
 		};
 
         this.invokeFun = function (iid, f, base, args, result, isConstructor, isMethod, functionIid) {
@@ -184,9 +196,9 @@
 		this.functionExit = function(iid, returnVal, wrappedExceptionVal) {
 			var entry = {entryKind: "function-exit"};
 			if(wrappedExceptionVal){
-				entry.exceptionValue = wrappedExceptionVal.exception;
+				entry.exceptionValue = p(wrappedExceptionVal.exception);
 			}else{
-				entry.returnValue = returnVal;
+				entry.returnValue = p(returnVal);
 			}
             log(iid, entry);
 		};
