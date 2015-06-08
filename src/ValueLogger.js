@@ -192,8 +192,8 @@
 
         this.functionEnter = function(iid, f, dis, args) {
 			if(nextConstructorCallCallSiteIID){
-				nextConstructorCallCallSiteIID = undefined;
 				registerAllocation(nextConstructorCallCallSiteIID, dis);
+				nextConstructorCallCallSiteIID = undefined;
 			}
             log(iid, {entryKind: "function-entry", base: p(dis), arguments: pa(args)});
 		};
