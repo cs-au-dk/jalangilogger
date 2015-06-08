@@ -1,20 +1,22 @@
-#!/bin/sh
+#!/usr/bin/env bash
+for f in $(find test -name '*.js');
+do
+	echo "Creating log for ${f}";
 
-for f in $(find test/$@ -name '*.js'); 
-do 
-	./instrument "$f"
-	./execute-standalone ${f/.js/_jalangi_.js}; 
-	
-	dn2=$(dirname $f)
-	dn1=${dn2/test/}
-	newDirectoryName=${dn1:1}
-	bn=$(basename "$f")
-	
-	newFileName=${bn/.js/.log}
-	mkdir -p JalangiLogFiles/${newDirectoryName}
-	cp -v ${f/.js/_jalangi_.js.log} JalangiLogFiles/${newDirectoryName}/${newFileName}
-	rm -f ${f/.js/_jalangi_.js.log}
-	rm -f ${f/.js/_jalangi_.js}
-	rm -f ${f/.js/_jalangi_.json}
-	
+	./instrument "${f}";
+
+	instrumented="${f/.js/_jalangi_.js}";
+	./execute-standalone "${instrumented}";
+
+	dn2=$(dirname "${f}")
+	dn1="${dn2/test/}"
+	newDirectoryName="${dn1:1}"
+	bn=$(basename "${f}")
+
+	newFileName="${bn/.js/.log}"
+	mkdir -p "JalangiLogFiles/${newDirectoryName}"
+	cp -v "${f/.js/_jalangi_.js.log}" "JalangiLogFiles/${newDirectoryName}/${newFileName}"
+	rm -f "${f/.js/_jalangi_.js.log}"
+	rm -f "${f/.js/_jalangi_.js}"
+	rm -f "${f/.js/_jalangi_.json}"
 done
