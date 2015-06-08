@@ -38,6 +38,8 @@
 				'Date.prototype': Date.prototype
 			};
 
+		 	var global = Function('return this')();
+			register(global, '<the global object>');
 			register(Object, 'Object');
 			register(Function, 'Function');
 			register(Array, 'Array');
@@ -72,7 +74,6 @@
         }
 
 		function p(val) {
-			console.log(val);
 			if (typeof val === "function" || (typeof val === "object" && val !== null)) {
 				return {valueKind: "abstract-object", value: describeObject(val)};
 			}
