@@ -72,6 +72,7 @@
         }
 
 		function p(val) {
+			console.log(val);
 			if (typeof val === "function" || (typeof val === "object" && val !== null)) {
 				return {valueKind: "abstract-object", value: describeObject(val)};
 			}
@@ -163,6 +164,9 @@
 		};
 
 		this.invokeFunPre = function(iid, f, base, args, isConstructor, isMethod, functionIid) {
+			if(typeof f !== "function"){ //about to crash
+				return;
+			}
 			var isUserConstructorCall = isConstructor && (functionIid !== undefined);
             if(isUserConstructorCall){
 				nextFunctionEnterIsConstructorCall = true;
