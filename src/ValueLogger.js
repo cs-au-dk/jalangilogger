@@ -5,7 +5,7 @@
 
         var allocationSites = new Map/*<Object, IID>*/();
         var builtins = makeBuiltinsMap();
-		var nextFunctionEnterIsConstructorCall = false;
+		var nextConstructorCallCallSiteIID = false;
 		var nativeCall = Function.prototype.call;
 		var nativeApply = Function.prototype.apply;
 
@@ -170,7 +170,7 @@
 			}
 			var isUserConstructorCall = isConstructor && (functionIid !== undefined);
             if(isUserConstructorCall){
-				nextFunctionEnterIsConstructorCall = true;
+				nextConstructorCallCallSiteIID = iid;
 			}
 			log(iid, {entryKind: "call", function: p(f), base: p(base), arguments: pa(args)});
 
@@ -191,9 +191,9 @@
         };
 
         this.functionEnter = function(iid, f, dis, args) {
-			if(nextFunctionEnterIsConstructorCall){
-				nextFunctionEnterIsConstructorCall = false;
-				registerAllocation(iid, dis);
+			if(nextConstructorCallCallSiteIID){
+				nextConstructorCallCallSiteIID = undefined;
+				registerAllocation(nextConstructorCallCallSiteIID, dis);
 			}
             log(iid, {entryKind: "function-entry", base: p(dis), arguments: pa(args)});
 		};
