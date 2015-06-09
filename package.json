@@ -1,0 +1,25 @@
+{
+  "name": "jalangilogger",
+  "version": "0.0.1",
+  "description": "Misc. logging of values during execution",
+  "main": "-",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "-"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/cs-au-dk/jalangilogger.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cs-au-dk/jalangilogger/issues"
+  },
+  "homepage": "https://github.com/cs-au-dk/jalangilogger",
+  "dependencies": {
+    "jalangi2": "=0.2.2"
+  }
+}
