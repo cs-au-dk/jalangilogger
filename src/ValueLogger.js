@@ -96,6 +96,9 @@
 				return "NUM_OTHER";
 			}
 			if (t == "string") {
+				if(val === ""){ //necessary since "" also matches the next condition
+					return "STR_OTHER" 
+				}
 				if(!isNaN(val) && val >= 0 && val < 4294967295 && (val % 1) == 0){
 					return "STR_UINT";
 				}
