@@ -126,12 +126,16 @@ assertFalse = function() {};
 				return "NUM_OTHER";
 			}
 			if (t == "string") {
-				
-				if(val.trim() !== "" && !isNaN(val) && val >= 0 && val < 4294967295 && (val % 1) == 0){
-					return "STR_UINT";
-				}
-				if(val.trim() !== "" && (!isNaN(val) || val === "Infinity" || val === "-Infinity" || val === "NaN")){
-					return "STR_OTHERNUM";
+				if(val.indexOf(' ') === -1 && val !== '' /* avoid toNumber string-manipulations */) {
+					var n = +val;
+					if(val === 'NaN'){
+						return "STR_OTHERNUM";
+					}else if (!isNaN(n)) {
+						if (n >= 0 && n < 4294967295 && (n % 1) == 0) {
+							return "STR_UINT";
+						}
+						return "STR_OTHERNUM";
+					}
 				}
 				if(val.match("^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*$") && !isReservedName(val)){
 					//identifiers - Not precise - See http://stackoverflow.com/questions/2008279/validate-a-javascript-function-name/2008444#2008444
