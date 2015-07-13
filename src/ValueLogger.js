@@ -1,3 +1,33 @@
+TAJS_dumpValue = function(s) {};
+TAJS_dumpPrototype = function() {};
+TAJS_dumpObject = function() {};
+TAJS_dumpState = function() {};
+TAJS_dumpModifiedState = function() {};
+TAJS_dumpAttributes = function() {};
+TAJS_dumpExp = function() {};
+TAJS_dumpNF = function() {};
+TAJS_conversionToPrimitive = function() {};
+TAJS_getUIEvent = function() {};
+TAJS_getDocumentEvent = function() {};
+TAJS_getMouseEvent = function() {};
+TAJS_getKeyboardEvent = function() {};
+TAJS_getEventListener = function() {};
+TAJS_getWheelEvent = function() {};
+TAJS_getAjaxEvent = function() {};
+TAJS_addContextSensitivity = function() {};
+TAJS_assert = function(a) {};
+TAJS_newObject = function() {};   
+
+print = function() {}; //google/cryptobench test      
+            
+//The next are added to run with v8tests
+assertTrue = function() {};
+assertEquals = function() {};
+assertThrows = function() {};           
+assertHasOwnProperties = function() {};            
+assertArrayEquals = function() {};
+assertFalse = function() {};           
+            
 
 (function (sandbox) {
 
@@ -96,13 +126,11 @@
 				return "NUM_OTHER";
 			}
 			if (t == "string") {
-				if(val === ""){ //necessary since "" also matches the next condition
-					return "STR_OTHER" 
-				}
-				if(!isNaN(val) && val >= 0 && val < 4294967295 && (val % 1) == 0){
+				
+				if(val.trim() !== "" && !isNaN(val) && val >= 0 && val < 4294967295 && (val % 1) == 0){
 					return "STR_UINT";
 				}
-				if(!isNaN(val)){
+				if(val.trim() !== "" && (!isNaN(val) || val === "Infinity" || val === "-Infinity" || val === "NaN")){
 					return "STR_OTHERNUM";
 				}
 				if(val.match("^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*$") && !isReservedName(val)){
@@ -233,7 +261,7 @@
 		 * Checks whether the given string is a reserved name.
 		 */
 		function isReservedName(s) {
-			if (s = "")
+			if (s == "")
 				return false;
 			switch (s.charAt(0)) {
 			case 'a':
@@ -282,3 +310,5 @@
 	}
 	sandbox.analysis = new MyAnalysis();
 })(J$);
+
+
