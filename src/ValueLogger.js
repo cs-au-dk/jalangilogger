@@ -128,7 +128,7 @@ assertFalse = function() {};
 			if (t == "string") {
 				if(val.indexOf(' ') === -1 && val !== '' /* avoid toNumber string-manipulations */) {
 					var n = +val;
-					if(val === 'NaN'){
+					if(val === 'NaN' || val.match("^[0-9]+\.[0-9]+[e][-|+][0-9]+$") /* exponentials should be logged to STR_OTHERNUM */){
 						return "STR_OTHERNUM";
 					}else if (!isNaN(n)) {
 						if (n >= 0 && n < 4294967295 && (n % 1) == 0) {
