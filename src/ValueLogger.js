@@ -126,14 +126,16 @@ assertFalse = function() {};
 				return "NUM_OTHER";
 			}
 			if (t == "string") {
-				if(val.indexOf(' ') === -1 && val !== '' /* avoid toNumber string-manipulations */) {
+				if(val.indexOf(' ') === -1 && val.indexOf('\n') === -1 && val.indexOf('\t') === -1 && val !== '' /* avoid toNumber string-manipulations */) {
 					var n = +val;
-					if(val === 'NaN' || val.match("^[0-9]+\.[0-9]+[e][-|+][0-9]+$") /* exponentials should be logged to STR_OTHERNUM */){
+					if(val === 'NaN' || val.match("^-?[0-9]+[e][-|+][0-9]+$") /* exponentials should be logged to STR_OTHERNUM */){
 						return "STR_OTHERNUM";
-					}else if (!isNaN(n)) {
+					}else if (!isNaN(n) && val.match("^[0-9]+$")) {
 						if (n >= 0 && n < 4294967295 && (n % 1) == 0) {
 							return "STR_UINT";
 						}
+						return "STR_OTHERNUM";
+					} else if(val.match("^-?[0-9]+\.[0-9]+[e][-|+][0-9]+$") || val.match("^-?[0-9]*\.[0-9]+$")){
 						return "STR_OTHERNUM";
 					}
 				}
@@ -144,10 +146,6 @@ assertFalse = function() {};
 				if(val.match("^[_$a-zA-Z0-9\xA0-\uFFFF]*$")){
 					//identifierParts - Not precise - See http://stackoverflow.com/questions/2008279/validate-a-javascript-function-name/2008444#2008444
 					return "STR_IDENTIFIERPARTS";
-				}
-				if(val.match("^((?![_$a-zA-Z0-9\xA0-\uFFFF]).)+[_$a-zA-Z0-9\xA0-\uFFFF]*$")){
-					//Prefix - Not precise - See http://stackoverflow.com/questions/2008279/validate-a-javascript-function-name/2008444#2008444
-					return "STR_PREFIX"
 				}
 				//if()
 				//return "STR_JSON" //TODO STR_JSON abstraction
