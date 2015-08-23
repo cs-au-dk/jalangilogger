@@ -135,7 +135,7 @@ assertFalse = function() {};
 							return "STR_UINT";
 						}
 						return "STR_OTHERNUM";
-					} else if(val.match("^-?[0-9]+\.[0-9]+[e][-|+][0-9]+$") || val.match("^-?[0-9]*\.[0-9]+$")){
+					} else if(val.match("^-?[0-9]+\\.[0-9]+[e][-|+][0-9]+$") || val.match("^-?[0-9]+\\.[0-9]+$")){
 						return "STR_OTHERNUM";
 					}
 				}
@@ -178,7 +178,6 @@ assertFalse = function() {};
 		function log(iid, entry) {
 			entry.sourceLocation = getFullLocation(iid);
 			console.log(JSON.stringify(entry));
-			//console.log(getFullLocation(iid) + ":" + m);
 		}
 
 		this.read = function(iid, name, val, isGlobal, isScriptLocal) {
