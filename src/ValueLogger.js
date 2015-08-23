@@ -38,6 +38,8 @@ assertFalse = function() {};
 		var nextConstructorCallCallSiteIID = false;
 		var nativeCall = Function.prototype.call;
 		var nativeApply = Function.prototype.apply;
+		var nativeSetTimeout = setTimeout;
+		var nativeSetInterval = setInterval;
 
         /**
          * Builds a map from some builtin objects to their canonical path
@@ -212,7 +214,16 @@ assertFalse = function() {};
 				var newBase = args[0];
 				var newArgs = f === nativeCall? Array.prototype.slice.call(args, 1, args.length): args[1];
                 this.invokeFunPre(iid, newF, newBase, newArgs, false, newBase !== undefined, allocationSites.get(newF));
+			} else if ((nativeSetTimeout === f  || nativeSetInterval === f) && (typeof args[0] !== 'function')) {
+				var args2 = [];
+				for(var i = 0; i < args.length; i++){
+					args2[i] = args[i];
+				}
+				args2[0] = J$.instrumentEvalCode(args[0], iid);
+				return {f: f, base: base, args: args2, skip: false};
 			}
+
+
 		};
 
         this.invokeFun = function (iid, f, base, args, result, isConstructor, isMethod, functionIid) {
@@ -243,6 +254,10 @@ assertFalse = function() {};
         this.literal = function (iid, val, hasGetterSetter) {
             registerAllocation(iid, val);
         };
+
+		this.instrumentCodePre = function (iid, code) {
+			log(iid, {entryKind: 'dynamic-code', code: code + ''});
+		};
 
         function registerAllocation(iid, val){
             if (typeof val === 'function' || typeof val === 'object') {
