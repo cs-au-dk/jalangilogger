@@ -137,7 +137,12 @@ assertFalse = function() {};
 							return "STR_UINT";
 						}
 						return "STR_OTHERNUM";
-					} else if(val.match("^-?[0-9]+\\.[0-9]+[e][-|+][0-9]+$") || val.match("^-?[0-9]+\\.[0-9]+$")){
+					} else if(val.match("^-?[0-9]*\\.[0-9]+[e][-|+][0-9]+$") 
+							|| val.match("^-?[0-9]*\\.[0-9]+$")
+							|| val.match("^-?[0-9]+\\.[0-9]*$")
+							|| val.match("^-[0-9]+$")
+							|| val === "Infinity"
+							|| val === "-Infinity"){
 						return "STR_OTHERNUM";
 					}
 				}
