@@ -123,7 +123,7 @@ assertFalse = function() {};
 					return "NUM_NAN";
 				if (!isFinite(val))
 					return "NUM_INF";
-				if (val >= 0 && val < 4294967295 && (val % 1) == 0)
+				if (val >= 0 && val <= 4294967295 && (val % 1) == 0)
 					return "NUM_UINT";
 				return "NUM_OTHER";
 			}
@@ -133,7 +133,7 @@ assertFalse = function() {};
 					if(val === 'NaN' || val.match("^-?[0-9]+[e][-|+][0-9]+$") /* exponentials should be logged to STR_OTHERNUM */){
 						return "STR_OTHERNUM";
 					}else if (!isNaN(n) && val.match("^[0-9]+$")) {
-						if (n >= 0 && n < 4294967295 && (n % 1) == 0) {
+						if (n >= 0 && n <= 4294967295 && (n % 1) == 0) {
 							return "STR_UINT";
 						}
 						return "STR_OTHERNUM";
