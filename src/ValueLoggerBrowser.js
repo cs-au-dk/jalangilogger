@@ -40,6 +40,8 @@ var entriesToSend = [];
 		var nextConstructorCallCallSiteIID = false;
 		var nativeCall = Function.prototype.call;
 		var nativeApply = Function.prototype.apply;
+		var nativeSetTimeout = setTimeout;		
+		var nativeSetInterval = setInterval;		
 
         /**
          * Builds a map from some builtin objects to their canonical path
@@ -126,7 +128,7 @@ var entriesToSend = [];
 					return "NUM_NAN";
 				if (!isFinite(val))
 					return "NUM_INF";
-				if (val >= 0 && val < 4294967295 && (val % 1) == 0)
+				if (val >= 0 && val <= 4294967295 && (val % 1) == 0)
 					return "NUM_UINT";
 				return "NUM_OTHER";
 			}
@@ -136,11 +138,16 @@ var entriesToSend = [];
 					if(val === 'NaN' || val.match("^-?[0-9]+[e][-|+][0-9]+$") /* exponentials should be logged to STR_OTHERNUM */){
 						return "STR_OTHERNUM";
 					}else if (!isNaN(n) && val.match("^[0-9]+$")) {
-						if (n >= 0 && n < 4294967295 && (n % 1) == 0) {
+						if (n >= 0 && n <= 4294967295 && (n % 1) == 0) {
 							return "STR_UINT";
 						}
 						return "STR_OTHERNUM";
-					} else if(val.match("^-?[0-9]+\\.[0-9]+[e][-|+][0-9]+$") || val.match("^-?[0-9]+\\.[0-9]+$")){
+					} else if(val.match("^-?[0-9]*\\.[0-9]+[e][-|+][0-9]+$") 
+							|| val.match("^-?[0-9]*\\.[0-9]+$")
+							|| val.match("^-?[0-9]+\\.[0-9]*$")
+							|| val.match("^-[0-9]+$")
+							|| val === "Infinity"
+							|| val === "-Infinity"){
 						return "STR_OTHERNUM";
 					}
 				}
@@ -235,6 +242,13 @@ var entriesToSend = [];
 				var newBase = args[0];
 				var newArgs = f === nativeCall? Array.prototype.slice.call(args, 1, args.length): args[1];
                 this.invokeFunPre(iid, newF, newBase, newArgs, false, newBase !== undefined, allocationSites.get(newF));
+			} else if ((nativeSetTimeout === f  || nativeSetInterval === f) && (typeof args[0] !== 'function')) {
+				var args2 = [];
+				for(var i = 0; i < args.length; i++){
+					args2[i] = args[i];
+				}
+				args2[0] = J$.instrumentEvalCode(args[0], iid);
+				return {f: f, base: base, args: args2, skip: false};
 			}
 		};
 
@@ -267,6 +281,10 @@ var entriesToSend = [];
             registerAllocation(iid, val);
         };
 
+        this.instrumentCodePre = function (iid, code) {
+			log(iid, {entryKind: 'dynamic-code', code: code + ''});
+		};
+		
         function registerAllocation(iid, val){
             if (typeof val === 'function' || typeof val === 'object') {
                 allocationSites.set(val, iid);
