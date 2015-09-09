@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 if [ -z ${JALANGI+x} ]; then
     >&2 echo '$JALANGI is not defined?! Set to e.g. "node_modules/jalangi2"';
     exit 1;
