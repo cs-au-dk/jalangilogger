@@ -1,0 +1,1 @@
+draw_points = !draw_points
