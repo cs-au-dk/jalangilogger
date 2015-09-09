@@ -2,40 +2,40 @@ package dk.au.cs.casa.jer.entries;
 
 public class SourceLocation {
 
-    private int linenumber;
+    private int lineNumber;
 
-    private int columnnumber;
+    private int columnNumber;
 
-    private String filename;
+    private String fileName;
 
-    public SourceLocation (int linenumber, int columnnumber, String filename) {
+    public SourceLocation (int lineNumber, int columnNumber, String fileName) {
 
-        this.linenumber = linenumber;
-        this.columnnumber = columnnumber;
-        this.filename = filename;
+        this.lineNumber = lineNumber;
+        this.columnNumber = columnNumber;
+        this.fileName = fileName;
     }
 
-    public int getColumnnumber () {
-        return columnnumber;
+    public int getColumnNumber () {
+        return columnNumber;
     }
 
-    public void setColumnnumber (int columnnumber) {
-        this.columnnumber = columnnumber;
+    public void setColumnNumber (int columnNumber) {
+        this.columnNumber = columnNumber;
     }
 
-    public String getFilename () {
-        return filename;
+    public String getFileName () {
+        return fileName;
     }
 
-    public void setFilename (String filename) {
-        this.filename = filename;
+    public void setFileName (String fileName) {
+        this.fileName = fileName;
     }
 
-    public int getLinenumber () {
-        return linenumber;
+    public int getLineNumber () {
+        return lineNumber;
     }
 
-    public void setLinenumber (int linenumber) {
-        this.linenumber = linenumber;
+    public void setLineNumber (int lineNumber) {
+        this.lineNumber = lineNumber;
     }
 }
