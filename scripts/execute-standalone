@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
-if [ -z ${JALANGI+x} ]; then
-    >&2 echo '$JALANGI is not defined?! Set to e.g. "node_modules/jalangi2"';
-    exit 1;
-fi
 for F in "$@"
 do
     echo "$F"
-    node --harmony ${JALANGI}/src/js/commands/direct.js --analysis src/ValueLogger.js "$F" | sort | uniq > "$F".log
+    node --harmony node_modules/jalangi2/src/js/commands/direct.js --analysis src/ValueLogger.js "$F" | sort | uniq > "$F".log
 done
