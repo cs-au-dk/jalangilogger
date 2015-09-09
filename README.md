@@ -19,7 +19,7 @@ For examples of how to use the collected values, see the later parts of this rea
 - collected values are abstracted wrt. the value lattice of [TAJS](https://github.com/cs-au-dk/TAJS)
   - user-allocated objects are abstracted by their allocation site
   - many natively allocated objects are abstracted by their canonical name
-  - strings and numbers are abstracted immediately
+  - strings and numbers are abstracted immediately to their abstract counter parts
     
 The [JalangiLogFiles](JalangiLogFiles) directory contains some example log files.
 
