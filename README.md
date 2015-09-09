@@ -29,6 +29,8 @@ The [JalangiLogFiles](JalangiLogFiles) directory contains some example log files
 - The [log-readers/java/src/dk/au/cs/casa/jer/types](log-readers/java/src/dk/au/cs/casa/jer/types) contains Java files that describes what an entry in a log file can look like (see JavaDoc for further information).
 - The [log-readers/java/](log-readers/java/) log-reader implementation can be thought of as the log-reader reference implementation.
 
+- TODO explain where the corresponding source files can be found (rename test directory?)
+
 ### Using log files in Java
  
 Java version 1.8+ is required to run this implementation.
@@ -49,9 +51,8 @@ If the example log files that have been provided with this project are not suffi
 
 ### Prerequisites
 
-- java (& javac) 1.6+ is required to run the Java-parts of this project
 - run `npm install` to install Jalangi and other dependencies
-
+- java (& javac) 1.6+ is required to run the produced log files for HTML files
 
 ### Creating log files from plain JavaScript files
 
@@ -63,14 +64,14 @@ The log files will be placed in the directory [JalangiLogFiles](JalangiLogFiles)
 Example:
 
 ```
-EXAMPLE
+TODO EXAMPLE
 ```
 
 Creating a log file for a single JavaScript application can be done using [scripts/execute-standalone](scripts/execute-standalone).
  
 Example:
 ```
-EXAMPLE
+TODO EXAMPLE
 ```
 
 ### Creating log files from HTML files
@@ -92,7 +93,7 @@ Due to the way Jalangi uses source locations in HTML files an extra post-process
 
 A concrete example of this process:
 ```
-EXAMPLE
+TODO EXAMPLE
 ```
 
 
@@ -110,7 +111,7 @@ A dynamically observed value is not over-approximated by the static analysis, th
 Example:
 
 ```javascript
-EXAMPLE
+TODO EXAMPLE
 ```
 
 Note that the collected string and number values are abstracted immediately regardless of whether they could be represented by a single concrete value.
@@ -125,7 +126,6 @@ This means that a precise and sound analysis can actually under-approximate the 
 - log files for JavaScript files is done where only a single JavaScript file is instrumented, obtaining a log file for an entire application is not currently possible
 - log files for JavaScript files will have nodejs-semantics and **not** browser-semantics, e.g. the value of `this` is not the global object.
 
-- TODO phantomjs automation of browser interaction for easy reproduction of log files
 - TODO cleanup in nodeJSServer: it uses way to many node-packages
 - TODO actual JavaDoc in Java log parsing files
 
