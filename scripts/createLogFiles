@@ -3,10 +3,10 @@ for f in $(find test -name '*.js');
 do
 	echo "Creating log for ${f}";
 
-	./instrument "${f}";
+	./scripts/instrument "${f}";
 
 	instrumented="${f/.js/_jalangi_.js}";
-	./execute-standalone "${instrumented}";
+	./scripts/execute-standalone "${instrumented}";
 
 	dn2=$(dirname "${f}")
 	dn1="${dn2/test/}"
