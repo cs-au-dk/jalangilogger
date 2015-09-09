@@ -1,35 +1,129 @@
-TAJS_dumpValue = function(s) {};
-TAJS_dumpPrototype = function() {};
-TAJS_dumpObject = function() {};
-TAJS_dumpState = function() {};
-TAJS_dumpModifiedState = function() {};
-TAJS_dumpAttributes = function() {};
-TAJS_dumpExp = function() {};
-TAJS_dumpNF = function() {};
-TAJS_conversionToPrimitive = function() {};
-TAJS_getUIEvent = function() {};
-TAJS_getDocumentEvent = function() {};
-TAJS_getMouseEvent = function() {};
-TAJS_getKeyboardEvent = function() {};
-TAJS_getEventListener = function() {};
-TAJS_getWheelEvent = function() {};
-TAJS_getAjaxEvent = function() {};
-TAJS_addContextSensitivity = function() {};
-TAJS_assert = function(a) {};
-TAJS_newObject = function() {};   
-
-print = function() {}; //google/cryptobench test      
-            
-//The next are added to run with v8tests
-assertTrue = function() {};
-assertEquals = function() {};
-assertThrows = function() {};           
-assertHasOwnProperties = function() {};            
-assertArrayEquals = function() {};
-assertFalse = function() {};           
-            
-
 (function (sandbox) {
+    var log /* the function to store log entries with */;
+
+    (function setupMode() {
+        if (typeof window !== 'undefined') {
+
+            var sendEntries = true;
+            var entriesToSend = [];
+
+            function sendLoggedEntries() {
+                var xmlhttp = new XMLHttpRequest();
+                xmlhttp.open("POST", "http://127.0.0.1:3000/sendEntries", true);
+                xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+                xmlhttp.send( "entries=" + entriesToSend);
+            }
+
+            window.onkeyup = function(event){
+                if(event.keyCode == 80){
+                    sendLoggedEntries();
+                    if(!sendEntries) //the data has already been sent
+                        return;
+
+                    var urlLocation = location.pathname;
+                    var htmlFileName = urlLocation.substr(urlLocation.indexOf("/instrumentedHtmlFiles/") + "/instrumentedHtmlFiles/".length);
+                    var logFileName = ""; //Jalangi makes a folder with the name of the html file, which we do not want in this path
+                    var directoriesInHTMLFileName = htmlFileName.split("/");
+                    for (var i = 0; i < directoriesInHTMLFileName.length - 1; i++){
+                        if(directoriesInHTMLFileName[i].indexOf(".html") != -1)
+                            continue;
+                        logFileName += directoriesInHTMLFileName[i] + "/"
+                    }
+                    logFileName += directoriesInHTMLFileName[directoriesInHTMLFileName.length - 1];
+                    logFileName = logFileName.substring(0, logFileName.length - 4) + "log";
+
+                    var xmlhttp = new XMLHttpRequest();
+                    xmlhttp.open("POST", "http://127.0.0.1:3000/printToFile", true);
+                    xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+                    xmlhttp.send( "fileName=" + logFileName);
+                    sendEntries = false;
+                    console.log("Send printToFileCommand")
+                }
+            };
+
+            log = function (iid, entry) {
+                entry.sourceLocation = getFullLocation(iid);
+                if (!sendEntries || !shouldSendEntry(JSON.stringify(entry)))
+                    return;
+
+                entriesToSend.push(JSON.stringify(entry) + "\n");
+                if (entriesToSend.length >= numberOfEntriesToSendEachTime) {
+                    sendLoggedEntries();
+                }
+            }
+        } else {
+            log = function (iid, entry) {
+                entry.sourceLocation = getFullLocation(iid);
+                console.log(JSON.stringify(entry));
+            }
+        }
+    })();
+
+
+    var preambles = {
+        TAJS: function () {
+            TAJS_dumpValue = function (s) {
+            };
+            TAJS_dumpPrototype = function () {
+            };
+            TAJS_dumpObject = function () {
+            };
+            TAJS_dumpState = function () {
+            };
+            TAJS_dumpModifiedState = function () {
+            };
+            TAJS_dumpAttributes = function () {
+            };
+            TAJS_dumpExp = function () {
+            };
+            TAJS_dumpNF = function () {
+            };
+            TAJS_conversionToPrimitive = function () {
+            };
+            TAJS_getUIEvent = function () {
+            };
+            TAJS_getDocumentEvent = function () {
+            };
+            TAJS_getMouseEvent = function () {
+            };
+            TAJS_getKeyboardEvent = function () {
+            };
+            TAJS_getEventListener = function () {
+            };
+            TAJS_getWheelEvent = function () {
+            };
+            TAJS_getAjaxEvent = function () {
+            };
+            TAJS_addContextSensitivity = function () {
+            };
+            TAJS_assert = function (a) {
+            };
+            TAJS_newObject = function () {
+            };
+        },
+        print: function () {
+            print = function () {
+            }; //google/cryptobench test
+        },
+        asserts: function () {
+            assertTrue = function () {
+            };
+            assertEquals = function () {
+            };
+            assertThrows = function () {
+            };
+            assertHasOwnProperties = function () {
+            };
+            assertArrayEquals = function () {
+            };
+            assertFalse = function () {
+            };
+        }
+    };
+    preambles.asserts();
+    preambles.TAJS();
+    preambles.print();
+
 
 	function MyAnalysis () {
 
@@ -137,7 +231,7 @@ assertFalse = function() {};
 							return "STR_UINT";
 						}
 						return "STR_OTHERNUM";
-					} else if(val.match("^-?[0-9]*\\.[0-9]+[e][-|+][0-9]+$") 
+					} else if(val.match("^-?[0-9]*\\.[0-9]+[e][-|+][0-9]+$")
 							|| val.match("^-?[0-9]*\\.[0-9]+$")
 							|| val.match("^-?[0-9]+\\.[0-9]*$")
 							|| val.match("^-[0-9]+$")
@@ -181,11 +275,6 @@ assertFalse = function() {};
 			}
             return {fileName: components[0], lineNumber: lineNumber, columnNumber: columnNumber};
         }
-
-		function log(iid, entry) {
-			entry.sourceLocation = getFullLocation(iid);
-			console.log(JSON.stringify(entry));
-		}
 
 		this.read = function(iid, name, val, isGlobal, isScriptLocal) {
 			log(iid, {entryKind: "read-variable", name: s(name), value: p(val)});
