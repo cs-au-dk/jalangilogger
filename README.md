@@ -13,13 +13,13 @@ For examples of how to use the collected values, see the later parts of this rea
 
 ## Collected values 
  
+The [JalangiLogFiles](JalangiLogFiles) directory contains some example log files.
+
 ## Using collected values 
  
-The [JalangiLogFiles](JalangiLogFiles) directory contains some example log files.
- 
-The [log-readers](log-readers) directory contains implementations for reading the log files.
-The [log-readers/java/src/dk/au/cs/casa/jer/types](log-readers/java/src/dk/au/cs/casa/jer/types) contains Java files that describes what an entry in a log file can look like (see JavaDoc for further information).
-The [log-readers/java/](log-readers/java/) log-reader implementation can be thought of as the log-reader reference implementation.
+- The [log-readers](log-readers) directory contains implementations for reading the log files.
+- The [log-readers/java/src/dk/au/cs/casa/jer/types](log-readers/java/src/dk/au/cs/casa/jer/types) contains Java files that describes what an entry in a log file can look like (see JavaDoc for further information).
+- The [log-readers/java/](log-readers/java/) log-reader implementation can be thought of as the log-reader reference implementation.
 
 ### Using log files in Java
  
@@ -30,6 +30,9 @@ Example:
 Set<IEntry> logEntries = new dk.au.cs.casa.jer.LogParser("myLog.log").getEntries();
   
 ```
+
+- The script [scripts/make-log-reader-jar.sh](scripts/make-log-reader-jar.sh) produces a jar file at dist/jer.jar.
+- jer.jar depends on gson, it is present at [log-readers/java/lib/gson-2.3.1.jar](log-readers/java/lib/gson-2.3.1.jar)
 
 
 ## Collecting more values
@@ -114,6 +117,7 @@ x++;
 
 - TODO phantomjs automation of browser interaction for easy reproduction of log files
 - TODO cleanup in nodeJSServer: it uses way to many node-packages
+- TODO actual JavaDoc in Java log parsing files
 
 ## Contributing
 
