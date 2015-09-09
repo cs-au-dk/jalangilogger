@@ -11,8 +11,16 @@ Caveat: This is an unpolished prototype-tool, known limitations are listed in th
  
 For examples of how to use the collected values, see the later parts of this readme. 
 
-## Collected values 
- 
+## Collected facts 
+
+- collected facts are values of expressions, variables and properties at certain locations in programs
+- facts are *not* qualified by contexts, they are purely syntactic
+- collected values are rarely concrete values (due to efficiency and space concerns)
+- collected values are abstracted wrt. the value lattice of [TAJS](https://github.com/cs-au-dk/TAJS)
+  - user-allocated objects are abstracted by their allocation site
+  - many natively allocated objects are abstracted by their canonical name
+  - strings and numbers are abstracted immediately
+    
 The [JalangiLogFiles](JalangiLogFiles) directory contains some example log files.
 
 ## Using collected values 
@@ -102,10 +110,12 @@ A dynamically observed value is not over-approximated by the static analysis, th
 Example:
 
 ```javascript
-var x = 42;
-x++;
-
+EXAMPLE
 ```
+
+Note that the collected string and number values are abstracted immediately regardless of whether they could be represented by a single concrete value.
+This means that a precise and sound analysis can actually under-approximate the collected string and number values without being unsound.
+
 ## Misc. limiations and oddities
 
 - Semantic limitations and bugs of [Jalangi](https://github.com/Samsung/jalangi2) will influence the logs
