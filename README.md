@@ -7,6 +7,7 @@ Creating log files from JS files
 
 
 Creating log files from HTML files
+
 1. run `scripts/instrumentHTMLFiles.sh` (The instrumented files are placed in a folder named instrumentedHTMLFiles)
 2. Run `npm start` (From inside the nodeJSServer folder) to start the nodeJS server
 3. Open the instrumented HTML-file you wish to log in a browser	
