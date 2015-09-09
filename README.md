@@ -15,11 +15,11 @@ For examples of how to use the collected values, see the later parts of this rea
  
 ## Using collected values 
  
-The [JalangiLogFiles]() directory contains some example log files.
+The [JalangiLogFiles](JalangiLogFiles) directory contains some example log files.
  
-The [log-readers]() directory contains implementations for reading the log files.
-The [log-readers/java/src/dk/au/cs/casa/jer/types]() contains Java files that describes what an entry in a log file can look like (see JavaDoc for further information).
-The [log-readers/java/]() log-reader implementation can be thought of as the log-reader reference implementation.
+The [log-readers](log-readers) directory contains implementations for reading the log files.
+The [log-readers/java/src/dk/au/cs/casa/jer/types](log-readers/java/src/dk/au/cs/casa/jer/types) contains Java files that describes what an entry in a log file can look like (see JavaDoc for further information).
+The [log-readers/java/](log-readers/java/) log-reader implementation can be thought of as the log-reader reference implementation.
 
 ### Using log files in Java
  
@@ -44,10 +44,10 @@ If the example log files that have been provided with this project are not suffi
 
 ### Creating log files from plain JavaScript files
 
-The file [scripts/createLogFiles]() can be used to create log files for all JavaScript files in the [test]() directory (recursively).
+The file [scripts/createLogFiles](scripts/createLogFiles) can be used to create log files for all JavaScript files in the [test]() directory (recursively).
 It does so by essentially recording values appearing during `node test/x/y/z/file.js`.
 
-The log files will be placed in the directory [JalangiLogFiles]() in a subdirectory corresponding to the location of the JavaScript files.
+The log files will be placed in the directory [JalangiLogFiles](JalangiLogFiles) in a subdirectory corresponding to the location of the JavaScript files.
 
 Example:
 
@@ -55,7 +55,7 @@ Example:
 EXAMPLE
 ```
 
-Creating a log file for a single JavaScript application can be done using [scripts/execute-standalone]().
+Creating a log file for a single JavaScript application can be done using [scripts/execute-standalone](scripts/execute-standalone).
  
 Example:
 ```
@@ -69,15 +69,15 @@ a server that can save log files needs to be started, the HTML file needs to be 
 
 The process of obtaining a log file for an HTML file looks like this:
 
-1. run [scripts/instrumentHTMLFiles.sh]() (The instrumented files are placed in a folder named instrumentedHTMLFiles)
-2. Run [script/startServer.sh]() to start the nodeJS server
+1. run [scripts/instrumentHTMLFiles.sh](scripts/instrumentHTMLFiles.sh) (The instrumented files are placed in a folder named instrumentedHTMLFiles)
+2. Run [script/startServer.sh](script/startServer.sh) to start the nodeJS server
 3. Open the instrumented HTML-file you wish to create log file for in a browser	
 4. Interact with the page and press p to save the log file  (The log file is saved in a folder named nodeJSServer/unchangedLogFiles)
 5. Repeat step 3 and 4 for every HTML file that should have a log file 
 
 Due to the way Jalangi uses source locations in HTML files an extra post-processing step is required for every HTML file in nodeJSServer/unchangedLogFiles.
 
-7. Run [scripts/postProcessHTMLLogs.sh]() to adjust the source locations in log files the log files in nodeJSServer/unchangedLogFiles, the adjusted files will be placed in the JalanggiLogFiles directory.
+7. Run [scripts/postProcessHTMLLogs.sh](scripts/postProcessHTMLLogs.sh) to adjust the source locations in log files the log files in nodeJSServer/unchangedLogFiles, the adjusted files will be placed in the JalanggiLogFiles directory.
 
 A concrete example of this process:
 ```
