@@ -31,9 +31,9 @@ assertEquals(272, Number('2\u00372'));
 assertTrue(isNaN(Number('2\u11372')), "short-string");
 
 // Check that long string can convert to proper numbers.
-var s = '\u0031';
+var s = '\u0031'; TAJS_dumpValue(s);
 for (var i = 0; i < 7; i++) {
-  s += s;
+  s += s; TAJS_dumpValue(s);
 }
 assertTrue(isFinite(Number(s)));
 

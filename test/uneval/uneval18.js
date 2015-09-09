@@ -1,0 +1,21 @@
+function f(x) {
+	return eval(x + " = 42");
+}
+f("boogie_nights")
+TAJS_dumpValue(boogie_nights)
+f("sjov")
+TAJS_dumpValue(sjov)
+f("boogie_nights1")
+TAJS_dumpValue(boogie_nights1)
+f("boogie_nights2")
+TAJS_dumpValue(boogie_nights2)
+f("boogie_nights3")
+TAJS_dumpValue(boogie_nights3)
+f("boogie_nights4")
+TAJS_dumpValue(boogie_nights4)
+f("boogie_nights5")
+TAJS_dumpValue(boogie_nights5)
+f("boogie_nights6")
+TAJS_dumpValue(boogie_nights6)
+f("boogie_nights7")
+TAJS_dumpValue(boogie_nights7)

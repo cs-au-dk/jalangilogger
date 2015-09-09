@@ -1,0 +1,11 @@
+var a = eval();
+TAJS_dumpValue(a);
+var b = eval(9.11);
+TAJS_dumpValue(b);
+var c = eval(new Boolean(b));
+TAJS_dumpValue(c);
+var d = eval("function funfun(x) { funfun(x); }");
+TAJS_dumpValue(d);
+TAJS_dumpObject(d);
+var f = d(1,2,3,4);
+TAJS_dumpValue(f);

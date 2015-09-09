@@ -1,0 +1,11 @@
+var a = "foo";
+var b = 1000;
+var bb = 1000 + 42;
+var ab = a + b;
+TAJS_dumpValue(a);
+TAJS_dumpValue(ab);
+TAJS_dumpValue(bb);
+TAJS_assert(a == "foo");
+TAJS_assert(ab == "foo1000");
+TAJS_assert(bb == 1042);
+TAJS_dumpValue(this);
