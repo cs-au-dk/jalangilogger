@@ -1,0 +1,1 @@
+{"entryKind":"write-variable","name":{"valueKind":"concrete-string","value":"source"},"value":{"valueKind":"abstract-primitive","value":"STR_OTHER"},"sourceLocation":{"fileName":"test/v8tests/with-function-expression.js","lineNumber":"28","columnNumber":"14"}}
