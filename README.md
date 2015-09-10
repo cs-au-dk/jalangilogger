@@ -161,7 +161,7 @@ TODO EXAMPLE
 Note that the collected string and number values are abstracted immediately regardless of whether they could be represented by a single concrete value.
 This means that a precise and sound analysis can actually under-approximate the collected string and number values without being unsound.
 
-## Misc. limiations and oddities
+## Misc. limitations and oddities
 
 - Semantic limitations and bugs of [Jalangi](https://github.com/Samsung/jalangi2) will influence the logs
   - the most serious limitation is the improper treatment of the with-statement
