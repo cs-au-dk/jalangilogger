@@ -18,7 +18,7 @@ import org.json.JSONObject;
 
 public class TransformHtmlLogFiles {
 	private static final String startInstrumentedDirectory = "instrumentedHTMLFiles/";
-	private static final String unchangedLogFileDirectory = "nodeJSServer/unchangedLogFiles/";
+	private static final String unchangedLogFileDirectory = "nodeJSServer/UnchangedLogFiles/";
 	private static final String changedLogFileDirectory = "JalangiLogFiles/";
 	private static final String originalTestFileDirectory = "test/";
 	
