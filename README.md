@@ -1,13 +1,11 @@
-# JER: JavaScript Execution Recorder
+# JalangiLogger
 
-TODO: Let Anders pick a proper name
-
-JER records facts about concrete executions of JavaScript programs.
+JalangiLogger(subject to change) records facts about concrete executions of JavaScript programs.
 
 The collection of facts is done as a Jalangi-analysis, and the values are stored as JSON entries in a text file.
 In this readme, the text file of JSON entries is known as a "log file".
  
-Caveat: This is an unpolished prototype-tool, known limitations are listed in the bottom of this readme, and on the issue tracker of this project.   
+Caveat: This is an unpolished prototype-tool, known limitations are listed in the bottom of this readme, and on the issue tracker of this project.
  
 For examples of how to use the collected values, see the later parts of this readme. 
 
