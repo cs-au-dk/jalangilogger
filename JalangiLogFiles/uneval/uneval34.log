@@ -1,0 +1,2 @@
+{"entryKind":"dynamic-code","code":"","sourceLocation":{"fileName":"test/uneval/uneval34.js","lineNumber":"1","columnNumber":"10"}}
+{"entryKind":"write-variable","name":{"valueKind":"concrete-string","value":"x"},"value":{"valueKind":"abstract-primitive","value":"undefined"},"sourceLocation":{"fileName":"test/uneval/uneval34.js","lineNumber":"1","columnNumber":"5"}}
