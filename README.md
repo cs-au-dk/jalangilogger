@@ -106,8 +106,39 @@ Due to the way Jalangi uses source locations in HTML files an extra post-process
 7. Run [scripts/postProcessHTMLLogs.sh](scripts/postProcessHTMLLogs.sh) to adjust the source locations in log files the log files in nodeJSServer/unchangedLogFiles, the adjusted files will be placed in the JalanggiLogFiles directory.
 
 A concrete example of this process:
+
+
+For the sake of the example, the server is run in a separate terminal:
 ```
-TODO EXAMPLE
+$ scripts/startServer.sh 
+Received entries
+POST /sendEntries 204 24.724 ms - -
+Printing to file: wala/portal-example-simple.log
+POST /printToFile 204 4.945 ms - -
+```
+
+```
+$ scripts/instrumentHTMLFiles.sh 
+test/wala/portal-example-simple.html
+url:http://foo.com#inline-0
+url:http://foo.com#inline-1
+url:http://foo.com#event-handler-0
+url:http://foo.com#inline-2
+url:http://foo.com#event-handler-1
+url:http://foo.com#event-handler-2
+url:http://foo.com#event-handler-3
+url:http://foo.com#event-handler-4
+url:http://foo.com#event-handler-5
+url:http://foo.com#event-handler-6
+url:http://foo.com#inline-3
+done!
+FIXME make this more targeted
+^C # aborting for the sake of the example
+$ google-chrome instrumentedHtmlFiles/wala/portal-example-simple.html/portal-example-simple.html 
+# Interact with the webpage...
+# And press 'p'
+$ scripts/postProcessHTMLLogs.sh
+FIXME make this more robust/targeted
 ```
 
 
