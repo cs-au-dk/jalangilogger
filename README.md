@@ -159,9 +159,16 @@ A dynamically observed value is not over-approximated by the static analysis, th
 
 Example:
 
+Consider the JavaScript program:
+
 ```javascript
-TODO EXAMPLE
+var x = 0;
+var y = 2;
+var z = x + y;
 ```
+The log file for the execution of this program reveals that `z` should be an `UINT` at line 3.
+There are multiple ways an analysis could be observed to be unsound according to this fact: e.g.: the analysis does not believe line 3 is reachable
+ or the analysis believes `z` is a string.
 
 Note that the collected string and number values are abstracted immediately regardless of whether they could be represented by a single concrete value.
 This means that a precise and sound analysis can actually under-approximate the collected string and number values without being unsound.
