@@ -64,7 +64,19 @@ The log files will be placed in the directory [JalangiLogFiles](JalangiLogFiles)
 Example:
 
 ```
-TODO EXAMPLE
+$ scripts/createLogFiles 
+Creating log for test/sunspider/access-binary-trees.js
+test/sunspider/access-binary-trees.js
+test/sunspider/access-binary-trees_jalangi_.js
+‘test/sunspider/access-binary-trees_jalangi_.js.log’ -> ‘JalangiLogFiles/sunspider/access-binary-trees.log’
+Creating log for test/sunspider/math-partial-sums.js
+test/sunspider/math-partial-sums.js
+test/sunspider/math-partial-sums_jalangi_.js
+‘test/sunspider/math-partial-sums_jalangi_.js.log’ -> ‘JalangiLogFiles/sunspider/math-partial-sums.log’
+^C # aborting for the sake of the example
+$ wc -l JalangiLogFiles/sunspider/*.log                  
+   223 JalangiLogFiles/sunspider/access-binary-trees.log
+   151 JalangiLogFiles/sunspider/math-partial-sums.log
 ```
 
 Creating a log file for a single JavaScript application can be done using [scripts/execute-standalone](scripts/execute-standalone).
@@ -72,6 +84,8 @@ Creating a log file for a single JavaScript application can be done using [scrip
 Example:
 ```
 TODO EXAMPLE
+FIXME execute-standalone creates EMPTY log files??
+FIXME execute-standalone does not output to JalangiLogFiles
 ```
 
 ### Creating log files from HTML files
