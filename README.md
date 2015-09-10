@@ -78,13 +78,17 @@ $ wc -l JalangiLogFiles/sunspider/*.log
    151 JalangiLogFiles/sunspider/math-partial-sums.log
 ```
 
-Creating a log file for a single JavaScript application can be done using [scripts/execute-standalone](scripts/execute-standalone).
+Creating a log file for a single JavaScript application can be done
+using [scripts/instrument](scripts/instrument) and [scripts/execute-standalone](scripts/execute-standalone).
  
 Example:
 ```
-TODO EXAMPLE
-FIXME execute-standalone creates EMPTY log files??
-FIXME execute-standalone does not output to JalangiLogFiles
+$ scripts/instrument test/v8tests/date-parse.js 
+test/v8tests/date-parse.js
+$ scripts/execute-standalone test/v8tests/date-parse_jalangi_.js
+test/v8tests/date-parse_jalangi_.js
+$ wc -l test/v8tests/date-parse_jalangi_.js.log 
+226 test/v8tests/date-parse_jalangi_.js.log
 ```
 
 ### Creating log files from HTML files
