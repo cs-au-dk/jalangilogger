@@ -1,5 +1,6 @@
 *.json
 *_jalangi_*.js
-*_jalangi_*.js.log
+**/*_jalangi_*.js.log
 *~
 node_modules
+instrumentedHtmlFiles
