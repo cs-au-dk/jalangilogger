@@ -30,6 +30,7 @@ The [JalangiLogFiles](JalangiLogFiles) directory contains some example log files
 
 - The log files have corresponding JavaScript and HTML source files in the [test](test) directory
   - for space reasons, log files have *not* been generated for all files in the test directory
+  - some log file contains TAJS-specific functions, these are mocked in [src/ValueLogger.js](src/ValueLogger.js) in order to avoid unintended side-effects on the executed code
 
 ### Using log files in Java
  
