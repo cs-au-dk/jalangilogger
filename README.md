@@ -116,9 +116,10 @@ For the sake of the example, the server is run in a separate terminal:
 ```
 $ scripts/startServer.sh 
 Received entries
-POST /sendEntries 204 24.724 ms - -
-Printing to file: wala/portal-example-simple.log
-POST /printToFile 204 4.945 ms - -
+POST /sendEntries 204 24.943 ms - -
+Printing to file: 10k/flatwar.log
+POST /printToFile 204 5.524 ms - -
+^C
 ```
 
 ```
@@ -136,13 +137,17 @@ url:http://foo.com#event-handler-5
 url:http://foo.com#event-handler-6
 url:http://foo.com#inline-3
 done!
-FIXME make this more targeted
+test/10k/flatwar.html
+url:http://foo.com#event-handler-0
+url:http://foo.com#inline-0
+done!
 ^C # aborting for the sake of the example
-$ google-chrome instrumentedHtmlFiles/wala/portal-example-simple.html/portal-example-simple.html 
+$ google-chrome instrumentedHtmlFiles/10k/flatwar.html/flatwar.html 
 # Interact with the webpage...
 # And press 'p'
 $ scripts/postProcessHTMLLogs.sh
-FIXME make this more robust/targeted
+$ wc -l JalangiLogFiles/10k/flatwar.log 
+2559 JalangiLogFiles/10k/flatwar.log
 ```
 
 
