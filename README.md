@@ -20,6 +20,7 @@ For examples of how to use the collected values, see the later parts of this rea
   - user-allocated objects are abstracted by their allocation site
   - many natively allocated objects are abstracted by their canonical name
   - strings and numbers are abstracted immediately to their abstract counter parts
+  - **these abstraction choices can easily be changed** -- contact esbena@cs.au.dk for support
     
 The [JalangiLogFiles](JalangiLogFiles) directory contains some example log files.
 
