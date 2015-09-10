@@ -28,7 +28,8 @@ The [JalangiLogFiles](JalangiLogFiles) directory contains some example log files
 - The [log-readers/java/src/dk/au/cs/casa/jer/types](log-readers/java/src/dk/au/cs/casa/jer/types) contains Java files that describes what an entry in a log file can look like (see JavaDoc for further information).
 - The [log-readers/java/](log-readers/java/) log-reader implementation can be thought of as the log-reader reference implementation.
 
-- TODO explain where the corresponding source files can be found (rename test directory?)
+- The log files have corresponding JavaScript and HTML source files in the [test](test) directory
+  - for space reasons, log files have *not* been generated for all files in the test directory
 
 ### Using log files in Java
  
