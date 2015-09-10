@@ -1,6 +1,6 @@
 {
   "name": "jalangilogger",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Misc. logging of values during execution",
   "main": "-",
   "directories": {
