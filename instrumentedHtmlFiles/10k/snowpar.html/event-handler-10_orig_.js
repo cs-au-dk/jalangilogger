@@ -1,1 +1,0 @@
-canvas.width = this.value; canvas.height = this.value; initSnowPos(); fixPositions('canvas');

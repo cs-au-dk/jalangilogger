@@ -1,1 +1,0 @@
-draw_rects = !draw_rects

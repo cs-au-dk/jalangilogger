@@ -1,1 +1,0 @@
-setLight(1)

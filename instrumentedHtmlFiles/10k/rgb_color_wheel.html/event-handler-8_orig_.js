@@ -1,1 +1,0 @@
-setTest('bg')

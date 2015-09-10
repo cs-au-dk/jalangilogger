@@ -1,1 +1,0 @@
-w = new World().Init();

@@ -1,1 +1,0 @@
-draw_snow = !draw_snow
