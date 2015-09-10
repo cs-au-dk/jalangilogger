@@ -25,20 +25,26 @@ public class TransformHtmlLogFiles {
 		
 	public static void main(String[] args) throws Exception {
 		loopThroughAllFilesAndTransformThem("");
+		System.out.println("All files has been transformed");
 	}
 
 	private static void loopThroughAllFilesAndTransformThem(String path) throws Exception {
 		File[] faFiles = new File(unchangedLogFileDirectory + path).listFiles();
 		for(File file: faFiles){
 			if(file.isFile() && file.getName().endsWith(".log")){
-				String logFileName = path + file.getName();
-				String htmlFileName = file.getName().substring(0, file.getName().length() - 3) + "html";
-				String originalHTMLFile = (originalTestFileDirectory + path + htmlFileName);
-				String instrumentedDirectory = startInstrumentedDirectory + path + htmlFileName + "/";
-				//Jalangi creates a folder of the same name as the file under instrumentation.
-				removeCommasAndEmptyLinesAndDuplicates(logFileName);
-				fillInlineJSOffsetSourceLocationLineNumbers(originalHTMLFile);
-				transformFile(logFileName, originalHTMLFile, instrumentedDirectory);
+				try {
+					String logFileName = path + file.getName();
+					String htmlFileName = file.getName().substring(0, file.getName().length() - 3) + "html";
+					String originalHTMLFile = (originalTestFileDirectory + path + htmlFileName);
+					String instrumentedDirectory = startInstrumentedDirectory + path + htmlFileName + "/";
+					//Jalangi creates a folder of the same name as the file under instrumentation.
+					removeCommasAndEmptyLinesAndDuplicates(logFileName);
+					fillInlineJSOffsetSourceLocationLineNumbers(originalHTMLFile);
+					transformFile(logFileName, originalHTMLFile, instrumentedDirectory);
+				} catch (FileNotFoundException e){
+					System.out.println(e);
+					continue;
+				}
 			} else if (file.isDirectory()){
 				loopThroughAllFilesAndTransformThem(path + file.getName() + "/");
 			}
@@ -80,18 +86,21 @@ public class TransformHtmlLogFiles {
 		//Make directories to the changed log file
 		String newFileName = changedLogFileDirectory + logFile;
 		new File(newFileName.substring(0, newFileName.lastIndexOf("/"))).mkdirs();
-		FileWriter writer = new FileWriter(newFileName);
+		ArrayList<String> linesToBeWritten = new ArrayList<String>();
 		String line = reader.readLine();
 		while(line != null){
 			JSONObject readedJsonObj = new JSONObject(line);
 			try {
 				JSONObject JsonObjToBeWritten = iterateThroughJSONObjectAndChangeSL(readedJsonObj, originalHTMLFile, instrumentedDirectory);
-				writer.write(JsonObjToBeWritten.toString() + "\r\n");
+				linesToBeWritten.add(JsonObjToBeWritten.toString() + "\r\n");
 			} catch (IllegalSourceLocationException exception){} //If illegal sourceLocation (i.e. iid in Jalangi) just ignore this line
 			line = reader.readLine();
-
 		}
 		reader.close();
+		FileWriter writer = new FileWriter(newFileName);
+		for(String lineToBeWritten : linesToBeWritten){
+			writer.write(lineToBeWritten);
+		}
 		writer.close();
 	}
 	//Takes an JSONObject and iterates through it, to find all source locations and then change these to
@@ -222,7 +231,6 @@ public class TransformHtmlLogFiles {
 				inlineJSOffsetSourceLocationsColumnNumbers.add("<script language=\"javascript\">".length() + line.indexOf("<script language=\"javascript\">"));
 			}
 			if(line.contains("<script type=\"text/javascript\">")){
-				System.out.println(lineNumber);
 				inlineJSOffsetSourceLocationsLineNumbers.add(lineNumber);
 				inlineJSOffsetSourceLocationsColumnNumbers.add("<script type=\"text/javascript\">".length() + line.indexOf("<script type=\"text/javascript\">"));
 			}
