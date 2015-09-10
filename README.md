@@ -129,6 +129,7 @@ This means that a precise and sound analysis can actually under-approximate the 
 - TODO cleanup in nodeJSServer: it uses way to many node-packages
 - TODO actual JavaDoc in Java log parsing files
 - TODO use proper temp directory for temporary/generated files 
+- TODO use config file for all the different directory-dependencies in scripts
 
 ## Contributing
 
