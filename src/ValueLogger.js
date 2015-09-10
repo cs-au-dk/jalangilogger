@@ -1,8 +1,21 @@
 (function (sandbox) {
     var log /* the function to store log entries with */;
 
-    (function setupMode() {
-        if (typeof window !== 'undefined') {
+	function getFullLocation(iid){
+		var location = sandbox.iidToLocation(sandbox.getGlobalIID(iid));
+		location = location.slice(1, location.length - 1);
+		var components = location.split(":");
+		var lineNumber = components[1];
+		var columnNumber = components[2];
+		if(typeof lineNumber === 'string' && lineNumber.indexOf('iid') === 0){
+			lineNumber = -1;
+			columnNumber = -1;
+		}
+		return {fileName: components[0], lineNumber: lineNumber, columnNumber: columnNumber};
+	}
+
+	(function setupMode() {
+		if (typeof window !== 'undefined') {
 
             var sendEntries = true;
             var entriesToSend = [];
@@ -262,19 +275,6 @@
 				result.push(p(args[i]));
 			return result;
 		}
-
-        function getFullLocation(iid){
-			var location = sandbox.iidToLocation(sandbox.getGlobalIID(iid));
-			location = location.slice(1, location.length - 1);
-			var components = location.split(":");
-			var lineNumber = components[1];
-			var columnNumber = components[2];
-			if(typeof lineNumber === 'string' && lineNumber.indexOf('iid') === 0){
-				lineNumber = -1;
-				columnNumber = -1;
-			}
-            return {fileName: components[0], lineNumber: lineNumber, columnNumber: columnNumber};
-        }
 
 		this.read = function(iid, name, val, isGlobal, isScriptLocal) {
 			log(iid, {entryKind: "read-variable", name: s(name), value: p(val)});
