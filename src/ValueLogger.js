@@ -19,7 +19,9 @@
 
             var sendEntries = true;
             var entriesToSend = [];
-
+            var numberOfEntriesToSendEachTime = 10000;
+            var loggedEntriesMap = new Map;
+            
             function sendLoggedEntries() {
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("POST", "http://127.0.0.1:3000/sendEntries", true);
@@ -53,7 +55,13 @@
                     console.log("Send printToFileCommand")
                 }
             };
-
+            shouldSendEntry = function (entry){
+            	if(entry in loggedEntriesMap){		
+            		return false;		
+            	}		
+            	loggedEntriesMap[entry] = 1		
+            	return true;
+            };
             log = function (iid, entry) {
                 entry.sourceLocation = getFullLocation(iid);
                 if (!sendEntries || !shouldSendEntry(JSON.stringify(entry)))
@@ -189,9 +197,12 @@
 				var root = roots[prefix];
 				Object.getOwnPropertyNames(root).forEach(
 					function (propertyName) {
+						if(prefix === "Function.prototype" && (propertyName === "arguments" || propertyName === "caller")) {
+							return;
+						}
 						var propertyValue = root[propertyName];
 						if (typeof propertyValue === 'function' || typeof propertyValue === 'object') {
-							var path = prefix + '.' + propertyName;
+							var path = prefix + '.' + propertyName; //console.log(prefix + "   " + propertyName)
 							register(propertyValue, path);
 						}
 					}
@@ -300,13 +311,13 @@
             if(isUserConstructorCall){
 				nextConstructorCallCallSiteIID = iid;
 			}
-			log(iid, {entryKind: "call", function: p(f), base: p(base), arguments: pa(args)});
+    		log(iid, {entryKind: "call", function: p(f), base: p(base), arguments: pa(args)});
 
 			if((f === nativeCall || f === nativeApply) && f){
 				// if Function.prototype.apply/call is used, register an extra call entry
 				var newF = base;
 				var newBase = args[0];
-				var newArgs = f === nativeCall? Array.prototype.slice.call(args, 1, args.length): args[1];
+				var newArgs = f === nativeCall? Array.prototype.slice.call(args, 1, args.length): args[1] || [];
                 this.invokeFunPre(iid, newF, newBase, newArgs, false, newBase !== undefined, allocationSites.get(newF));
 			} else if ((nativeSetTimeout === f  || nativeSetInterval === f) && (typeof args[0] !== 'function')) {
 				var args2 = [];
