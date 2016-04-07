@@ -101,7 +101,7 @@ a server that can save log files needs to be started, the HTML file needs to be 
 The process of obtaining a log file for an HTML file looks like this:
 
 1. run [scripts/instrumentHTMLFiles.sh](scripts/instrumentHTMLFiles.sh) (The instrumented files are placed in a folder named instrumentedHTMLFiles)
-2. Run [script/startServer.sh](script/startServer.sh) to start the nodeJS server
+2. Run [scripts/startServer.sh](scripts/startServer.sh) to start the nodeJS server
 3. Open the instrumented HTML-file you wish to create log file for in a browser	
 4. Interact with the page and press p to save the log file  (The log file is saved in a folder named nodeJSServer/unchangedLogFiles)
 5. Repeat step 3 and 4 for every HTML file that should have a log file 
