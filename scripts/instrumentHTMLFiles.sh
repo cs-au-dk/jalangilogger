@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-for f in $(find test -name '*.html');
+for f in $(find test -name '*.html' -o -name '*.htm');
 do
 	echo "$f"
 	saveDir="${f/test/}"    
