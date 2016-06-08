@@ -29,13 +29,15 @@ import java.util.Set;
  * Parser for an entire ValueLogger log file.
  */
 public class LogParser {
-
     private Set<IEntry> entries = new HashSet<>();
+    private Metadata metadata;
 
     public LogParser (Path logFile) {
         Gson gson = makeGsonParser();
         String line = null;
         try (FileReader fr = new FileReader(logFile.toFile()); BufferedReader br = new BufferedReader(fr)) {
+            //First line contains the metadata
+            metadata = new Metadata(br.readLine());
             while ((line = br.readLine()) != null) {
                 IEntry e = gson.fromJson(line, IEntry.class);
                 if (e != null) {
@@ -120,5 +122,9 @@ public class LogParser {
 
     public Set<IEntry> getEntries() {
         return entries;
+    }
+
+    public Metadata getMetadata() {
+        return metadata;
     }
 }
