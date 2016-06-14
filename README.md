@@ -87,7 +87,7 @@ Example:
 ```
 $ scripts/instrument test/v8tests/date-parse.js 
 test/v8tests/date-parse.js
-$ scripts/execute-standalone test/v8tests/date-parse_jalangi_.js
+$ scripts/execute-standalone test/v8tests/date-parse_jalangi_.js test/v8tests/date-parse.js 
 test/v8tests/date-parse_jalangi_.js
 $ wc -l test/v8tests/date-parse_jalangi_.js.log 
 226 test/v8tests/date-parse_jalangi_.js.log
