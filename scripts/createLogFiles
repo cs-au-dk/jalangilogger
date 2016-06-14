@@ -13,8 +13,14 @@ do
 	newDirectoryName="${dn1:1}"
 	bn=$(basename "${f}")
 
+    sha="$(sha1sum ${f})"
+    sha="${sha:0:40}"
+    time="$(date +%s)"
+    json_rep="{\"sha\":\"${sha}\", \"time\":${time}}"
+
 	newFileName="${bn/.js/.log}"
 	mkdir -p "JalangiLogFiles/${newDirectoryName}"
+    echo "${json_rep}" | cat - ${f/.js/_jalangi_.js.log} > /tmp/out && mv /tmp/out ${f/.js/_jalangi_.js.log}
 	cp -v "${f/.js/_jalangi_.js.log}" "JalangiLogFiles/${newDirectoryName}/${newFileName}"
 	rm -f "${f/.js/_jalangi_.js.log}"
 	rm -f "${f/.js/_jalangi_.js}"
