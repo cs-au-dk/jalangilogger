@@ -1,3 +1,4 @@
+{"sha":"3b73afb7569c8a8233ad69fe322313d9e01fc464", "time":1465383987}
 {"entryKind":"call","function":{"valueKind":"abstract-object","value":{"objectKind":"other"}},"base":{"valueKind":"abstract-object","value":{"objectKind":"builtin","canonicalName":"<the global object>"}},"arguments":[{"valueKind":"abstract-primitive","value":"NUM_UINT"}],"sourceLocation":{"fileName":"test/uneval/uneval47.js","lineNumber":"3","columnNumber":"1"}}
 {"entryKind":"call","function":{"valueKind":"abstract-object","value":{"objectKind":"other"}},"base":{"valueKind":"abstract-object","value":{"objectKind":"builtin","canonicalName":"<the global object>"}},"arguments":[{"valueKind":"abstract-primitive","value":"STR_UINT"}],"sourceLocation":{"fileName":"test/uneval/uneval47.js","lineNumber":"2","columnNumber":"5"}}
 {"entryKind":"dynamic-code","code":"3","sourceLocation":{"fileName":"test/uneval/uneval47.js","lineNumber":"2","columnNumber":"5"}}

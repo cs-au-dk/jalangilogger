@@ -1,3 +1,4 @@
+{"sha":"c62f83058369880025e1fbdb54eab5c252598593", "time":1465383987}
 Failed to instrument (function(){const x = 0, y = 0; const x;return })
 Failed to instrument (function(){const x = 0, y = 0; const y;return })
 Failed to instrument (function(){const x = 0, y; const x;return })

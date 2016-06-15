@@ -1,3 +1,4 @@
+{"sha":"cfeec470fc5af60cd1c9eb52e463b5b3733b72c4", "time":1465383987}
 Failed to instrument assertEquals(42, foo); var foo = 87;
 Failed to instrument assertEquals(87, bar); const bar = 42;
 {"entryKind":"call","function":{"valueKind":"abstract-object","value":{"objectKind":"other"}},"base":{"valueKind":"abstract-object","value":{"objectKind":"builtin","canonicalName":"<the global object>"}},"arguments":[{"valueKind":"abstract-primitive","value":"NUM_UINT"},{"valueKind":"abstract-primitive","value":"NUM_UINT"}],"sourceLocation":{"fileName":"test/v8tests/declare-locally.js","lineNumber":"40","columnNumber":"1"}}

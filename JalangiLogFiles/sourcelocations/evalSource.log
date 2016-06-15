@@ -1,3 +1,4 @@
+{"sha":"078823efbd1907705a4a340fe853f572bc5cb059", "time":1465383987}
 {"entryKind":"dynamic-code","code":"var x","sourceLocation":{"fileName":"test/sourcelocations/evalSource.js","lineNumber":"2","columnNumber":"6"}}
 {"entryKind":"read-variable","name":{"valueKind":"concrete-string","value":"src"},"value":{"valueKind":"abstract-primitive","value":"STR_OTHER"},"sourceLocation":{"fileName":"test/sourcelocations/evalSource.js","lineNumber":"2","columnNumber":"6"}}
 {"entryKind":"write-variable","name":{"valueKind":"concrete-string","value":"src"},"value":{"valueKind":"abstract-primitive","value":"STR_OTHER"},"sourceLocation":{"fileName":"test/sourcelocations/evalSource.js","lineNumber":"1","columnNumber":"11"}}

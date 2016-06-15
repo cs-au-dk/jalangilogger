@@ -1,3 +1,4 @@
+{"sha":"82d506b82e2b29479d7dea892350dac84504c349", "time":1465383986}
 {"arguments":[],"sourceLocation":{"fileName":"test/10k/fractal_landscape.html","columnNumber":9,"lineNumber":7},"entryKind":"function-entry","base":{"valueKind":"abstract-object","value":{"objectKind":"builtin","canonicalName":"<the global object>"}}}
 {"name":{"valueKind":"concrete-string","value":"parseFloat"},"sourceLocation":{"fileName":"test/10k/fractal_landscape.html","columnNumber":33,"lineNumber":9},"value":{"valueKind":"abstract-object","value":{"objectKind":"other"}},"entryKind":"read-variable"}
 {"name":{"valueKind":"concrete-string","value":"document"},"sourceLocation":{"fileName":"test/10k/fractal_landscape.html","columnNumber":44,"lineNumber":9},"value":{"valueKind":"abstract-object","value":{"objectKind":"other"}},"entryKind":"read-variable"}
@@ -308,3 +309,4 @@
 {"name":{"valueKind":"concrete-string","value":"mountain"},"sourceLocation":{"fileName":"test/10k/fractal_landscape.html","columnNumber":28,"lineNumber":15},"value":{"valueKind":"abstract-primitive","value":"0"},"entryKind":"write-variable"}
 {"name":{"valueKind":"concrete-string","value":"mountain"},"sourceLocation":{"fileName":"test/10k/fractal_landscape.html","columnNumber":17,"lineNumber":16},"value":{"valueKind":"abstract-primitive","value":"0"},"entryKind":"read-variable"}
 {"name":{"valueKind":"concrete-string","value":"displacement"},"sourceLocation":{"fileName":"test/10k/fractal_landscape.html","columnNumber":32,"lineNumber":20},"value":{"valueKind":"abstract-primitive","value":"NUM_OTHER"},"entryKind":"write-variable"}
+Kind":"concrete-string","value":"displacement"},"sourceLocation":{"fileName":"test/10k/fractal_landscape.html","columnNumber":32,"lineNumber":20},"value":{"valueKind":"abstract-primitive","value":"NUM_OTHER"},"entryKind":"write-variable"}

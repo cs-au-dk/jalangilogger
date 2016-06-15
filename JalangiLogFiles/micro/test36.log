@@ -1,3 +1,4 @@
+{"sha":"1e5aee6dcc22aacb2bc282c8665135fe17350ed1", "time":1465383987}
 {"entryKind":"read-variable","name":{"valueKind":"concrete-string","value":"TAJS_dumpValue"},"value":{"valueKind":"abstract-object","value":{"objectKind":"other"}},"sourceLocation":{"fileName":"test/micro/test36.js","lineNumber":"5","columnNumber":"1"}}
 {"entryKind":"read-variable","name":{"valueKind":"concrete-string","value":"this"},"value":{"valueKind":"abstract-object","value":{"objectKind":"other"}},"sourceLocation":{"fileName":"test/micro/test36.js","lineNumber":"1","columnNumber":"1"}}
 {"entryKind":"write-property","name":{"valueKind":"concrete-string","value":"foo"},"value":{"valueKind":"abstract-primitive","value":"NUM_UINT"},"sourceLocation":{"fileName":"test/micro/test36.js","lineNumber":"1","columnNumber":"1"}}

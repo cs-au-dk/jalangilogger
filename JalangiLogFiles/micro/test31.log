@@ -1,2 +1,3 @@
+{"sha":"879f305b8afe6abba155b2948c26b3e37a6c592f", "time":1465383987}
 {"entryKind":"read-property","name":{"valueKind":"concrete-string","value":"foo"},"value":{"valueKind":"abstract-primitive","value":"undefined"},"sourceLocation":{"fileName":"test/micro/test31.js","lineNumber":"5","columnNumber":"8"}}
 {"entryKind":"read-variable","name":{"valueKind":"concrete-string","value":"this"},"value":{"valueKind":"abstract-object","value":{"objectKind":"other"}},"sourceLocation":{"fileName":"test/micro/test31.js","lineNumber":"5","columnNumber":"8"}}

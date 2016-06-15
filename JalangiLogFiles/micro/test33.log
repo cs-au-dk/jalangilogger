@@ -1,3 +1,4 @@
+{"sha":"fca1927246f4fa584a596d225a5798957b28df2c", "time":1465383987}
 {"entryKind":"read-variable","name":{"valueKind":"concrete-string","value":"bar"},"value":{"valueKind":"abstract-primitive","value":"NUM_UINT"},"sourceLocation":{"fileName":"test/micro/test33.js","lineNumber":"5","columnNumber":"7"}}
 {"entryKind":"read-variable","name":{"valueKind":"concrete-string","value":"foo"},"value":{"valueKind":"abstract-primitive","value":"NUM_UINT"},"sourceLocation":{"fileName":"test/micro/test33.js","lineNumber":"2","columnNumber":"7"}}
 {"entryKind":"read-variable","name":{"valueKind":"concrete-string","value":"this"},"value":{"valueKind":"abstract-object","value":{"objectKind":"other"}},"sourceLocation":{"fileName":"test/micro/test33.js","lineNumber":"6","columnNumber":"1"}}

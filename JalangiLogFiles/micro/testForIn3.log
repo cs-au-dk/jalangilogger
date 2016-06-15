@@ -1,3 +1,4 @@
+{"sha":"e9e5912ab659c9bb9ffb4992f40696deb9c87bfa", "time":1465383987}
 {"entryKind":"read-property","name":{"valueKind":"concrete-string","value":"x"},"value":{"valueKind":"abstract-primitive","value":"1"},"sourceLocation":{"fileName":"test/micro/testForIn3.js","lineNumber":"5","columnNumber":"9"}}
 {"entryKind":"read-property","name":{"valueKind":"concrete-string","value":"y"},"value":{"valueKind":"abstract-primitive","value":"NUM_UINT"},"sourceLocation":{"fileName":"test/micro/testForIn3.js","lineNumber":"5","columnNumber":"9"}}
 {"entryKind":"read-variable","name":{"valueKind":"concrete-string","value":"p"},"value":{"valueKind":"abstract-primitive","value":"STR_IDENTIFIER"},"sourceLocation":{"fileName":"test/micro/testForIn3.js","lineNumber":"5","columnNumber":"11"}}

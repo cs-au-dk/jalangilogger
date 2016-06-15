@@ -1,2 +1,3 @@
+{"sha":"9a88ec60368d5c4bb876cb74d048b92f8af9a94b", "time":1465383987}
 {"entryKind":"call","function":{"valueKind":"abstract-object","value":{"objectKind":"other"}},"base":{"valueKind":"abstract-object","value":{"objectKind":"builtin","canonicalName":"<the global object>"}},"arguments":[{"valueKind":"abstract-primitive","value":"STR_OTHER"}],"sourceLocation":{"fileName":"test/v8tests/scanner.js","lineNumber":"30","columnNumber":"1"}}
 {"entryKind":"read-variable","name":{"valueKind":"concrete-string","value":"assertThrows"},"value":{"valueKind":"abstract-object","value":{"objectKind":"other"}},"sourceLocation":{"fileName":"test/v8tests/scanner.js","lineNumber":"30","columnNumber":"1"}}

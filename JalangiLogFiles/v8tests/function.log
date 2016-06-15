@@ -1,3 +1,4 @@
+{"sha":"e31bc8053c7c49f17d7f0e688e7b594ed7c88b0d", "time":1465383987}
 Failed to instrument (function(x) { return x // comment })
 {"entryKind":"call","function":{"valueKind":"abstract-object","value":{"objectKind":"allocation-site","allocationSite":{"fileName":"test/v8tests/function.js","lineNumber":"30","columnNumber":"5"}}},"base":{"valueKind":"abstract-object","value":{"objectKind":"builtin","canonicalName":"<the global object>"}},"arguments":[],"sourceLocation":{"fileName":"test/v8tests/function.js","lineNumber":"31","columnNumber":"19"}}
 {"entryKind":"call","function":{"valueKind":"abstract-object","value":{"objectKind":"allocation-site","allocationSite":{"fileName":"test/v8tests/function.js","lineNumber":"35","columnNumber":"5"}}},"base":{"valueKind":"abstract-object","value":{"objectKind":"builtin","canonicalName":"<the global object>"}},"arguments":[],"sourceLocation":{"fileName":"test/v8tests/function.js","lineNumber":"36","columnNumber":"17"}}

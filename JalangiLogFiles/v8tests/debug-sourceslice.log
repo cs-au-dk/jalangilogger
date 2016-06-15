@@ -1,3 +1,4 @@
+{"sha":"0c2c59960899575fb5db7df5b1bf6b55fd3eedab", "time":1465383987}
 {"entryKind":"dynamic-code","code":"function a() { b(); };\nfunction    b() {\n  c(true);\n};\n  function c(x) {\n    if (x) {\n      return 1;\n    } else {\n      return 1;\n    }\n  };\n","sourceLocation":{"fileName":"test/v8tests/debug-sourceslice.js","lineNumber":"47","columnNumber":"6"}}
 {"entryKind":"read-property","name":{"valueKind":"abstract-primitive","value":"0"},"value":{"valueKind":"abstract-primitive","value":"STR_OTHER"},"sourceLocation":{"fileName":"test/v8tests/debug-sourceslice.js","lineNumber":"45","columnNumber":"13"}}
 {"entryKind":"read-property","name":{"valueKind":"abstract-primitive","value":"1"},"value":{"valueKind":"abstract-primitive","value":"STR_OTHER"},"sourceLocation":{"fileName":"test/v8tests/debug-sourceslice.js","lineNumber":"45","columnNumber":"13"}}

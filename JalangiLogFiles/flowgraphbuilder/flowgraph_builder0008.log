@@ -1,1 +1,2 @@
+{"sha":"65a0e49e24420be32cea31aa8cdca9569f346e09", "time":1465383986}
 {"entryKind":"write-variable","name":{"valueKind":"concrete-string","value":"x"},"value":{"valueKind":"abstract-object","value":{"objectKind":"allocation-site","allocationSite":{"fileName":"test/flowgraphbuilder/flowgraph_builder0008.js","lineNumber":"1","columnNumber":"5"}}},"sourceLocation":{"fileName":"test/flowgraphbuilder/flowgraph_builder0008.js","lineNumber":"1","columnNumber":"5"}}

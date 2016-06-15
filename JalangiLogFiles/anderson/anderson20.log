@@ -1,3 +1,4 @@
+{"sha":"555990ca01c9946282b666a63895cd0966bfb67b", "time":1465383986}
 {"entryKind":"call","function":{"valueKind":"abstract-object","value":{"objectKind":"allocation-site","allocationSite":{"fileName":"test/anderson/anderson20.js","lineNumber":"3","columnNumber":"1"}}},"base":{"valueKind":"abstract-object","value":{"objectKind":"builtin","canonicalName":"<the global object>"}},"arguments":[],"sourceLocation":{"fileName":"test/anderson/anderson20.js","lineNumber":"5","columnNumber":"1"}}
 {"entryKind":"function-entry","base":{"valueKind":"abstract-object","value":{"objectKind":"builtin","canonicalName":"<the global object>"}},"arguments":[],"sourceLocation":{"fileName":"test/anderson/anderson20.js","lineNumber":"3","columnNumber":"1"}}
 {"entryKind":"function-exit","returnValue":{"valueKind":"abstract-primitive","value":"undefined"},"sourceLocation":{"fileName":"test/anderson/anderson20.js","lineNumber":"3","columnNumber":"1"}}

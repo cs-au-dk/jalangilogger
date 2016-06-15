@@ -1,4 +1,6 @@
-asdf'
+{"sha":"0ed487434d279e805fa32e06507eac6d2225c3ab", "time":1465383987}
+
+asdf'
 Failed to instrument 'asdf\
 {"entryKind":"call","function":{"valueKind":"abstract-object","value":{"objectKind":"other"}},"base":{"valueKind":"abstract-object","value":{"objectKind":"builtin","canonicalName":"<the global object>"}},"arguments":[{"valueKind":"abstract-primitive","value":"STR_IDENTIFIER"},{"valueKind":"abstract-primitive","value":"STR_IDENTIFIER"}],"sourceLocation":{"fileName":"test/v8tests/newline-in-string.js","lineNumber":"40","columnNumber":"1"}}
 {"entryKind":"call","function":{"valueKind":"abstract-object","value":{"objectKind":"other"}},"base":{"valueKind":"abstract-object","value":{"objectKind":"builtin","canonicalName":"<the global object>"}},"arguments":[{"valueKind":"abstract-primitive","value":"STR_IDENTIFIER"},{"valueKind":"abstract-primitive","value":"STR_IDENTIFIER"}],"sourceLocation":{"fileName":"test/v8tests/newline-in-string.js","lineNumber":"44","columnNumber":"1"}}

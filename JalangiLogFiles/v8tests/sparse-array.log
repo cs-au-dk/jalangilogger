@@ -1,3 +1,4 @@
+{"sha":"f7c61ac3ae098483412135e6a286c7bf0a0c522a", "time":1465383987}
 {"entryKind":"read-variable","name":{"valueKind":"concrete-string","value":"array"},"value":{"valueKind":"abstract-object","value":{"objectKind":"allocation-site","allocationSite":{"fileName":"test/v8tests/sparse-array.js","lineNumber":"35","columnNumber":"15"}}},"sourceLocation":{"fileName":"test/v8tests/sparse-array.js","lineNumber":"37","columnNumber":"5"}}
 {"entryKind":"read-variable","name":{"valueKind":"concrete-string","value":"i"},"value":{"valueKind":"abstract-primitive","value":"0"},"sourceLocation":{"fileName":"test/v8tests/sparse-array.js","lineNumber":"36","columnNumber":"19"}}
 {"entryKind":"read-variable","name":{"valueKind":"concrete-string","value":"i"},"value":{"valueKind":"abstract-primitive","value":"0"},"sourceLocation":{"fileName":"test/v8tests/sparse-array.js","lineNumber":"36","columnNumber":"29"}}

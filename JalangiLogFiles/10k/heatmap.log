@@ -1,3 +1,4 @@
+{"sha":"7a23b80da4152602432ec1875249dc8306153b80", "time":1465383986}
 {"name":{"valueKind":"concrete-string","value":"Heatmap"},"sourceLocation":{"fileName":"test/10k/heatmap.html","columnNumber":15,"lineNumber":50},"value":{"valueKind":"abstract-object","value":{"objectKind":"allocation-site","allocationSite":{"fileName":"test/10k/heatmap.html","columnNumber":15,"lineNumber":50}}},"entryKind":"write-variable"}
 {"name":{"valueKind":"concrete-string","value":"Canvas"},"sourceLocation":{"fileName":"test/10k/heatmap.html","columnNumber":14,"lineNumber":122},"value":{"valueKind":"abstract-object","value":{"objectKind":"allocation-site","allocationSite":{"fileName":"test/10k/heatmap.html","columnNumber":14,"lineNumber":122}}},"entryKind":"write-variable"}
 {"name":{"valueKind":"concrete-string","value":"Canvas"},"sourceLocation":{"fileName":"test/10k/heatmap.html","columnNumber":5,"lineNumber":125},"value":{"valueKind":"abstract-object","value":{"objectKind":"allocation-site","allocationSite":{"fileName":"test/10k/heatmap.html","columnNumber":14,"lineNumber":122}}},"entryKind":"read-variable"}
@@ -304,4 +305,6 @@
 {"name":{"valueKind":"concrete-string","value":"o"},"sourceLocation":{"fileName":"test/10k/heatmap.html","columnNumber":39,"lineNumber":243},"value":{"valueKind":"abstract-object","value":{"objectKind":"other"}},"entryKind":"read-variable"}
 {"name":{"valueKind":"concrete-string","value":"selectedIndex"},"sourceLocation":{"fileName":"test/10k/heatmap.html","columnNumber":39,"lineNumber":243},"value":{"valueKind":"abstract-primitive","value":"1"},"entryKind":"read-property"}
 {"name":{"valueKind":"concrete-string","value":"opacity"},"sourceLocation":{"fileName":"test/10k/heatmap.html","columnNumber":13,"lineNumber":243},"value":{"valueKind":"abstract-primitive","value":"NUM_OTHER"},"entryKind":"write-property"}
+{"returnValue":{"valueKind":"abstract-primitive","value":"undefined"},"sourceLocation":{"fileName":"test/10k/heatmap.html","columnNumber":38,"lineNumber":242},"entryKind":"function-exit"}
+ue":"NUM_OTHER"},"entryKind":"write-property"}
 {"returnValue":{"valueKind":"abstract-primitive","value":"undefined"},"sourceLocation":{"fileName":"test/10k/heatmap.html","columnNumber":38,"lineNumber":242},"entryKind":"function-exit"}
