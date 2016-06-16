@@ -141,9 +141,9 @@ public class TransformHtmlLogFiles {
 		String fileName = obj.getString("fileName");
 		Integer lineNumber = obj.getInt("lineNumber");
 		Integer columnNumber = obj.getInt("columnNumber");
-		if(lineNumber == -1 && columnNumber == -1){ //in case Jalangi has sourcelocation iid.
-			throw new IllegalSourceLocationException();
-		}
+//		if(lineNumber == -1 && columnNumber == -1){ //in case Jalangi has sourcelocation iid.
+//			throw new IllegalSourceLocationException();
+//		}
 		if(fileName.contains("inline-") && fileName.contains("_orig_.js")){
 			int inlineNumber = findInlineNumber("inline-(.*)_orig_.js", fileName);
 			int newLineNumber = lineNumber + inlineJSOffsetSourceLocationsLineNumbers.get(inlineNumber);
@@ -167,13 +167,16 @@ public class TransformHtmlLogFiles {
 		boolean stringFound = false;
 		boolean inScript = false;
 		while(line != null){
-			if(line.contains("<script>") || line.contains("<script type=\"text/javascript\">") || line.contains("<script type='text/javascript'>") || line.contains("<script language=\"javascript\">")){
+			int scriptStartIndex = 0;
+			if(line.contains("<script")){
+				scriptStartIndex = line.indexOf("<script");
 				inScript = true;
 			}
 			if(line.contains("</script>")){
 				inScript = false;
 			}
-			if(!inScript && line.contains(lineToSearchForInOriginalFile)){
+			line = line.replace("&lt;", "<").replace("&gt;", ">");
+			if((!inScript || line.indexOf(lineToSearchForInOriginalFile) < scriptStartIndex) && line.contains(lineToSearchForInOriginalFile)){
 				obj.put("fileName", originalHTMLFile);
 				obj.put("lineNumber", lineNumber);
 				obj.put("columnNumber", line.indexOf(lineToSearchForInOriginalFile) + obj.getInt("columnNumber"));
@@ -190,7 +193,7 @@ public class TransformHtmlLogFiles {
 
 
 	private static String getLineToSearchForFromEventHandlerFile(String eventHandlerFile, JSONObject obj)
-			throws JSONException, FileNotFoundException, IOException {
+			throws JSONException, IOException {
 		int lineNumber = obj.getInt("lineNumber");
 		BufferedReader reader = new BufferedReader(new FileReader(eventHandlerFile));
 		
@@ -220,28 +223,19 @@ public class TransformHtmlLogFiles {
 		String line = reader.readLine();
 		int lineNumber = 0;
 		while(line != null){
-			if(line.contains("<script>")){
+			Pattern pattern = Pattern.compile("<script.*>");
+			Matcher matcher = pattern.matcher(line);
+
+			if(matcher.find()){
+				String match = matcher.group();
 				inlineJSOffsetSourceLocationsLineNumbers.add(lineNumber);
-				inlineJSOffsetSourceLocationsColumnNumbers.add("<script>".length() + line.indexOf("<script>"));
-			}
-			if(line.contains("<script type='text/javascript'>")){
-				inlineJSOffsetSourceLocationsLineNumbers.add(lineNumber);
-				inlineJSOffsetSourceLocationsColumnNumbers.add("<script type='text/javascript'>".length() + line.indexOf("<script type='text/javascript'>"));
-			}
-			if(line.contains("<script language=\"javascript\">")){
-				inlineJSOffsetSourceLocationsLineNumbers.add(lineNumber);
-				inlineJSOffsetSourceLocationsColumnNumbers.add("<script language=\"javascript\">".length() + line.indexOf("<script language=\"javascript\">"));
-			}
-			if(line.contains("<script type=\"text/javascript\">")){
-				inlineJSOffsetSourceLocationsLineNumbers.add(lineNumber);
-				inlineJSOffsetSourceLocationsColumnNumbers.add("<script type=\"text/javascript\">".length() + line.indexOf("<script type=\"text/javascript\">"));
+				inlineJSOffsetSourceLocationsColumnNumbers.add(match.length() + line.indexOf(match));
 			}
 
 			line = reader.readLine();
 			lineNumber++;
 		}	
 		reader.close();
-		
 	}
 
 	
