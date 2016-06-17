@@ -9,4 +9,4 @@ json_rep="$(./scripts/find_sha.sh $test_file)"
 node --harmony --max_old_space_size=4096 node_modules/jalangi2/src/js/commands/direct.js --analysis src/ValueLogger.js "$log_file" | sort | uniq > "$log_file".log
 
 #Prepend json_rep to log file
-echo "${json_rep}" | cat - ${test_file/.js/_jalangi_.js.log} > /tmp/out && mv /tmp/out ${test_file/.js/_jalangi_.js.log}
+./scripts/prepend_line.sh "${json_rep}" "${test_file/.js/_jalangi_.js.log}"
