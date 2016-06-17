@@ -22,44 +22,56 @@
             var numberOfEntriesToSendEachTime = 10000;
             var loggedEntriesMap = new Map;
             
-            function sendLoggedEntries() {
+            function sendLoggedEntries(callback) {
                 var xmlhttp = new XMLHttpRequest();
+                if(callback){
+                	xmlhttp.onreadystatechange = function()
+                        {
+                            if (xmlhttp.readyState == 4 && xmlhttp.status == 204)
+                            {
+                                callback();
+                            }
+                        };
+				}
                 xmlhttp.open("POST", "http://127.0.0.1:3000/sendEntries", true);
                 xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
                 xmlhttp.send( "entries=" + entriesToSend);
+                entriesToSend = [];
             }
 
             window.onkeyup = function(event){
                 if(event.keyCode == 80){
-                    sendLoggedEntries();
-                    if(!sendEntries) //the data has already been sent
-                        return;
+                    callback = function () {
+						if(!sendEntries) //the data has already been sent
+							return;
 
-                    var urlLocation = location.pathname;
-                    var htmlFileName = urlLocation.substr(urlLocation.indexOf("/instrumentedHtmlFiles/") + "/instrumentedHtmlFiles/".length);
-                    var logFileName = ""; //Jalangi makes a folder with the name of the html file, which we do not want in this path
-                    var directoriesInHTMLFileName = htmlFileName.split("/");
-                    for (var i = 0; i < directoriesInHTMLFileName.length - 1; i++){
-                        if(directoriesInHTMLFileName[i].indexOf(".html") != -1)
-                            continue;
-                        logFileName += directoriesInHTMLFileName[i] + "/"
-                    }
-                    logFileName += directoriesInHTMLFileName[directoriesInHTMLFileName.length - 1];
-                    logFileName = logFileName.substring(0, logFileName.length - 4) + "log";
+						var urlLocation = location.pathname;
+						var htmlFileName = urlLocation.substr(urlLocation.indexOf("/instrumentedHtmlFiles/") + "/instrumentedHtmlFiles/".length);
+						var logFileName = ""; //Jalangi makes a folder with the name of the html file, which we do not want in this path
+						var directoriesInHTMLFileName = htmlFileName.split("/");
+						for (var i = 0; i < directoriesInHTMLFileName.length - 1; i++){
+							if(directoriesInHTMLFileName[i].indexOf(".html") != -1)
+								continue;
+							logFileName += directoriesInHTMLFileName[i] + "/"
+						}
+						logFileName += directoriesInHTMLFileName[directoriesInHTMLFileName.length - 1];
+						logFileName = logFileName.substring(0, logFileName.length - 4) + "log";
 
-                    var xmlhttp = new XMLHttpRequest();
-                    xmlhttp.open("POST", "http://127.0.0.1:3000/printToFile", true);
-                    xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-                    xmlhttp.send( "fileName=" + logFileName);
-                    sendEntries = false;
-                    console.log("Send printToFileCommand")
+						var xmlhttp = new XMLHttpRequest();
+						xmlhttp.open("POST", "http://127.0.0.1:3000/printToFile", true);
+						xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+						xmlhttp.send( "fileName=" + logFileName);
+						sendEntries = false;
+						console.log("Send printToFileCommand")
+                    };
+                    sendLoggedEntries(callback);
                 }
             };
             shouldSendEntry = function (entry){
-            	if(entry in loggedEntriesMap){		
+            	if(entry in loggedEntriesMap)
             		return false;		
-            	}		
-            	loggedEntriesMap[entry] = 1		
+                else
+            		loggedEntriesMap[entry] = 1;
             	return true;
             };
             log = function (iid, entry) {
