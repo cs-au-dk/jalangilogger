@@ -2,5 +2,5 @@
 for F in "$@"
 do
     echo "$F"
-    node --harmony node_modules/jalangi2/src/js/commands/direct.js --analysis src/ValueLogger.js "$F" | sort | uniq > "$F".log
+    node --harmony node_modules/jalangi2/src/js/commands/direct.js --analysis src/ValueLogger.js "$F"
 done

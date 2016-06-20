@@ -101,7 +101,6 @@
 					fs.appendFileSync('NEW_LOG_FILE.log', entryString + "\n");
 					loggedEntriesMap.set(entryString, 1);
 				}
-                console.log(JSON.stringify(entry));
             }
         }
     })();
