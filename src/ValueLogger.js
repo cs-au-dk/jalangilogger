@@ -1,6 +1,10 @@
 (function (sandbox) {
     var log /* the function to store log entries with */;
 
+    window.onbeforeunload = function() {
+        return "Are you sure you want to navigate away?";
+    }
+
 	function getFullLocation(iid){
 		var location = sandbox.iidToLocation(sandbox.getGlobalIID(iid));
 		location = location.slice(1, location.length - 1);
