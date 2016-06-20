@@ -1,10 +1,6 @@
 (function (sandbox) {
     var log /* the function to store log entries with */;
 
-    window.onbeforeunload = function() {
-        return "Are you sure you want to navigate away?";
-    }
-
 	function getFullLocation(iid){
 		var location = sandbox.iidToLocation(sandbox.getGlobalIID(iid));
 		location = location.slice(1, location.length - 1);
@@ -20,7 +16,7 @@
 
 	(function setupMode() {
 		if (typeof window !== 'undefined') {
-
+			
             var sendEntries = true;
             var entriesToSend = [];
             var numberOfEntriesToSendEachTime = 10000;
@@ -78,7 +74,8 @@
             		loggedEntriesMap[entry] = 1;
             	return true;
             };
-            log = function (iid, entry) {
+
+			log = function (iid, entry) {
                 entry.sourceLocation = getFullLocation(iid);
                 if (!sendEntries || !shouldSendEntry(JSON.stringify(entry)))
                     return;
@@ -87,10 +84,23 @@
                 if (entriesToSend.length >= numberOfEntriesToSendEachTime) {
                     sendLoggedEntries();
                 }
-            }
+            };
+
+			window.onbeforeunload = function() {
+				return "Are you sure you want to navigate away?";
+			}
         } else {
+			var fs = require('fs');
+			var loggedEntriesMap = new Map;
             log = function (iid, entry) {
                 entry.sourceLocation = getFullLocation(iid);
+
+				var entryString = JSON.stringify(entry);
+
+				if (!(loggedEntriesMap.has(entryString))) {
+					fs.appendFileSync('NEW_LOG_FILE.log', entryString + "\n");
+					loggedEntriesMap.set(entryString, 1);
+				}
                 console.log(JSON.stringify(entry));
             }
         }
