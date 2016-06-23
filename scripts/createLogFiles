@@ -15,8 +15,9 @@ do
 
 	newFileName="${bn/.js/.log}"
 	mkdir -p "JalangiLogFiles/${newDirectoryName}"
-	cp -v "${f/.js/_jalangi_.js.log}" "JalangiLogFiles/${newDirectoryName}/${newFileName}"
-	rm -f "${f/.js/_jalangi_.js.log}"
+
+	sort "NEW_LOG_FILE.log" > "JalangiLogFiles/${newDirectoryName}/${newFileName}"
+	rm -f "NEW_LOG_FILE.log"
 	rm -f "${f/.js/_jalangi_.js}"
 	rm -f "${f/.js/_jalangi_.json}"
 done
