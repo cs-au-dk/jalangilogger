@@ -93,6 +93,9 @@ $ wc -l test/v8tests/date-parse_jalangi_.js.log
 226 test/v8tests/date-parse_jalangi_.js.log
 ```
 
+It is also possible to create a log file for javascript programs that have dependencies. For example nodejs requires. This is done using `./scripts/executeOnDir.sh path/to/dir path/to/dir/mainfile.js` 
+
+
 ### Creating log files from HTML files
 
 The creation of a log file for a HTML file is more involved than for a plain JavaScript file, for two reasons: 

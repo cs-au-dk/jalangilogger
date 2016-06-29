@@ -27,7 +27,10 @@ outputFilePath="${outputFileLocation}/${outputFileName}"
 if [[ ! -d $outputFileLocation ]]; then
     mkdir -p "${outputFileLocation}"
 fi
+new_log_file_name="NEW_LOG_FILE.log"
 
-sort "NEW_LOG_FILE.log" | uniq > "${outputFilePath}"
+sort "${new_log_file_name}" | uniq > "${outputFilePath}"
+rm "${new_log_file_name}"
+rm -r "${tmp_folder}" 
 
 ./scripts/prepend_line.sh "${json_rep}" "${outputFilePath}"
