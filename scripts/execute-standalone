@@ -1,17 +1,6 @@
 #!/usr/bin/env bash
-log_file=$1
-test_file=$2
-
-echo "$log_file"
-
-json_rep="$(./scripts/gen_json_meta.sh $test_file)"
-
-node --harmony --max_old_space_size=4096 node_modules/jalangi2/src/js/commands/direct.js --analysis src/ValueLogger.js "$log_file" | sort | uniq > "$log_file".log
-
-#Prepend json_rep to log file
-./scripts/prepend_line.sh "${json_rep}" "${test_file/.js/_jalangi_.js.log}"
 for F in "$@"
 do
-    echo "$F"
-    node --harmony node_modules/jalangi2/src/js/commands/direct.js --analysis src/ValueLogger.js "$F"
+    echo "$F";
+    node --harmony --max_old_space_size=4096 node_modules/jalangi2/src/js/commands/direct.js --analysis src/ValueLogger.js "$F";
 done

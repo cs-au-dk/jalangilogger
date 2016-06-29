@@ -2,11 +2,10 @@
 for f in $(find test -name '*.js');
 do
 	echo "Creating log for ${f}";
-
 	./scripts/instrument "${f}";
 
 	instrumented="${f/.js/_jalangi_.js}";
-	./scripts/execute-standalone "${instrumented}" "${f}";
+	./scripts/execute-standalone "${instrumented}";
 
 	dn2=$(dirname "${f}")
 	dn1="${dn2/test/}"
@@ -16,7 +15,12 @@ do
 	newFileName="${bn/.js/.log}"
 	mkdir -p "JalangiLogFiles/${newDirectoryName}"
 
-	sort "NEW_LOG_FILE.log" > "JalangiLogFiles/${newDirectoryName}/${newFileName}"
+    outputFileLocation="JalangiLogFiles/${newDirectoryName}/${newFileName}"
+	sort "NEW_LOG_FILE.log" | uniq > "${outputFileLocation}"
+
+    json_rep="$(./scripts/gen_json_meta.sh $f)"
+    ./scripts/prepend_line.sh "${json_rep}" "${outputFileLocation}"
+
 	rm -f "NEW_LOG_FILE.log"
 	rm -f "${f/.js/_jalangi_.js}"
 	rm -f "${f/.js/_jalangi_.json}"
