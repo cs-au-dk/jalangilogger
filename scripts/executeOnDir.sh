@@ -24,8 +24,6 @@ else
     ./scripts/instrument "${main_file}" "${tmp_folder}"
     ./scripts/execute-standalone "${tmp_folder}${instrumented_main_file}"
 fi
-echo "ls ------"
-ls "${tmp_folder}"
 
 outputFileLocation="JalangiLogFiles/${main_file_folder_wo_test}"
 outputFileName="${main_file_name%.*}.log"
