@@ -8,12 +8,13 @@ if [[ ! -d $tmp_folder ]]; then
 fi
 
 main_file_name="$(basename $main_file)"
+main_file_folder="$(dirname $main_file)"
+main_file_folder_wo_test="${main_file_folder#*/}"
+
 #If dir is set
 if ! [[ -z $dir ]]; then
     node scripts/instrumentDirHelper.js "${dir}" "${tmp_folder}"
     json_rep="$(./scripts/gen_json_meta.sh "${main_file}" "${dir}")"
-    main_file_folder="$(dirname $main_file)"
-    main_file_folder_wo_test="${main_file_folder#*/}"
     instrumented_files_folder="${tmp_folder}${main_file_folder_wo_test}"
     instrumented_main_file="${instrumented_files_folder}/${main_file_name}"
     ./scripts/execute-standalone "${instrumented_main_file}"
@@ -23,6 +24,8 @@ else
     ./scripts/instrument "${main_file}" "${tmp_folder}"
     ./scripts/execute-standalone "${tmp_folder}${instrumented_main_file}"
 fi
+echo "ls ------"
+ls "${tmp_folder}"
 
 outputFileLocation="JalangiLogFiles/${main_file_folder_wo_test}"
 outputFileName="${main_file_name%.*}.log"
