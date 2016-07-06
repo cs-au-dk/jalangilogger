@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-for F in "$@"
-do
-    echo "$F"
-    node node_modules/jalangi2/src/js/commands/esnstrument_cli.js --inlineIID --inlineSource "$F"
-done
+file=$1
+output=$2
+node node_modules/jalangi2/src/js/commands/esnstrument_cli.js --inlineIID --inlineSource "$file"
+instrumented="${file/.js/_jalangi_.js}";
+mv ${instrumented} ${output} 

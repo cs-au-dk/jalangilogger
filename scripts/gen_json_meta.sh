@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 test_file=$1
+test_dir=$2
 
 uname=`uname`
+test_file_wo_path="$(basename test_file)"
 if [[ "$uname" == "Darwin" ]]; then
     shacmd="shasum"
 else
@@ -9,9 +11,9 @@ else
 fi
 
 #If test_file is a directory, then 
-if [[ -d $test_file ]]; then
-    strip_slash=${test_file%/}
-    sha="$($shacmd ${strip_slash}/* | $shacmd)"
+if ! [[ -z $test_dir ]]; then
+    strip_slash=${test_dir%/}
+    sha="$(($shacmd ${test_dir}/*; echo $test_file_wo_path) | $shacmd)"
 else
     sha="$($shacmd ${test_file})"
 fi
@@ -20,4 +22,3 @@ sha="${sha:0:40}"
 time="$(date +%s)"
 json_rep="{\"sha\":\"${sha}\", \"time\":${time}}"
 echo "$json_rep"
-
