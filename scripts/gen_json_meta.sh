@@ -13,7 +13,7 @@ fi
 #If test_file is a directory, then 
 if ! [[ -z $test_dir ]]; then
     strip_slash=${test_dir%/}
-    sha="$(($shacmd ${test_dir}/*; echo $test_file_wo_path) | $shacmd)"
+    sha="$(($shacmd ${strip_slash}/* | cut -c-40; echo $test_file_wo_path) | $shacmd)"
 else
     sha="$($shacmd ${test_file})"
 fi
