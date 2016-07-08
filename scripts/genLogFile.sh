@@ -1,52 +1,59 @@
 #!/usr/bin/env bash
-main_file=$1
+mainFile=$1
+
+# The instrumentation will include all files in $dir if specified
 dir=$2
-should_put_in_resources=$3
-tmp_folder="tmp"
-instr_out_folder="$tmp_folder/test"
-script_location_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-if [[ ! -d $instr_out_folder ]]; then
-    echo "Creating $instr_out_folder"
-    mkdir -p $instr_out_folder
-fi
+# Argument used when invoking the script from TAJS
+shouldPutInResources=$3
 
-main_file_name="$(basename $main_file)"
-main_file_folder="$(dirname $main_file)"
+tmpFolder="tmp"
+instrumentOutFolder="test"
+scriptLocationDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+mainFileName="$(basename $mainFile)"
+mainFileFolder="$(dirname $mainFile)"
+
+#Create output folder for instrumented files
+mkdir -p "$tmpFolder/$instrumentOutFolder"
 
 #If dir is set
 if ! [[ -z $dir ]]; then
-    cd $tmp_folder
-    node "$script_location_dir/instrumentDirHelper.js" "../${dir}" "test"
+    # NOTE. Jalangi will insert source locations relative to the output folder.
+    # This is why entering the tmp folder before running the instrumentation is crucial
+    # Otherwise the source locations will start with a 'tmp/'
+    cd $tmpFolder
+    node "$scriptLocationDir/instrumentDirHelper.js" "../${dir}" "$instrumentOutFolder"
     cd "../"
-    json_rep="$($script_location_dir/genJsonMeta.sh "${main_file}" "${dir}")"
-    instrumented_files_folder="${tmp_folder}/${main_file_folder}"
-    instrumented_main_file="${instrumented_files_folder}/${main_file_name}"
-    $script_location_dir/execute-standalone "${instrumented_main_file}"
+    jsonRep="$($scriptLocationDir/genJsonMeta.sh "${mainFile}" "${dir}")"
+    instrumented_files_folder="${tmpFolder}/${mainFileFolder}"
+    instrumented_mainFile="${instrumented_files_folder}/${mainFileName}"
+    $scriptLocationDir/execute-standalone "${instrumented_mainFile}"
 else
-    json_rep="$($script_location_dir/genJsonMeta.sh "${main_file}")"
-    instrumented_main_file="${main_file_name/.js/_jalangi_.js}";
-    $script_location_dir/scripts/instrument "${main_file}" "${tmp_folder}"
-    $script_location_dir/scripts/execute-standalone "${tmp_folder}${instrumented_main_file}"
+    jsonRep="$($scriptLocationDir/genJsonMeta.sh "${mainFile}")"
+    instrumented_mainFile="${mainFileName/.js/_jalangi_.js}";
+    $scriptLocationDir/instrument "${mainFile}" "${tmpFolder}"
+    $scriptLocationDir/execute-standalone "${tmpFolder}/${instrumented_mainFile}"
 fi
 
-main_file_folder_wo_test="${main_file_folder#*/}"
+mainFileFolderWithoutTest="${mainFileFolder#*/}"
 
-if [[ $should_put_in_resources ]]; then
-    outputFileLocation="resources/JalangiLogFiles/${main_file_folder_wo_test}"
+if [[ $shouldPutInResources ]]; then
+    logFileFolder="resources/JalangiLogFiles/${mainFileFolderWithoutTest}"
 else
-    outputFileLocation="JalangiLogFiles/${main_file_folder_wo_test}"
+    logFileFolder="JalangiLogFiles/${mainFileFolderWithoutTest}"
 fi
-outputFileName="${main_file_name%.*}.log"
-outputFilePath="${outputFileLocation}/${outputFileName}"
 
-if [[ ! -d $outputFileLocation ]]; then
-    mkdir -p "${outputFileLocation}"
+outputFile="${mainFileName%.*}.log"
+outputFilePath="${logFileFolder}/${outputFile}"
+
+if [[ ! -d $logFileFolder ]]; then
+    mkdir -p "${logFileFolder}"
 fi
-new_log_file_name="NEW_LOG_FILE.log"
 
-sort "${new_log_file_name}" | uniq > "${outputFilePath}"
-rm "${new_log_file_name}"
-rm -r "${tmp_folder}" 
+newLogFileName="NEW_LOG_FILE.log"
 
-$script_location_dir/prependLine.sh "${json_rep}" "${outputFilePath}"
+sort "${newLogFileName}" | uniq > "${outputFilePath}"
+rm "${newLogFileName}"
+rm -r "${tmpFolder}" 
+
+$scriptLocationDir/prependLine.sh "${jsonRep}" "${outputFilePath}"
