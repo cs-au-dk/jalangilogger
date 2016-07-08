@@ -3,5 +3,5 @@ for f in $(find test -name '*.js');
 do
 	echo "Creating log for ${f}";
     dir=$(dirname "${f}")
-	./scripts/executeOnDir.sh $f $dir;
+	./scripts/genLogFile.sh $f $dir;
 done

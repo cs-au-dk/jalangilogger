@@ -17,8 +17,8 @@ do
     non_prefixed_file_path="${log_file#*UnchangedLogFiles/}"
     test_file="test/${non_prefixed_file_path%.*}.html"
     new_log_file="JalangiLogFiles/${non_prefixed_file_path}"
-    json_rep="$(./scripts/gen_json_meta.sh ${test_file})"
-    ./scripts/prepend_line.sh "${json_rep}" "${new_log_file}"
+    json_rep="$(./scripts/genJsonMeta.sh ${test_file})"
+    ./scripts/prependLine.sh "${json_rep}" "${new_log_file}"
 done
 
 

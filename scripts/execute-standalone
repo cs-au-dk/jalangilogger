@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
+script_location_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 for F in "$@"
 do
     echo "$F";
-    node --harmony --max_old_space_size=4096 node_modules/jalangi2/src/js/commands/direct.js --analysis src/ValueLogger.js "$F";
+    node --harmony --max_old_space_size=4096 $script_location_dir/../node_modules/jalangi2/src/js/commands/direct.js --analysis $script_location_dir/../src/ValueLogger.js "$F";
 done
