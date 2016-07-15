@@ -41,25 +41,25 @@ if ! [[ -z $dir ]]; then
     cd $tmpFolder
     node "$scriptLocationDir/instrumentDirHelper.js" "../${dir}" "$instrumentOutFolder"
     cd "../"
-    jsonRep="$($scriptLocationDir/genJsonMeta.sh "${mainFile}" "${dir}")"
-    instrumented_files_folder="${tmpFolder}/${mainFileFolder}"
-    instrumented_mainFile="${instrumented_files_folder}/${mainFileName}"
-    execute_jalangi "${instrumented_mainFile}"
+    jsonMeta="$($scriptLocationDir/genJsonMeta.sh "${mainFile}" "${dir}")"
+    instrumentedFilesFolder="${tmpFolder}/${mainFileFolder}"
+    instrumentedMainFile="${instrumentedFilesFolder}/${mainFileName}"
+    execute_jalangi "${instrumentedMainFile}"
 else
-    jsonRep="$($scriptLocationDir/genJsonMeta.sh "${mainFile}")"
-    instrumented_mainFile="${mainFileName/.js/_jalangi_.js}";
+    jsonMeta="$($scriptLocationDir/genJsonMeta.sh "${mainFile}")"
+    instrumentedMainFile="${mainFileName/.js/_jalangi_.js}";
     $scriptLocationDir/instrument "${mainFile}" "${tmpFolder}"
-    execute_jalangi "${tmpFolder}/${instrumented_mainFile}"
+    execute_jalangi "${tmpFolder}/${instrumentedMainFile}"
 fi
 jalangiExitCode=$?
 set -e
 
 if [[ $jalangiExitCode == 124 ]]; then
-    exit_status="timeout"  
+    exitStatus="timeout"  
 elif [[ $jalangiExitCode != 0 ]]; then
-    exit_status="failure"  
+    exitStatus="failure"  
 else
-    exit_status="success"  
+    exitStatus="success"  
 fi
 
 mainFileFolderWithoutTest="${mainFileFolder#*/}"
@@ -70,7 +70,7 @@ else
     logFileFolder="JalangiLogFiles/${mainFileFolderWithoutTest}"
 fi
 
-jsonRep=$(node -e "x = $jsonRep; x.result='$exit_status'; console.log(JSON.stringify(x))") 
+jsonMeta=$(node -e "x = $jsonMeta; x.result='$exitStatus'; console.log(JSON.stringify(x))") 
 
 outputFile="${mainFileName%.*}.log"
 outputFilePath="${logFileFolder}/${outputFile}"
@@ -85,4 +85,4 @@ sort "${newLogFileName}" | uniq > "${outputFilePath}"
 rm "${newLogFileName}"
 rm -r "${tmpFolder}" 
 
-$scriptLocationDir/prependLine.sh "${jsonRep}" "${outputFilePath}"
+$scriptLocationDir/prependLine.sh "${jsonMeta}" "${outputFilePath}"
