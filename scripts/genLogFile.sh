@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+#!/bin/bash
+
 #Stop on error
 set -e
 
