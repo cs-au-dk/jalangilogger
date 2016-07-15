@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 mainFile=$1
 
 # The instrumentation will include all files in $dir if specified

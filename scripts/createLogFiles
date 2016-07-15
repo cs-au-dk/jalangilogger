@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 for f in $(find test -name '*.js');
 do
 	echo "Creating log for ${f}";

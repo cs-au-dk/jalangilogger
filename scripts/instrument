@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 file=$1
 output=$2
 node node_modules/jalangi2/src/js/commands/esnstrument_cli.js --inlineIID --inlineSource "$file"

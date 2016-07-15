@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 test_file=$1
 test_dir=$2
 
