@@ -61,7 +61,7 @@ public class LogParser {
         });
         builder.registerTypeAdapter(SourceLocation.class, (JsonDeserializer<SourceLocation>) (json, typeOfT, context) -> {
             JsonObject obj = json.getAsJsonObject();
-            return new SourceLocation(obj.get("lineNumber").getAsInt(), obj.get("columnNumber").getAsInt(), obj.get("fileName").getAsString());
+            return new SourceLocation(obj.get("lineNumber").getAsInt(), obj.get("columnNumber").getAsInt(), getFileName(obj));
         });
         builder.registerTypeAdapter(ValueDescription.class, (JsonDeserializer<ValueDescription>) (json, typeOfT, context) -> {
             JsonObject obj = json.getAsJsonObject();
@@ -118,6 +118,10 @@ public class LogParser {
                 }
         );
         return builder.create();
+    }
+
+    private String getFileName(JsonObject obj) {
+        return obj.get("fileName").getAsString().replace("_orig_", "");
     }
 
     public Set<IEntry> getEntries() {
