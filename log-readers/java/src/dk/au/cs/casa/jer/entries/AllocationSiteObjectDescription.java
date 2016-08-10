@@ -1,6 +1,7 @@
 package dk.au.cs.casa.jer.entries;
 
 public class AllocationSiteObjectDescription extends ObjectDescription {
+
     private final SourceLocation allocationSite;
 
     public AllocationSiteObjectDescription(SourceLocation allocationSite) {
@@ -18,8 +19,6 @@ public class AllocationSiteObjectDescription extends ObjectDescription {
 
     @Override
     public String toString() {
-        return "AllocationSiteObjectDescription{" +
-                "allocationSite=" + allocationSite +
-                '}';
+        return "AllocationSite(" + allocationSite + ")";
     }
 }

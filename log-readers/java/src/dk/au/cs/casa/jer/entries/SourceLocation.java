@@ -8,6 +8,11 @@ public class SourceLocation {
 
     private String fileName;
 
+    @Override
+    public String toString() {
+        return String.format("%s:%d:%d", fileName, lineNumber, columnNumber);
+    }
+
     public SourceLocation (int lineNumber, int columnNumber, String fileName) {
 
         this.lineNumber = lineNumber;
