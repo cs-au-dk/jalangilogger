@@ -12,10 +12,10 @@ dir=$2
 shouldPutInResources=$3
 
 tmpFolder="tmp"
-instrumentOutFolder="test"
 scriptLocationDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 mainFileName="$(basename $mainFile)"
 mainFileFolder="$(dirname $mainFile)"
+instrumentOutFolder=$dir
 OS=$(uname)
 if [[ $OS == "Darwin" ]]; then
     #If missing, run: brew install coreutils
@@ -39,7 +39,7 @@ if ! [[ -z $dir ]]; then
     # This is why entering the tmp folder before running the instrumentation is crucial
     # Otherwise the source locations will start with a 'tmp/'
     cd $tmpFolder
-    node "$scriptLocationDir/instrumentDirHelper.js" "../${dir}" "$instrumentOutFolder"
+    node "$scriptLocationDir/instrumentDirHelper.js" "../${dir}" "${instrumentOutFolder}/.."
     cd "../"
     jsonMeta="$($scriptLocationDir/genJsonMeta.sh "${mainFile}" "${dir}")"
     instrumentedFilesFolder="${tmpFolder}/${mainFileFolder}"
