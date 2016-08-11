@@ -4,19 +4,12 @@ test_dir=$2
 
 uname=`uname`
 test_file_wo_path="$(basename test_file)"
-if [[ "$uname" == "Darwin" ]]; then
-    shacmd="shasum"
-else
-    shacmd="sha1sum"
-fi
+shacmd="shasum"
 
 #If test_file is a directory, then 
 if ! [[ -z $test_dir ]]; then
-    # strip_slash=${test_dir%/}
-    # sha="$(($shacmd ${strip_slash}/* | cut -c-40; echo $test_file_wo_path) | $shacmd)"
-    echo "(TODO mtorp please implement support for sha-computation for directories: recursively obtain all plain .js & .html files)" >&2;
-    # XXX use sha for main for now
-    sha="$($shacmd ${test_file})"
+    strip_slash=${test_dir%/}
+    sha="$(($shacmd ${strip_slash}/* | cut -c-40; echo $test_file_wo_path) | $shacmd)"
 else
     sha="$($shacmd ${test_file})"
 fi
