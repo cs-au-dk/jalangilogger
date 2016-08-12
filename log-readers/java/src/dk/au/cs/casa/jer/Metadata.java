@@ -18,11 +18,18 @@ public class Metadata {
         return jsonRep.time;
     }
 
+    public String getRoot() {
+        return jsonRep.root;
+    }
+
     private class JSONRep {
         @SerializedName("sha")
         public String sha;
 
         @SerializedName("time")
         public long time;
+
+        @SerializedName("root")
+        public String root;
     }
 }
