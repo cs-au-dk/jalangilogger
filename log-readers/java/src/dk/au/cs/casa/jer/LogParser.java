@@ -39,9 +39,13 @@ public class LogParser {
             //First line contains the metadata
             metadata = new Metadata(br.readLine());
             while ((line = br.readLine()) != null) {
-                IEntry e = gson.fromJson(line, IEntry.class);
-                if (e != null) {
-                    entries.add(e);
+                try {
+                    IEntry e = gson.fromJson(line, IEntry.class);
+                    if (e != null) {
+                        entries.add(e);
+                    }
+                } catch (Exception e) {
+                    System.err.println(String.format("Error during parsing of line: %n%s", line));
                 }
             }
         } catch (Exception e) {
