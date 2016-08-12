@@ -4,6 +4,6 @@ TEST_FILE_FOLDER=$3
 SCRIPT_LOCATION_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 GEN_LOG_FILE_SCRIPT="$SCRIPT_LOCATION_DIR/genLogFile.sh" 
 
-pushd $TAJS_FOLDER 
+pushd $TAJS_FOLDER > /dev/null 
 $GEN_LOG_FILE_SCRIPT "$TEST_FILE" "$TEST_FILE_FOLDER" "true"
-popd
+popd > /dev/null
