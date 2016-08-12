@@ -1,3 +1,5 @@
+#!/bin/bash
+
 TAJS_FOLDER=$1
 TEST_FILE=$2
 TEST_FILE_FOLDER=$3
