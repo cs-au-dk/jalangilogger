@@ -34,7 +34,7 @@ router.post('/printToFile', function(req, res, next){
 			file.on('error', function(err) { console.error(err) });
 			file.on('open', function (fd) {consoleLines.forEach(function(v) { file.write(v + '\n')}); file.end; consoleLines = []; 
                 //kill server after printToFile!!!
-                process.exit()});
+                req.app.close();});
 		}
 	});
 
