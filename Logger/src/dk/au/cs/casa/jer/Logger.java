@@ -188,6 +188,7 @@ public class Logger {
             instrument();
             Process server = startServer();
             try {
+                System.out.println("Press p when done interacting with the browser.%n");
                 openBrowser();
                 server.waitFor();
                 //waitForEnter();
