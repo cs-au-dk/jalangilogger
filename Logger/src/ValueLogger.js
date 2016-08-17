@@ -1,5 +1,6 @@
 (function (sandbox) {
     var log /* the function to store log entries with */;
+    var notifyExit = true;
 
 	function getFullLocation(iid){
 		var location = sandbox.iidToLocation(sandbox.getGlobalIID(iid));
@@ -58,11 +59,13 @@
 						logFileName = logFileName.substring(0, logFileName.length - 4) + "log";
 
 						var xmlhttp = new XMLHttpRequest();
-						xmlhttp.open("POST", "http://127.0.0.1:3000/printToFile", true);
+						xmlhttp.open("POST", "http://127.0.0.1:3000/printToFile", false);
 						xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
 						xmlhttp.send( "fileName=" + logFileName);
 						sendEntries = false;
-						console.log("Send printToFileCommand")
+						console.log("Send printToFileCommand");
+                        notifyExit = false;
+                        close();
                     };
                     sendLoggedEntries(callback);
                 }
@@ -87,7 +90,9 @@
             };
 
 			window.onbeforeunload = function() {
-				return "Are you sure you want to navigate away?";
+                if (notifyExit) {
+				    return "Are you sure you want to navigate away?";
+                }
 			}
         } else {
 			var fs = require('fs');

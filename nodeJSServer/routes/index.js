@@ -3,6 +3,16 @@ var router = express.Router();
 
 var consoleLines = [];
 
+var gracefulShutdown = function(server) {
+                server.close(function() {
+                    process.exit();
+                });
+  
+                setTimeout(function() {
+                    process.exit();
+                }, 10*1000);
+            }
+
 router.post('/sendEntries', function(req, res, next) {
 	 console.log("Received entries")
 	 res.status(204); //No Content response
@@ -31,10 +41,15 @@ router.post('/printToFile', function(req, res, next){
           }else{
             file = fs.createWriteStream("logfile");
           }
-			file.on('error', function(err) { console.error(err) });
-			file.on('open', function (fd) {consoleLines.forEach(function(v) { file.write(v + '\n')}); file.end; consoleLines = []; 
+            file.on('error', function(err) { console.error(err) });
+			file.on('open', function (fd) {consoleLines.forEach(function(v) { 
+                file.write(v + '\n')
+            });  
+                file.end; consoleLines = [];
                 //kill server after printToFile!!!
-                req.app.close();});
+                req.socket.server.close();
+                gracefulShutdown(req.socket.server);            
+            });
 		}
 	});
 
