@@ -29,7 +29,7 @@ mkdir -p "$tmpFolder/$instrumentOutFolder"
 
 function execute_jalangi {
     set +e
-    $timeoutUtil 60s node --harmony --max_old_space_size=4096 $scriptLocationDir/../node_modules/jalangi2/src/js/commands/direct.js --analysis $scriptLocationDir/../src/ValueLogger.js "$1";
+    $timeoutUtil 60s node --harmony --max_old_space_size=4096 $scriptLocationDir/../node_modules/jalangi2/src/js/commands/direct.js --analysis $scriptLocationDir/../src/logger/ValueLogger.js "$1";
     return $?
 }
 

@@ -1,14 +1,12 @@
 #!/bin/bash
-
 set -e
 
 BASE=`pwd`
-SRC_LOG="${BASE}/src/java/src"
-SRC_READ="${BASE}/log-readers/java/src"
-LIB_LOG="${SRC_LOG}/../lib"
-LIB_READ="${SRC_READ}/../lib"
-DIST="${BASE}/dist"
-BUILD="${BASE}/build"
+SRC="${BASE}/logger/src"
+LIB="${BASE}/logger/lib"
+DIST="${BASE}/logger/dist"
+BUILD="${BASE}/logger/build"
+OS=$(uname)
 
 
 mkdir -p ${BUILD}
@@ -16,12 +14,15 @@ rm -rf ${BUILD}
 mkdir -p ${BUILD}
 mkdir -p ${DIST}
 
-cd ${SRC_LOG}
-cp --parents `find . -name "*.java"` ${BUILD}
-cd ${SRC_READ}
-cp --parents `find . -name "*.java"` ${BUILD}
+cd ${SRC}
 
-JARS="${LIB_READ}/gson-2.3.1.jar:${LIB_LOG}/commons-io-2.5.jar:${LIB_LOG}/org.json-20120521.jar"
+if [[ $OS == "Darwin" ]]; then
+    rsync -R `find . -name "*.java"` ${BUILD}
+else
+    cp --parents `find . -name "*.java"` ${BUILD}
+fi
+
+JARS="${LIB}/gson-2.3.1.jar:${LIB}/commons-io-2.5.jar:${LIB}/org.json-20120521.jar"
 echo $JARS
 cd ${BUILD}
 javac -cp ${JARS} `find . -name "*.java"`

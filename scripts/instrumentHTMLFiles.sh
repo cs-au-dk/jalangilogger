@@ -6,8 +6,8 @@ if [ -z "$1" ]
     do
         echo "$f"
         saveDir="${f/test/}"
-        node node_modules/jalangi2/src/js/commands/instrument.js --inlineIID --inlineSource -i --inlineJalangi --analysis src/ValueLogger.js --outputDir instrumentedHtmlFiles/$saveDir "$f"
+        node node_modules/jalangi2/src/js/commands/instrument.js --inlineIID --inlineSource -i --inlineJalangi --analysis src/logger/ValueLogger.js --outputDir instrumentedHtmlFiles/$saveDir "$f"
     done
   else
-    node node_modules/jalangi2/src/js/commands/instrument.js --inlineIID --inlineSource -i --inlineJalangi --analysis src/ValueLogger.js --outputDir instrumentedHtmlFiles/$1 "test/$1"
+    node node_modules/jalangi2/src/js/commands/instrument.js --inlineIID --inlineSource -i --inlineJalangi --analysis src/logger/ValueLogger.js --outputDir instrumentedHtmlFiles/$1 "test/$1"
 fi
