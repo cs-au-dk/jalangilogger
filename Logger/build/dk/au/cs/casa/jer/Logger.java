@@ -189,9 +189,12 @@ public class Logger {
             Process server = startServer();
             try {
                 openBrowser();
-                waitForEnter();
+                server.waitFor();
+                //waitForEnter();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             } finally {
-                stopServer(server);
+                //stopServer(server);
             }
             Path log = postProcessLog(serverDir.resolve("logfile"));
             Path logWithMeta = addMeta(log, "success");
