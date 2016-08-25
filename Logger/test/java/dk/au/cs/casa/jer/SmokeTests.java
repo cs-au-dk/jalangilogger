@@ -1,5 +1,6 @@
 package java.dk.au.cs.casa.jer;
 
+import dk.au.cs.casa.jer.LogParser;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
