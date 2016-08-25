@@ -8,7 +8,6 @@ DIST="${BASE}/logger/dist"
 BUILD="${BASE}/logger/build"
 OS=$(uname)
 
-
 mkdir -p ${BUILD}
 rm -rf ${BUILD}
 mkdir -p ${BUILD}
@@ -27,4 +26,5 @@ echo $JARS
 cd ${BUILD}
 javac -cp ${JARS} `find . -name "*.java"`
 cd ${BUILD}
-jar cf ${DIST}/jer.jar `find . -name "*.class"`
+MAIN_CLASS=dk.au.cs.casa.jer.Main
+jar cfe ${DIST}/jer.jar $MAIN_CLASS `find . -name "*.class"`
