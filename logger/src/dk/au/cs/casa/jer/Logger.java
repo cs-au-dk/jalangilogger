@@ -115,7 +115,7 @@ public class Logger {
         }
         //pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-        System.out.printf("Starting (at %s): %s", pwd, String.join(" ", Arrays.asList(cmd)));
+        System.out.printf("Starting (at %s): %s%n", pwd, String.join(" ", Arrays.asList(cmd)));
         Process p = pb.start();
         return p;
     }
@@ -133,7 +133,7 @@ public class Logger {
     private void instrument() throws IOException {
         Path instrument_js = jalangilogger.resolve("node_modules/jalangi2").resolve("src/js/commands/instrument.js").toAbsolutePath();
         String script = instrument_js.toString();
-        String out = instrumentationDir.resolve(rootRelativeTestDir.getParent()).toAbsolutePath().toString();
+        String out = instrumentationDir.resolve(rootRelativeTestDir).getParent().toAbsolutePath().toString();
         String in = rootRelativeTestDir.toString();
         String[] cmd = new String[]{node.toString(), script, "--inlineIID", "--inlineSource", "-i", "--inlineJalangi", "--analysis", analysis.toString(), "--outputDir", out, in};
         Process exec = exec(root, cmd);
