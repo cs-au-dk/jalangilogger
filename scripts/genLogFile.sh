@@ -9,14 +9,16 @@ MAIN_FILE=$1
 DIR=$2
 
 SCRIPT_FOLDER="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-JALANGI_FOLDER=${SCRIPT_FOLDER%/*}
+PROJECT="${SCRIPT_FOLDER}/.."
+LIB="${PROJECT}/logger/lib"
+DIST="${PROJECT}/logger/dist"
 
-JARS=logger/lib/commons-io-2.5.jar:logger/lib/gson-2.3.1.jar:logger/lib/org.json-20120521.jar:logger/dist/jer.jar
+JARS=${LIB}/commons-io-2.5.jar:${LIB}/gson-2.3.1.jar:${LIB}/org.json-20120521.jar:${DIST}/jer.jar
 
 MAIN_CLASS=dk.au.cs.casa.jer.Main
 
 if [[ -z $DIR ]]; then
-    java -cp $JARS $MAIN_CLASS $JALANGI_FOLDER $MAIN_FILE 
+    java -cp $JARS $MAIN_CLASS $PROJECT $MAIN_FILE 
 else
-    java -cp $JARS $MAIN_CLASS $JALANGI_FOLDER $MAIN_FILE $DIR
+    java -cp $JARS $MAIN_CLASS $PROJECT $MAIN_FILE $DIR
 fi
