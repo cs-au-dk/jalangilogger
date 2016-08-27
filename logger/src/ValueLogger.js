@@ -2,8 +2,8 @@
     var log /* the function to store log entries with */;
     var notifyExit = true;
 
-	function getFullLocation(iid){
-		var location = sandbox.iidToLocation(sandbox.getGlobalIID(iid));
+	function getFullLocation(sid, iid){
+		var location = sandbox.iidToLocation(sid, iid);
 		location = location.slice(1, location.length - 1);
 		var components = location.split(":");
 		var lineNumber = components[1];
@@ -79,7 +79,7 @@
             };
 
 			log = function (iid, entry) {
-                entry.sourceLocation = getFullLocation(iid);
+                entry.sourceLocation = getFullLocation(sandbox.sid, iid);
                 if (!sendEntries || !shouldSendEntry(JSON.stringify(entry)))
                     return;
 
@@ -98,7 +98,7 @@
 			var fs = require('fs');
 			var loggedEntriesMap = new Map;
             log = function (iid, entry) {
-                entry.sourceLocation = getFullLocation(iid);
+                entry.sourceLocation = getFullLocation(sandbox.sid, iid);
 
 				var entryString = JSON.stringify(entry);
 
@@ -178,7 +178,7 @@
 
 	function MyAnalysis () {
 
-        var allocationSites = new Map/*<Object, IID>*/();
+        var allocationSites = new Map/*<Object, {sid: SID, iid: IID}>*/();
         var builtins = makeBuiltinsMap();
 		var nextConstructorCallCallSiteIID = false;
 		var nativeCall = Function.prototype.call;
@@ -243,7 +243,8 @@
 
         function describeObject(val){
             if(allocationSites.has(val)){
-                return {objectKind: "allocation-site", allocationSite: getFullLocation(allocationSites.get(val))};
+				var allocationSite = allocationSites.get(val);
+				return {objectKind: "allocation-site", allocationSite: getFullLocation(allocationSite.sid, allocationSite.iid)};
             }
 
             if(builtins.has(val)){
@@ -348,7 +349,7 @@
 				var newF = base;
 				var newBase = args[0];
 				var newArgs = f === nativeCall? Array.prototype.slice.call(args, 1, args.length): args[1] || [];
-                this.invokeFunPre(iid, newF, newBase, newArgs, false, newBase !== undefined, allocationSites.get(newF));
+                this.invokeFunPre(iid, newF, newBase, newArgs, false, newBase !== undefined, allocationSites.get(newF).iid);
 			} else if ((nativeSetTimeout === f  || nativeSetInterval === f) && (typeof args[0] !== 'function')) {
 				var args2 = [];
 				for(var i = 0; i < args.length; i++){
@@ -396,7 +397,7 @@
 
         function registerAllocation(iid, val){
             if (typeof val === 'function' || typeof val === 'object') {
-                allocationSites.set(val, iid);
+                allocationSites.set(val, {sid: sandbox.sid, iid: iid});
             }
         }
 
