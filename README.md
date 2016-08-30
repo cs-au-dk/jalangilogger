@@ -77,7 +77,7 @@ It is also possible to create a log file for javascript programs that have depen
 ### Creating log files from HTML files
 
 Creating a log file for a HTML based test is slightly more involved.
-When invoking [scripts/genLogFile.sh](scripts/genLogFile.sh) with a HTML file as an arugment a browser instance running the HTML application is spawned. The user can then interact with the application to generate values. Once the user is done, the browser application is killed by pressing 'p', and the values are saved to a log file similar. For example:
+When invoking [scripts/genLogFile.sh](scripts/genLogFile.sh) with a HTML file as an argument a browser instance running the HTML application is spawned. The user can then interact with the application to generate values. Once the user is done, the browser application is killed by pressing 'p', and the values are saved to a log file. For example:
 
 ```
 $ ./scripts/genLogFile.sh ./ test/chromeexperiments/core.html
