@@ -6,6 +6,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
+import static java.lang.String.format;
+
 /**
  * Created by torp on 25/08/16.
  */
@@ -37,7 +39,7 @@ public class Main {
 
     private static Path getNewLogFilePath(Path testFile, Path logFileDestinationFolder) {
         String testFileName = testFile.getFileName().toString();
-        return logFileDestinationFolder.resolve(testFileName.substring(0, testFileName.indexOf('.')) + ".log");
+        return logFileDestinationFolder.resolve(format("%s.log", testFileName));
     }
 
     private static void copyFile(Path base, Path destination) {

@@ -67,9 +67,9 @@ using [scripts/genLogFile.sh](scripts/genLogFile.sh)
 Example:
 ```
 $ ./scripts/genLogFile.sh ./ test/anderson/anderson10.js 
-Log file is located at: JalangiLogFiles/test/anderson/anderson10.log
-$ wc -l JalangiLogFiles/test/anderson/anderson10.log
-12 JalangiLogFiles/test/anderson/anderson10.log
+Log file is located at: JalangiLogFiles/test/anderson/anderson10.js.log
+$ wc -l JalangiLogFiles/test/anderson/anderson10.js.log
+12 JalangiLogFiles/test/anderson/anderson10.js.log
 ```
 
 It is also possible to create a log file for javascript programs that have dependencies. For example nodejs requires. This is done using `./scripts/genLogFile.sh ./ path/to/dir path/to/dir/mainfile.js` 
@@ -82,9 +82,9 @@ When invoking [scripts/genLogFile.sh](scripts/genLogFile.sh) with a HTML file as
 ```
 $ ./scripts/genLogFile.sh ./ test/chromeexperiments/core.html
 Press p when done interacting with the browser.
-Log file is located at: /Users/torp/development/jalangilogger/JalangiLogFiles/test/chromeexperiments/core.log
-$ wc -l JalangiLogFiles/test/chromeexperiments/core.log
-     696 JalangiLogFiles/test/chromeexperiments/core.log
+Log file is located at: /Users/torp/development/jalangilogger/JalangiLogFiles/test/chromeexperiments/core.html.log
+$ wc -l JalangiLogFiles/test/chromeexperiments/core.html.log
+     696 JalangiLogFiles/test/chromeexperiments/core.html.log
 ```
 
 Note: After pressing 'p' the script might continue running for around 10 seconds.
