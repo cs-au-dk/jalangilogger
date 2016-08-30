@@ -5,7 +5,7 @@ set -e
 
 ROOT=$1
 MAIN_FILE=$2
-# The instrumentation will include all files in $dir if specified
+# The instrumentation will include all files in $DIR if specified
 DIR=$3
 
 PROJECT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
