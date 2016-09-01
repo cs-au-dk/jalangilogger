@@ -6,10 +6,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static java.lang.String.format;
 
 /**
  * Produces a log file
@@ -32,23 +35,27 @@ public class Logger {
 
     private final Path jalangilogger;
 
+    private final List<Path> preambles;
+
     /**
      * Produces a log file for the run of a single main file
      */
-    public Logger(Path root, Path rootRelativeMain, Path node, Path jalangilogger) {
-        this(isolateInNewRoot(root, rootRelativeMain), rootRelativeMain.getParent(), rootRelativeMain, node, jalangilogger);
+    public Logger(Path root, Path rootRelativeMain, List<Path> preambles, Path node, Path jalangilogger) {
+        this(isolateInNewRoot(root, rootRelativeMain), rootRelativeMain.getParent(), rootRelativeMain, preambles, node, jalangilogger);
     }
 
     /**
      * Produces a log file for the run of a main file in a directory
      */
-    public Logger(Path root, Path rootRelativeTestDir, Path rootRelativeMain, Path node, Path jalangilogger) {
+    public Logger(Path root, Path rootRelativeTestDir, Path rootRelativeMain, List<Path> preambles, Path node, Path jalangilogger) {
         if(rootRelativeTestDir.isAbsolute()){
             throw new IllegalArgumentException("rootRelativeTestDir must be relative");
         }
         if(rootRelativeMain.isAbsolute()){
             throw new IllegalArgumentException("rootRelativeMain must be relative");
         }
+        checkAbsolutePreambles(preambles);
+        this.preambles = preambles;
         this.root = root;
         this.rootRelativeTestDir = rootRelativeTestDir;
         this.rootRelativeMain = rootRelativeMain;
@@ -61,6 +68,14 @@ public class Logger {
         }
         this.instrumentationDir = temp.resolve("instrumentation");
         this.analysis = jalangilogger.resolve("logger/src/ValueLogger.js").toAbsolutePath();
+    }
+
+    private void checkAbsolutePreambles(List<Path> preambles) {
+        for (Path preamble : preambles) {
+            if (!preamble.isAbsolute()) {
+                throw new IllegalArgumentException(format("Preambles must be absolute %s", preamble));
+            }
+        }
     }
 
     private static Path createTempDirectory() throws IOException {
@@ -100,7 +115,7 @@ public class Logger {
         String hash = HashUtil.shaDirOrFile(root.resolve(rootRelativeTestDir));
         long time = System.currentTimeMillis();
         String root = rootRelativeTestDir.toString();
-        String meta = String.format("{'sha':'%s', 'time':'%d', 'root':'%s', 'result':'%s'}".replaceAll("'", "\""), hash, time, root, exitStatus);
+        String meta = format("{'sha':'%s', 'time':'%d', 'root':'%s', 'result':'%s'}".replaceAll("'", "\""), hash, time, root, exitStatus);
         List<String> lines = Files.readAllLines(log);
         lines.add(0, meta);
         Path outputLog = log.getParent().resolve(log.getFileName().toString() + ".metaed");
@@ -222,8 +237,9 @@ public class Logger {
         private String run() throws IOException {
             Path direct_js = jalangilogger.resolve("node_modules/jalangi2").resolve("src/js/commands/direct.js").toAbsolutePath();
             String script = direct_js.toString();
-            String[] cmd = {node.toString(), script, "--analysis", analysis.toString(), rootRelativeMain.toString()};
-            Process p = exec(instrumentationDir, cmd);
+            List<String> cmd = new ArrayList<>(Arrays.asList(new String[] {node.toString(), script, "--analysis", analysis.toString(), rootRelativeMain.toString()}));
+            addPreambles(cmd);
+            Process p = exec(instrumentationDir, cmd.toArray(new String[cmd.size()]));
             boolean timeout = false;
             try {
                 timeout = !p.waitFor(60, TimeUnit.SECONDS);
@@ -236,6 +252,13 @@ public class Logger {
             p.destroy();
             String exitStatus = failure ? "failure" : "success";
             return exitStatus;
+        }
+    }
+
+    private void addPreambles(List<String> cmd) {
+        for (Path preamble : preambles) {
+            cmd.add("--preamble");
+            cmd.add(preamble.toString());
         }
     }
 }

@@ -2,9 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ed4b4951-193f-4add-a5d0-56f9f2c1fad0" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/logger/dist/jer.jar" afterPath="$PROJECT_DIR$/logger/dist/jer.jar" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/logger/src/ValueLogger.js" afterPath="$PROJECT_DIR$/logger/src/ValueLogger.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/logger/src/dk/au/cs/casa/jer/Logger.java" afterPath="$PROJECT_DIR$/logger/src/dk/au/cs/casa/jer/Logger.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/logger/src/dk/au/cs/casa/jer/Main.java" afterPath="$PROJECT_DIR$/logger/src/dk/au/cs/casa/jer/Main.java" />
     </list>
     <ignored path="jalangilogger.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -72,25 +71,25 @@
         <entry file="file://$PROJECT_DIR$/logger/src/dk/au/cs/casa/jer/LogParser.java">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="105">
-              <caret line="30" column="13" selection-start-line="30" selection-start-column="13" selection-end-line="30" selection-end-column="13" />
+              <caret line="31" column="13" selection-start-line="31" selection-start-column="13" selection-end-line="31" selection-end-column="13" />
               <folding>
                 <element signature="imports" expanded="false" />
-                <element signature="e#6279#6280#0" expanded="false" />
-                <element signature="e#6357#6358#0" expanded="false" />
-                <element signature="e#6396#6397#0" expanded="false" />
-                <element signature="e#6426#6427#0" expanded="false" />
-                <element signature="e#6463#6464#0" expanded="false" />
-                <element signature="e#6494#6495#0" expanded="false" />
+                <element signature="e#6031#6032#0" expanded="false" />
+                <element signature="e#6109#6110#0" expanded="false" />
+                <element signature="e#6148#6149#0" expanded="false" />
+                <element signature="e#6178#6179#0" expanded="false" />
+                <element signature="e#6215#6216#0" expanded="false" />
+                <element signature="e#6246#6247#0" expanded="false" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Logger.java" pinned="false" current-in-tab="true">
+      <file leaf-file-name="Logger.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/logger/src/dk/au/cs/casa/jer/Logger.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="300">
-              <caret line="115" column="9" selection-start-line="115" selection-start-column="9" selection-end-line="115" selection-end-column="9" />
+            <state relative-caret-position="327">
+              <caret line="239" column="47" selection-start-line="239" selection-start-column="47" selection-end-line="239" selection-end-column="47" />
               <folding />
             </state>
           </provider>
@@ -106,11 +105,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Main.java" pinned="false" current-in-tab="false">
+      <file leaf-file-name="Main.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/logger/src/dk/au/cs/casa/jer/Main.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="465">
-              <caret line="52" column="0" selection-start-line="52" selection-start-column="0" selection-end-line="52" selection-end-column="0" />
+            <state relative-caret-position="120">
+              <caret line="20" column="28" selection-start-line="20" selection-start-column="28" selection-end-line="20" selection-end-column="28" />
               <folding />
             </state>
           </provider>
@@ -165,8 +164,8 @@
         <option value="$PROJECT_DIR$/logger/src/dk/au/cs/casa/jer/TransformHtmlLogFiles.java" />
         <option value="$PROJECT_DIR$/logger/src/dk/au/cs/casa/jer/Metadata.java" />
         <option value="$PROJECT_DIR$/logger/test/SmokeTests.java" />
-        <option value="$PROJECT_DIR$/logger/src/dk/au/cs/casa/jer/Main.java" />
         <option value="$PROJECT_DIR$/logger/src/dk/au/cs/casa/jer/Logger.java" />
+        <option value="$PROJECT_DIR$/logger/src/dk/au/cs/casa/jer/Main.java" />
       </list>
     </option>
   </component>
@@ -722,7 +721,7 @@
       <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
       <option name="MAIN_CLASS_NAME" value="dk.au.cs.casa.jer.Main" />
       <option name="VM_PARAMETERS" value="" />
-      <option name="PROGRAM_PARAMETERS" value="$PROJECT_DIR$ test/anderson/anderson10.js" />
+      <option name="PROGRAM_PARAMETERS" value="./ test/anderson/anderson10.js node ./" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
       <option name="ALTERNATIVE_JRE_PATH" />
@@ -773,12 +772,12 @@
       <workItem from="1471940559505" duration="452000" />
       <workItem from="1472113313558" duration="597000" />
       <workItem from="1472115244923" duration="7499000" />
-      <workItem from="1472539814911" duration="7400000" />
+      <workItem from="1472539814911" duration="9000000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="30377000" />
+    <option name="totallyTimeSpent" value="31977000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="23" width="1440" height="873" extended-state="6" />
@@ -786,6 +785,7 @@
     <layout>
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.329602" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Palette&#9;" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Capture Analysis" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="8" side_tool="true" content_ui="tabs" />
@@ -798,17 +798,16 @@
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Statistic" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.329602" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.329602" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="UI Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39925373" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.39925373" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="true" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.329602" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Thumbnails" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.329602" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
     </layout>
@@ -829,11 +828,17 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/logger/src/dk/au/cs/casa/jer/Main.java</url>
-          <line>35</line>
+          <line>38</line>
           <properties />
         </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/logger/src/dk/au/cs/casa/jer/Logger.java</url>
+          <line>126</line>
+          <properties />
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
       </breakpoints>
-      <option name="time" value="1" />
+      <option name="time" value="2" />
     </breakpoint-manager>
     <watches-manager />
   </component>
@@ -848,12 +853,12 @@
           <caret line="30" column="13" selection-start-line="30" selection-start-column="13" selection-end-line="30" selection-end-column="13" />
           <folding>
             <element signature="imports" expanded="false" />
-            <element signature="e#6279#6280#0" expanded="false" />
-            <element signature="e#6357#6358#0" expanded="false" />
-            <element signature="e#6396#6397#0" expanded="false" />
-            <element signature="e#6426#6427#0" expanded="false" />
-            <element signature="e#6463#6464#0" expanded="false" />
-            <element signature="e#6494#6495#0" expanded="false" />
+            <element signature="e#6031#6032#0" expanded="false" />
+            <element signature="e#6109#6110#0" expanded="false" />
+            <element signature="e#6148#6149#0" expanded="false" />
+            <element signature="e#6178#6179#0" expanded="false" />
+            <element signature="e#6215#6216#0" expanded="false" />
+            <element signature="e#6246#6247#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -916,12 +921,12 @@
           <caret line="30" column="13" selection-start-line="30" selection-start-column="13" selection-end-line="30" selection-end-column="13" />
           <folding>
             <element signature="imports" expanded="false" />
-            <element signature="e#6279#6280#0" expanded="false" />
-            <element signature="e#6357#6358#0" expanded="false" />
-            <element signature="e#6396#6397#0" expanded="false" />
-            <element signature="e#6426#6427#0" expanded="false" />
-            <element signature="e#6463#6464#0" expanded="false" />
-            <element signature="e#6494#6495#0" expanded="false" />
+            <element signature="e#6031#6032#0" expanded="false" />
+            <element signature="e#6109#6110#0" expanded="false" />
+            <element signature="e#6148#6149#0" expanded="false" />
+            <element signature="e#6178#6179#0" expanded="false" />
+            <element signature="e#6215#6216#0" expanded="false" />
+            <element signature="e#6246#6247#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -973,12 +978,12 @@
           <caret line="30" column="13" selection-start-line="30" selection-start-column="13" selection-end-line="30" selection-end-column="13" />
           <folding>
             <element signature="imports" expanded="false" />
-            <element signature="e#6279#6280#0" expanded="false" />
-            <element signature="e#6357#6358#0" expanded="false" />
-            <element signature="e#6396#6397#0" expanded="false" />
-            <element signature="e#6426#6427#0" expanded="false" />
-            <element signature="e#6463#6464#0" expanded="false" />
-            <element signature="e#6494#6495#0" expanded="false" />
+            <element signature="e#6031#6032#0" expanded="false" />
+            <element signature="e#6109#6110#0" expanded="false" />
+            <element signature="e#6148#6149#0" expanded="false" />
+            <element signature="e#6178#6179#0" expanded="false" />
+            <element signature="e#6215#6216#0" expanded="false" />
+            <element signature="e#6246#6247#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -1030,12 +1035,12 @@
           <caret line="30" column="13" selection-start-line="30" selection-start-column="13" selection-end-line="30" selection-end-column="13" />
           <folding>
             <element signature="imports" expanded="false" />
-            <element signature="e#6279#6280#0" expanded="false" />
-            <element signature="e#6357#6358#0" expanded="false" />
-            <element signature="e#6396#6397#0" expanded="false" />
-            <element signature="e#6426#6427#0" expanded="false" />
-            <element signature="e#6463#6464#0" expanded="false" />
-            <element signature="e#6494#6495#0" expanded="false" />
+            <element signature="e#6031#6032#0" expanded="false" />
+            <element signature="e#6109#6110#0" expanded="false" />
+            <element signature="e#6148#6149#0" expanded="false" />
+            <element signature="e#6178#6179#0" expanded="false" />
+            <element signature="e#6215#6216#0" expanded="false" />
+            <element signature="e#6246#6247#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -1087,12 +1092,12 @@
           <caret line="30" column="13" selection-start-line="30" selection-start-column="13" selection-end-line="30" selection-end-column="13" />
           <folding>
             <element signature="imports" expanded="false" />
-            <element signature="e#6279#6280#0" expanded="false" />
-            <element signature="e#6357#6358#0" expanded="false" />
-            <element signature="e#6396#6397#0" expanded="false" />
-            <element signature="e#6426#6427#0" expanded="false" />
-            <element signature="e#6463#6464#0" expanded="false" />
-            <element signature="e#6494#6495#0" expanded="false" />
+            <element signature="e#6031#6032#0" expanded="false" />
+            <element signature="e#6109#6110#0" expanded="false" />
+            <element signature="e#6148#6149#0" expanded="false" />
+            <element signature="e#6178#6179#0" expanded="false" />
+            <element signature="e#6215#6216#0" expanded="false" />
+            <element signature="e#6246#6247#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -1134,12 +1139,12 @@
           <caret line="47" column="95" selection-start-line="47" selection-start-column="95" selection-end-line="47" selection-end-column="95" />
           <folding>
             <element signature="imports" expanded="false" />
-            <element signature="e#6279#6280#0" expanded="false" />
-            <element signature="e#6357#6358#0" expanded="false" />
-            <element signature="e#6396#6397#0" expanded="false" />
-            <element signature="e#6426#6427#0" expanded="false" />
-            <element signature="e#6463#6464#0" expanded="false" />
-            <element signature="e#6494#6495#0" expanded="false" />
+            <element signature="e#6031#6032#0" expanded="false" />
+            <element signature="e#6109#6110#0" expanded="false" />
+            <element signature="e#6148#6149#0" expanded="false" />
+            <element signature="e#6178#6179#0" expanded="false" />
+            <element signature="e#6215#6216#0" expanded="false" />
+            <element signature="e#6246#6247#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -1195,12 +1200,12 @@
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="imports" expanded="false" />
-            <element signature="e#6279#6280#0" expanded="false" />
-            <element signature="e#6357#6358#0" expanded="false" />
-            <element signature="e#6396#6397#0" expanded="false" />
-            <element signature="e#6426#6427#0" expanded="false" />
-            <element signature="e#6463#6464#0" expanded="false" />
-            <element signature="e#6494#6495#0" expanded="false" />
+            <element signature="e#6031#6032#0" expanded="false" />
+            <element signature="e#6109#6110#0" expanded="false" />
+            <element signature="e#6148#6149#0" expanded="false" />
+            <element signature="e#6178#6179#0" expanded="false" />
+            <element signature="e#6215#6216#0" expanded="false" />
+            <element signature="e#6246#6247#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -1334,15 +1339,15 @@
     <entry file="file://$PROJECT_DIR$/logger/src/dk/au/cs/casa/jer/LogParser.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="105">
-          <caret line="30" column="13" selection-start-line="30" selection-start-column="13" selection-end-line="30" selection-end-column="13" />
+          <caret line="31" column="13" selection-start-line="31" selection-start-column="13" selection-end-line="31" selection-end-column="13" />
           <folding>
             <element signature="imports" expanded="false" />
-            <element signature="e#6279#6280#0" expanded="false" />
-            <element signature="e#6357#6358#0" expanded="false" />
-            <element signature="e#6396#6397#0" expanded="false" />
-            <element signature="e#6426#6427#0" expanded="false" />
-            <element signature="e#6463#6464#0" expanded="false" />
-            <element signature="e#6494#6495#0" expanded="false" />
+            <element signature="e#6031#6032#0" expanded="false" />
+            <element signature="e#6109#6110#0" expanded="false" />
+            <element signature="e#6148#6149#0" expanded="false" />
+            <element signature="e#6178#6179#0" expanded="false" />
+            <element signature="e#6215#6216#0" expanded="false" />
+            <element signature="e#6246#6247#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -1355,18 +1360,18 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/logger/src/dk/au/cs/casa/jer/Main.java">
+    <entry file="file://$PROJECT_DIR$/logger/src/dk/au/cs/casa/jer/Logger.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="465">
-          <caret line="52" column="0" selection-start-line="52" selection-start-column="0" selection-end-line="52" selection-end-column="0" />
+        <state relative-caret-position="327">
+          <caret line="239" column="47" selection-start-line="239" selection-start-column="47" selection-end-line="239" selection-end-column="47" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/logger/src/dk/au/cs/casa/jer/Logger.java">
+    <entry file="file://$PROJECT_DIR$/logger/src/dk/au/cs/casa/jer/Main.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="300">
-          <caret line="115" column="9" selection-start-line="115" selection-start-column="9" selection-end-line="115" selection-end-column="9" />
+        <state relative-caret-position="120">
+          <caret line="20" column="28" selection-start-line="20" selection-start-column="28" selection-end-line="20" selection-end-column="28" />
           <folding />
         </state>
       </provider>

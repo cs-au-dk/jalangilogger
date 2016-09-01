@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
 
 import static java.lang.String.format;
 
@@ -17,16 +19,17 @@ public class Main {
         Path root = Paths.get(args[0]);
         Path mainFile = Paths.get(args[1]);
         Logger logger = null;
+        List<Path> preambles = new ArrayList<>();
             Path loggerDir;
         if (args.length > 4) {
             Path testFileDir = Paths.get(args[2]);
             Path node = Paths.get(args[3]);
             loggerDir = Paths.get(args[4]);
-            logger = new Logger(root, testFileDir, mainFile, node, loggerDir);
+            logger = new Logger(root, testFileDir, mainFile, preambles, node, loggerDir);
         } else {
             Path node = Paths.get(args[2]);
             loggerDir = Paths.get(args[3]);
-            logger = new Logger(root, mainFile, node, loggerDir);
+            logger = new Logger(root, mainFile, preambles, node, loggerDir);
         }
         final Path logFile = logger.log();
 
