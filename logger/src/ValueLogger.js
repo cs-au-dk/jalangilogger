@@ -381,7 +381,8 @@
 				var newF = base;
 				var newBase = args[0];
 				var newArgs = f === nativeCall? Array.prototype.slice.call(args, 1, args.length): args[1] || [];
-                this.invokeFunPre(iid, newF, newBase, newArgs, false, newBase !== undefined, allocationSites.get(newF).iid);
+				var newFAllocationSite = allocationSites.get(newF);
+				this.invokeFunPre(iid, newF, newBase, newArgs, false, newBase !== undefined, newFAllocationSite? newFAllocationSite.iid: undefined);
 			} else if ((nativeSetTimeout === f  || nativeSetInterval === f) && (typeof args[0] !== 'function')) {
 				var args2 = [];
 				for(var i = 0; i < args.length; i++){
