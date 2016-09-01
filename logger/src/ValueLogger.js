@@ -95,6 +95,8 @@
                 }
 			}
         } else {
+            var preambles = extractPreambles();
+            doRequires(preambles);
 			var fs = require('fs');
 			var loggedEntriesMap = new Map;
             log = function (iid, entry) {
@@ -107,8 +109,34 @@
 					loggedEntriesMap.set(entryString, 1);
 				}
             }
+
+            function doRequires(preambles) {
+                for (var i = 0; i < preambles.length; i++) {
+                    require(preambles[i]);
+                }
+            }
+
+            function extractPreambles() {
+                var args = process.argv;
+                var preambles = [];
+
+                for (var i = 0; i < args.length; i++) {
+                    var arg = args[i];
+                    if (isPreambleOption(arg)) {
+                        var preamble = args[++i];
+                        preambles.push(preamble);
+                    }
+                }
+                return preambles;
+
+                function isPreambleOption(arg) {
+                    return arg === "--preamble";
+                }
+
+            }
         }
     })();
+
 
 
     var preambles = {
