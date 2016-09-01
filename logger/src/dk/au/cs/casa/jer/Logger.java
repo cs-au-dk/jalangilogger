@@ -36,12 +36,15 @@ public class Logger {
     private final Path jalangilogger;
 
     private final List<Path> preambles;
+    private boolean shaFromMainFile = false;
 
     /**
      * Produces a log file for the run of a single main file
      */
     public Logger(Path root, Path rootRelativeMain, List<Path> preambles, Path node, Path jalangilogger) {
         this(isolateInNewRoot(root, rootRelativeMain), rootRelativeMain.getParent(), rootRelativeMain, preambles, node, jalangilogger);
+        this.shaFromMainFile = true;
+
     }
 
     /**
@@ -112,9 +115,15 @@ public class Logger {
     }
 
     private Path addMeta(Path log, String exitStatus) throws IOException {
-        String hash = HashUtil.shaDirOrFile(root.resolve(rootRelativeTestDir));
+        Path shaRoot;
+        if (shaFromMainFile) {
+            shaRoot = rootRelativeMain;
+        } else {
+            shaRoot = rootRelativeTestDir;
+        }
+        String hash = HashUtil.shaDirOrFile(root.resolve(shaRoot));
         long time = System.currentTimeMillis();
-        String root = rootRelativeTestDir.toString();
+        String root = shaRoot.toString();
         String meta = format("{'sha':'%s', 'time':'%d', 'root':'%s', 'result':'%s'}".replaceAll("'", "\""), hash, time, root, exitStatus);
         List<String> lines = Files.readAllLines(log);
         lines.add(0, meta);

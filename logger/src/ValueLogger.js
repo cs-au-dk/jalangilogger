@@ -95,9 +95,9 @@
                 }
 			}
         } else {
-            var preambles = extractPreambles();
-            doRequires(preambles);
 			var fs = require('fs');
+            var preambles = extractPreambles();
+            loadPreambles(preambles);
 			var loggedEntriesMap = new Map;
             log = function (iid, entry) {
                 entry.sourceLocation = getFullLocation(sandbox.sid, iid);
@@ -110,9 +110,13 @@
 				}
             }
 
-            function doRequires(preambles) {
+            function loadPreambles(preambles) {
+                // eval evaluates in the global context if it's referenced by a variable
+                // which is not named eval.
+                var evalGlobal = eval;
                 for (var i = 0; i < preambles.length; i++) {
-                    require(preambles[i]);
+                    var fileContent = fs.readFileSync(preambles[i], "utf-8");
+                    evalGlobal(fileContent);
                 }
             }
 
