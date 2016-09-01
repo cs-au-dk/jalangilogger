@@ -60,8 +60,9 @@ public class LogParser {
             JsonObject obj = json.getAsJsonObject();
             SourceLocation sourceLocation = context.deserialize(obj.get("sourceLocation"), SourceLocation.class);
             ValueDescription name = context.deserialize(obj.get("name"), ValueDescription.class);
+            ValueDescription base = context.deserialize(obj.get("base"), ValueDescription.class);
             ValueDescription value = context.deserialize(obj.get("value"), ValueDescription.class);
-            return new VariableOrPropertyEntry(sourceLocation, name, value);
+            return new VariableOrPropertyEntry(sourceLocation, name, base, value);
         });
         builder.registerTypeAdapter(SourceLocation.class, (JsonDeserializer<SourceLocation>) (json, typeOfT, context) -> {
             JsonObject obj = json.getAsJsonObject();
@@ -105,11 +106,7 @@ public class LogParser {
                         case "write-variable":
                         case "read-property":
                         case "write-property":
-                            VariableOrPropertyEntry entry = ctx.deserialize(json, VariableOrPropertyEntry.class);
-                            if("read-variable".equals(entryKind) && (entry.getVarOrProp() instanceof ConcreteStringDescription && "this".equals(((ConcreteStringDescription)entry.getVarOrProp()).getString()))){
-                                return null;
-                            }
-                            return entry;
+                            return ctx.deserialize(json, VariableOrPropertyEntry.class);
                         case "function-exit":
                             return ctx.deserialize(json, FunctionExitEntry.class);
                         case "function-entry":

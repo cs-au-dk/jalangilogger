@@ -3,15 +3,21 @@ package dk.au.cs.casa.jer.entries;
 public class VariableOrPropertyEntry extends Entry {
 
     private final ValueDescription valueDescription;
+    private final ValueDescription base;
     private final ValueDescription varOrProp;
 
-    public VariableOrPropertyEntry(SourceLocation source_location, ValueDescription varOrProp, ValueDescription value) {
+    public VariableOrPropertyEntry(SourceLocation source_location, ValueDescription varOrProp, ValueDescription base, ValueDescription value) {
         super(source_location);
         this.valueDescription = value;
+        this.base = base;
         this.varOrProp = varOrProp;
     }
 
     public ValueDescription getVarOrProp() {
+        return varOrProp;
+    }
+
+    public ValueDescription getBase() {
         return varOrProp;
     }
 
@@ -28,6 +34,7 @@ public class VariableOrPropertyEntry extends Entry {
     public String toString () {
         return "VariableOrPropertyEntry{" +
                 "valueDescription=" + valueDescription +
+                "base=" + base +
                 ", varOrProp=" + varOrProp +
                 '}';
     }
