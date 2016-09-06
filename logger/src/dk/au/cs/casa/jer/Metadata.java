@@ -22,6 +22,10 @@ public class Metadata {
         return jsonRep.root;
     }
 
+    public String getResult() {
+        return jsonRep.result;
+    }
+
     private class JSONRep {
         @SerializedName("sha")
         public String sha;
@@ -31,5 +35,8 @@ public class Metadata {
 
         @SerializedName("root")
         public String root;
+
+        @SerializedName("result")
+        public String result;
     }
 }
