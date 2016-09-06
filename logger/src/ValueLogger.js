@@ -4,6 +4,9 @@
 
 	function getFullLocation(sid, iid){
 		var location = sandbox.iidToLocation(sid, iid);
+        if (location === undefined || location === "undefined") {
+            return undefined; 
+        }
 		location = location.slice(1, location.length - 1);
 		var components = location.split(":");
 		var lineNumber = components[1];
@@ -80,6 +83,9 @@
 
 			log = function (iid, entry) {
                 entry.sourceLocation = getFullLocation(sandbox.sid, iid);
+                if (entry.sourceLocation == undefined) {
+                    return;
+                }
                 if (!sendEntries || !shouldSendEntry(JSON.stringify(entry)))
                     return;
 
@@ -101,7 +107,9 @@
 			var loggedEntriesMap = new Map;
             log = function (iid, entry) {
                 entry.sourceLocation = getFullLocation(sandbox.sid, iid);
-
+                if (entry.sourceLocation == undefined) {
+                    return;
+                }
 				var entryString = JSON.stringify(entry);
 
 				if (!(loggedEntriesMap.has(entryString))) {
@@ -276,7 +284,10 @@
         function describeObject(val){
             if(allocationSites.has(val)){
 				var allocationSite = allocationSites.get(val);
-				return {objectKind: "allocation-site", allocationSite: getFullLocation(allocationSite.sid, allocationSite.iid)};
+                var fullLocation = getFullLocation(allocationSite.sid, allocationSite.iid);
+                if (fullLocation !== undefined) {
+				    return {objectKind: "allocation-site", allocationSite: fullLocation};
+                }
             }
 
             if(builtins.has(val)){
