@@ -21,7 +21,7 @@ else
     cp --parents `find . -name "*.java"` ${BUILD}
 fi
 
-JARS="${LIB}/gson-2.3.1.jar:${LIB}/commons-io-2.5.jar:${LIB}/org.json-20120521.jar"
+JARS="${LIB}/gson-2.3.1.jar:${LIB}/commons-io-2.5.jar:${LIB}/json-20160810.jar"
 echo $JARS
 cd ${BUILD}
 javac -cp ${JARS} `find . -name "*.java"`
