@@ -12,7 +12,7 @@ PROJECT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 LIB="${PROJECT}/logger/lib"
 DIST="${PROJECT}/logger/dist"
 NODE=$(which node)
-JARS=${LIB}/commons-io-2.5.jar:${LIB}/gson-2.3.1.jar:${LIB}/org.json-20120521.jar:${DIST}/jer.jar
+JARS=${LIB}/commons-io-2.5.jar:${LIB}/gson-2.3.1.jar:${LIB}/json-20160810.jar:${DIST}/jer.jar
 
 MAIN_CLASS=dk.au.cs.casa.jer.Main
 

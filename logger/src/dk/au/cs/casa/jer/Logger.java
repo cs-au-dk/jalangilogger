@@ -2,6 +2,7 @@ package dk.au.cs.casa.jer;
 
 import java.awt.*;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
@@ -154,7 +155,7 @@ public class Logger {
         throw new IllegalArgumentException("Unsupported extension of main-file: " + mainName);
     }
 
-    private void instrument() throws IOException {
+    private void instrument() throws IOException, InstrumentationSyntaxErrorException {
         Path instrument_js = jalangilogger.resolve("node_modules/jalangi2").resolve("src/js/commands/instrument.js").toAbsolutePath();
         String script = instrument_js.toString();
         String out = instrumentationDir.resolve(rootRelativeTestDir).getParent().toAbsolutePath().toString();
@@ -166,8 +167,15 @@ public class Logger {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+        String err;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(exec.getInputStream()))) {
+            err = reader.lines().collect(Collectors.joining("\n"));
+        }
         if (exec.exitValue() != 0) {
             throw new RuntimeException("Instrumentation failed");
+        }
+        if (err.contains("SyntaxError")) {
+            throw new InstrumentationSyntaxErrorException();
         }
     }
 
@@ -209,7 +217,13 @@ public class Logger {
         }
 
         public Path log() throws IOException {
-            instrument();
+            try {
+                instrument();
+            } catch (InstrumentationSyntaxErrorException e) {
+                Path log = createEmptyLog();
+                Path logWithMeta = addMeta(log, "syntax error");
+                return logWithMeta;
+            }
             Process server = startServer();
             try {
                 System.out.println("Press p when done interacting with the browser.%n");
@@ -236,7 +250,13 @@ public class Logger {
     private class JSLogger {
 
         public Path log() throws IOException {
-            instrument();
+            try {
+                instrument();
+            } catch (InstrumentationSyntaxErrorException e) {
+                Path log = createEmptyLog();
+                Path logWithMeta = addMeta(log, "syntax error");
+                return logWithMeta;
+            }
             String exitStatus = run();
             Path log = postProcessLog(instrumentationDir.resolve("NEW_LOG_FILE.log"));
             Path logWithMeta = addMeta(log, exitStatus);
@@ -264,10 +284,22 @@ public class Logger {
         }
     }
 
+    private Path createEmptyLog() {
+        try {
+            return File.createTempFile("NEW_LOG_FILE", ".log").toPath();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private void addPreambles(List<String> cmd) {
         for (Path preamble : preambles) {
             cmd.add("--preamble");
             cmd.add(preamble.toString());
         }
+    }
+
+    private class InstrumentationSyntaxErrorException extends Exception {
+
     }
 }
