@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,24 +35,30 @@ public class Logger {
 
     private final Path node;
 
+    private final Path jjs;
+
     private final Path jalangilogger;
 
     private final List<Path> preambles;
+
+    private final int timeLimit;
+
     private boolean shaFromMainFile = false;
+
+    private final Environment environment;
 
     /**
      * Produces a log file for the run of a single main file
      */
-    public Logger(Path root, Path rootRelativeMain, List<Path> preambles, Path node, Path jalangilogger) {
-        this(isolateInNewRoot(root, rootRelativeMain), rootRelativeMain.getParent(), rootRelativeMain, preambles, node, jalangilogger);
+    public Logger(Path root, Path rootRelativeMain, List<Path> preambles, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
+        this(isolateInNewRoot(root, rootRelativeMain), rootRelativeMain.getParent(), rootRelativeMain, preambles, timeLimit, environment, node, jalangilogger, jjs);
         this.shaFromMainFile = true;
-
     }
 
     /**
      * Produces a log file for the run of a main file in a directory
      */
-    public Logger(Path root, Path rootRelativeTestDir, Path rootRelativeMain, List<Path> preambles, Path node, Path jalangilogger) {
+    public Logger(Path root, Path rootRelativeTestDir, Path rootRelativeMain, List<Path> preambles, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
         if(rootRelativeTestDir.isAbsolute()){
             throw new IllegalArgumentException("rootRelativeTestDir must be relative");
         }
@@ -59,6 +66,9 @@ public class Logger {
             throw new IllegalArgumentException("rootRelativeMain must be relative");
         }
         checkAbsolutePreambles(preambles);
+        this.jjs = jjs;
+        this.environment = environment;
+        this.timeLimit = timeLimit;
         this.preambles = preambles;
         this.root = root;
         this.rootRelativeTestDir = rootRelativeTestDir;
@@ -146,22 +156,34 @@ public class Logger {
     }
 
     public Path log() throws IOException {
-        String mainName = rootRelativeMain.toString();
-        if (mainName.endsWith(".js")) {
-            return new JSLogger().log();
-        } else if (mainName.endsWith(".html")) {
+        if (environment == Environment.NASHORN || environment == Environment.NODE || environment == Environment.NODE_GLOBAL) {
+            return new JSLogger(environment).log();
+        } else if (environment == Environment.BROWSER) {
             return new HTMLLogger().log();
         }
-        throw new IllegalArgumentException("Unsupported extension of main-file: " + mainName);
+        throw new IllegalArgumentException("Unsupported environment: " + environment);
     }
 
-    private void instrument() throws IOException, InstrumentationSyntaxErrorException {
+    private void instrument(Environment environment) throws IOException, InstrumentationSyntaxErrorException {
         Path instrument_js = jalangilogger.resolve("node_modules/jalangi2").resolve("src/js/commands/instrument.js").toAbsolutePath();
         String script = instrument_js.toString();
         String out = instrumentationDir.resolve(rootRelativeTestDir).getParent().toAbsolutePath().toString();
         String in = rootRelativeTestDir.toString();
-        String[] cmd = new String[]{node.toString(), script, "--inlineIID", "--inlineSource", "-i", "--inlineJalangi", "--analysis", analysis.toString(), "--outputDir", out, in};
-        Process exec = exec(root, cmd);
+        ArrayList<String> cmd = new ArrayList<>(Arrays.asList(node.toString(), script, "--inlineIID", "--analysis", analysis.toString(), "--outputDir", out));
+        switch (environment) {
+            case BROWSER:
+                cmd.add("--instrumentInline");
+                cmd.add("--inlineJalangi");
+                break;
+            case NASHORN:
+                cmd.add("--inlineJalangiAndAnlysesInSingleJSFile");
+                break;
+            case NODE:
+            case NODE_GLOBAL:
+                break;
+        }
+        cmd.add(in);
+        Process exec = exec(root, cmd.toArray(new String[]{}));
         try {
             exec.waitFor();
         } catch (InterruptedException e) {
@@ -218,7 +240,7 @@ public class Logger {
 
         public Path log() throws IOException {
             try {
-                instrument();
+                instrument(Environment.BROWSER);
             } catch (InstrumentationSyntaxErrorException e) {
                 Path log = createEmptyLog();
                 Path logWithMeta = addMeta(log, "syntax error");
@@ -226,7 +248,7 @@ public class Logger {
             }
             Process server = startServer();
             try {
-                System.out.println("Press p when done interacting with the browser.%n");
+                System.out.printf("Press 'p' in the browser when done interacting with the application.%n");
                 openBrowser();
                 server.waitFor();
                 //waitForEnter();
@@ -236,7 +258,7 @@ public class Logger {
                 //stopServer(server);
             }
             Path log = postProcessLog(serverDir.resolve("logfile"));
-            Path logWithMeta = addMeta(log, "success");
+            Path logWithMeta = addMeta(log, "success"); // XXX we do not know that?!
             return logWithMeta;
         }
 
@@ -249,9 +271,15 @@ public class Logger {
 
     private class JSLogger {
 
+        private final Environment environment;
+
+        private JSLogger(Environment environment) {
+            this.environment = environment;
+        }
+
         public Path log() throws IOException {
             try {
-                instrument();
+                instrument(environment);
             } catch (InstrumentationSyntaxErrorException e) {
                 Path log = createEmptyLog();
                 Path logWithMeta = addMeta(log, "syntax error");
@@ -264,16 +292,42 @@ public class Logger {
         }
 
         private String run() throws IOException {
-            Path direct_js = jalangilogger.resolve("node_modules/jalangi2").resolve("src/js/commands/direct.js").toAbsolutePath();
-            String script = direct_js.toString();
-            List<String> cmd = new ArrayList<>(Arrays.asList(new String[] {node.toString(), script, "--analysis", analysis.toString(), rootRelativeMain.toString()}));
+            List<String> cmd;
+            switch (environment){
+                case NODE:
+                case NODE_GLOBAL:
+                Path direct_js = jalangilogger.resolve("node_modules/jalangi2").resolve("src/js/commands/direct.js").toAbsolutePath();
+                    String script = direct_js.toString();
+                    Path commandLineMain = environment == Environment.NODE? rootRelativeMain: makeGlobalifier(rootRelativeMain);
+                    cmd = new ArrayList<>(Arrays.asList(new String[] {node.toString(), script, "--analysis", analysis.toString(), commandLineMain.toString()}));
+                    break;
+                case NASHORN:
+                    cmd = new ArrayList<>(Arrays.asList(new String[] {jjs.toString(), rootRelativeMain.toString(), "--"}));
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Unhandled environment kind: " + environment);
+            }
             addPreambles(cmd);
             Process p = exec(instrumentationDir, cmd.toArray(new String[cmd.size()]));
-            boolean timeout = false;
+            boolean timeout;
             try {
-                timeout = !p.waitFor(60, TimeUnit.SECONDS);
+                timeout = !p.waitFor(timeLimit, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
+            } finally {
+                try {
+                    // XXX an attempt to kill zombie nodejs-processes for good.
+                    p.destroy();
+                    p.waitFor(1, TimeUnit.SECONDS);
+                    p.destroyForcibly();
+                    p.waitFor(1, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    // ignore
+                } finally {
+                    if (p.isAlive()) {
+                        throw new IllegalStateException("Could not kill process!?!");
+                    }
+                }
             }
             if (timeout)
                 return "timeout";
@@ -281,6 +335,23 @@ public class Logger {
             p.destroy();
             String exitStatus = failure ? "failure" : "success";
             return exitStatus;
+        }
+
+        /**
+         * Makes a wrapper-file that loads the main-file in a global context (instead of the node-module context)
+         */
+        private Path makeGlobalifier(Path mainFile) {
+            try {
+                Path globalifier = Files.createTempFile("globalifier", ".js");
+                Files.write(globalifier, Arrays.asList(
+                        "var fs = require('fs');",
+                        "var globalEval = eval;",
+                        String.format("(globalEval)(fs.readFileSync('%s', 'utf-8'));", mainFile.toString())
+                ), StandardOpenOption.TRUNCATE_EXISTING);
+                return globalifier;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -301,5 +372,12 @@ public class Logger {
 
     private class InstrumentationSyntaxErrorException extends Exception {
 
+    }
+
+    public enum Environment {
+        NODE,
+        NODE_GLOBAL,
+        NASHORN,
+        BROWSER
     }
 }

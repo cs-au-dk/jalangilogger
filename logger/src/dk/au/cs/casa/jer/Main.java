@@ -21,15 +21,18 @@ public class Main {
         Logger logger = null;
         List<Path> preambles = new ArrayList<>();
             Path loggerDir;
+        int defaultTimeLimit = 60;
+        Logger.Environment defaultJSEnvironment = Logger.Environment.NODE;
+        final Logger.Environment environment = mainFile.getFileName().toString().endsWith(".js")? defaultJSEnvironment : Logger.Environment.BROWSER;
         if (args.length > 4) {
             Path testFileDir = Paths.get(args[2]);
             Path node = Paths.get(args[3]);
             loggerDir = Paths.get(args[4]);
-            logger = new Logger(root, testFileDir, mainFile, preambles, node, loggerDir);
+            logger = new Logger(root, testFileDir, mainFile, preambles, defaultTimeLimit, environment, node, loggerDir, null);
         } else {
             Path node = Paths.get(args[2]);
             loggerDir = Paths.get(args[3]);
-            logger = new Logger(root, mainFile, preambles, node, loggerDir);
+            logger = new Logger(root, mainFile, preambles, defaultTimeLimit, environment, node, loggerDir, null);
         }
         final Path logFile = logger.log();
 
