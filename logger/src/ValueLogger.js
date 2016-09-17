@@ -269,8 +269,10 @@
             TAJS_split = function () {
             };
             TAJS_makeComplementaryString = function () {
+                return "TAJS_makeComplementaryString(" + Array.prototype.join.call(arguments, ", ") + ")";
             };
             TAJS_newArray = function () {
+                return [];
             };
         },
         print: function () {
