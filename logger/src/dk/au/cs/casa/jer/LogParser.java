@@ -21,6 +21,7 @@ import dk.au.cs.casa.jer.entries.VariableOrPropertyEntry;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
@@ -29,32 +30,18 @@ import java.util.Set;
  * Parser for an entire ValueLogger log file.
  */
 public class LogParser {
+
+    private final Path logFile;
+
     private Set<IEntry> entries = new HashSet<>();
+
     private Metadata metadata;
 
-    public LogParser (Path logFile) {
-        Gson gson = makeGsonParser();
-        String line = null;
-        try (FileReader fr = new FileReader(logFile.toFile()); BufferedReader br = new BufferedReader(fr)) {
-            //First line contains the metadata
-            metadata = new Metadata(br.readLine());
-            while ((line = br.readLine()) != null) {
-                try {
-                    IEntry e = gson.fromJson(line, IEntry.class);
-                    if (e != null) {
-                        entries.add(e);
-                    }
-                } catch (Exception e) {
-                    System.err.println(String.format("Error during parsing of line: %n%s", line));
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        	throw new RuntimeException(String.format("Error during parsing of line: %n%s", line), e);
-        }
+    public LogParser(Path logFile) {
+        this.logFile = logFile;
     }
 
-    private Gson makeGsonParser() {
+    private static Gson makeGsonParser() {
         GsonBuilder builder = new GsonBuilder();
         builder.registerTypeAdapter(VariableOrPropertyEntry.class, (JsonDeserializer<VariableOrPropertyEntry>) (json, typeOfT, context) -> {
             JsonObject obj = json.getAsJsonObject();
@@ -84,7 +71,7 @@ public class LogParser {
         });
         builder.registerTypeAdapter(ObjectDescription.class, (JsonDeserializer<ObjectDescription>) (json, typeOfT, ctx) -> {
             JsonObject obj = json.getAsJsonObject();
-        	String objectKind = obj.get("objectKind").getAsString();
+            String objectKind = obj.get("objectKind").getAsString();
             switch (objectKind) {
                 case "allocation-site":
                     return ctx.deserialize(obj, AllocationSiteObjectDescription.class);
@@ -121,15 +108,54 @@ public class LogParser {
         return builder.create();
     }
 
-    private String getFileName(JsonObject obj) {
+    private static Set<IEntry> parseEntries(Path logFile) {
+        Gson gson = makeGsonParser();
+        String line = null;
+        Set<IEntry> entries = new HashSet<>();
+        try (FileReader fr = new FileReader(logFile.toFile()); BufferedReader br = new BufferedReader(fr)) {
+            //First line contains the metadata
+            br.readLine();
+            while ((line = br.readLine()) != null) {
+                try {
+                    IEntry e = gson.fromJson(line, IEntry.class);
+                    if (e != null) {
+                        entries.add(e);
+                    }
+                } catch (Exception e) {
+                    System.err.println(String.format("Error during parsing of line: %n%s", line));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(String.format("Error during parsing of line: %n%s", line), e);
+        }
+        return entries;
+    }
+
+    private static String getFileName(JsonObject obj) {
         return obj.get("fileName").getAsString().replace("_orig_", "");
     }
 
     public Set<IEntry> getEntries() {
+        if (entries == null) {
+            entries = parseEntries(logFile);
+        }
         return entries;
     }
 
     public Metadata getMetadata() {
+        if (metadata == null) {
+            metadata = parseMetadata(logFile);
+        }
         return metadata;
+    }
+
+    private Metadata parseMetadata(Path logFile) {
+        try (FileReader fr = new FileReader(logFile.toFile()); BufferedReader br = new BufferedReader(fr)) {
+            //First line contains the metadata
+            return new Metadata(br.readLine());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
