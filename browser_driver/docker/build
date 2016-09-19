@@ -1,0 +1,3 @@
+#!/bin/bash
+
+docker build -t algobardo/tajsound:latest --shm-size 1g .

@@ -6,6 +6,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,7 +50,11 @@ public class SmokeTests {
 
     @Test
     public void parse () {
-        new LogParser(path).getEntries();
-
+        try {
+            new LogParser(path.toUri().toURL()).getEntries();
+        }
+        catch(MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

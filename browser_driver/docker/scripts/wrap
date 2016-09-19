@@ -1,0 +1,33 @@
+echo "Wrapped program starting..."
+
+if [ -z ${VIDEOUTOPT+x} ]; then 
+  VIDEOUTOPT="/out/record.mp4"
+else 
+  echo "Using overriden video output location" 
+fi
+
+echo "Video output will be in $VIDEOUTOPT"
+
+mkdir -p "$(dirname "$VIDEOUTOPT")"
+
+ffmpeg -y -f x11grab 	\
+-video_size 1280x1024 	\
+-i :44 					\
+-codec:v libx264 		\
+-r 18 					\
+-pix_fmt yuv420p        \
+-loglevel error         \
+"$VIDEOUTOPT" < /tmp/recordstop & 
+export FFMPEGPID=$!
+echo "Recording started...pid:$FFMPEGPID, output; $VIDEOUTOPT"
+
+$@
+OUTCODE=$?
+
+sleep 1
+echo 'q' > /tmp/recordstop
+echo "Recording ended"
+echo "Waiting ffmpeg to die...pid: $FFMPEGPID"
+while kill -0 $FFMPEGPID 2> /dev/null; do sleep 1; done;
+rm /tmp/recordstop
+exit $OUTCODE

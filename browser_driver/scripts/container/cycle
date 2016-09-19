@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Usage:
+# <folder> <entry>
+
+export DBUS_SESSION_BUS_ADDRESS=/dev/null # https://github.com/angular/protractor/issues/2419
+
+cd "$(dirname "$0")"
+
+# going to project root
+cd ../../
+
+scripts/container/setup "$1" .
+
+echo "Opening in the browser"
+#export VIDEOUTOPT="$OUTDIR/original-instrumented.mp4"
+nogui protractor driver/protractor.conf.js --url "http://127.0.0.1:8083/$2" --outdir "$1"

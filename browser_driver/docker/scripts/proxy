@@ -1,0 +1,5 @@
+#!/bin/bash
+
+PROXY_ARGS="--quiet --anticache -p 8081"
+SCRIPT=$1
+mitmdump $PROXY_ARGS -s "$SCRIPT" &

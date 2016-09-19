@@ -1,0 +1,15 @@
+#!/bin/bash
+
+cd "$(dirname "$0")"
+
+# going to project root
+cd ../../
+
+DIR=$(pwd)
+
+cd /tmp
+mitmdump 		\
+	--anticache \
+	-p 8081 	\
+	--quiet 	\
+	-s "$DIR/node_modules/jalangi2/scripts/proxy.py --inlineIID --inlineSource --no-cache --noResultsGUI --analysis $DIR/node_modules/jalangilogger/logger/src/ValueLogger.js" &

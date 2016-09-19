@@ -1,19 +1,35 @@
 package dk.au.cs.casa.jer;
 
 import com.google.gson.Gson;
+import com.spotify.docker.client.DefaultDockerClient;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.LogStream;
+import com.spotify.docker.client.exceptions.DockerCertificateException;
+import com.spotify.docker.client.messages.AuthConfig;
+import com.spotify.docker.client.messages.ContainerConfig;
+import com.spotify.docker.client.messages.ContainerCreation;
+import com.spotify.docker.client.messages.ContainerInfo;
+import com.spotify.docker.client.messages.ExecCreation;
+import com.spotify.docker.client.messages.HostConfig;
+import com.spotify.docker.client.messages.PortBinding;
 
 import java.awt.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -87,7 +103,7 @@ public class Logger {
         this.node = node;
         this.jalangilogger = jalangilogger;
         try {
-            this.temp = createTempDirectory();
+            this.temp = createTempDirectory().toRealPath();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -125,7 +141,7 @@ public class Logger {
     }
 
     private static Path createHTMLWrapper(Path root, Path rootRelativeTestDir, Path jsFileName, List<Path> preambles) {
-        List<Path> scriptSources = new ArrayList();
+        List<Path> scriptSources = new ArrayList<>();
         scriptSources.addAll(preambles);
         scriptSources.add(jsFileName);
         List<String> HTMLWrap = new ArrayList<>();
@@ -191,7 +207,15 @@ public class Logger {
     }
 
     private Process exec(Path pwd, String... cmd) throws IOException {
+        return exec(pwd, false, cmd);
+    }
+
+    private Process exec(Path pwd, boolean redirectOutput, String... cmd) throws IOException {
         ProcessBuilder pb = new ProcessBuilder(cmd);
+        if(redirectOutput) {
+            pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+            pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        }
         if (pwd != null) {
             pb.directory(pwd.toFile());
         }
@@ -207,6 +231,8 @@ public class Logger {
             return new JSLogger(environment).log();
         } else if (environment == Environment.BROWSER) {
             return new HTMLLogger().log();
+        } else if (environment == Environment.DRIVEN_BROWSER) {
+            return new DrivenHTMLLogger().log();
         }
         throw new IllegalArgumentException("Unsupported environment: " + environment);
     }
@@ -218,6 +244,7 @@ public class Logger {
         String in = ".";
         ArrayList<String> cmd = new ArrayList<>(Arrays.asList(node.toString(), script, "--inlineIID", "--analysis", analysis.toString(), "--outputDir", out));
         switch (environment) {
+            case DRIVEN_BROWSER:
             case BROWSER:
                 cmd.add("--instrumentInline");
                 cmd.add("--inlineJalangi");
@@ -253,6 +280,7 @@ public class Logger {
         Path transformed = new LogFileTransformer(root, instrumentationDir, rootRelativeMain).transform(filtered);
         return transformed;
     }
+
 
     private class HTMLLogger {
 
@@ -313,6 +341,128 @@ public class Logger {
             BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
             System.out.printf("Press ENTER when done interacting (and pressing `p`) with the browser.%n");
             br.readLine();
+        }
+    }
+
+    private class DrivenHTMLLogger {
+
+        final HostConfig hf = HostConfig.builder()
+                .binds(
+                        instrumentationDir.toAbsolutePath().toString() + ":/wkd",
+                        jalangilogger.toAbsolutePath().toString() + ":/jalangilogger"
+                ).build();
+
+        private void checkAllCanBeShared(DockerClient docker) throws Exception {
+            final ContainerConfig containerConfig = ContainerConfig.builder()
+                    .image("busybox:latest")
+                    .hostConfig(hf)
+                    .cmd("sh", "-c", "ls /wkd && ls /jalangilogger")
+                    .build();
+            final ContainerCreation creation = docker.createContainer(containerConfig);
+            String id = creation.id();
+            docker.startContainer(id);
+            if(docker.waitContainer(id).statusCode() != 0) {
+                String msg = String.format("Check the docker configuration, both %s and %s need to be among the 'shared folders'", instrumentationDir.toAbsolutePath().toString(), jalangilogger.toAbsolutePath().toString());
+                throw new RuntimeException(msg);
+            }
+        }
+
+        String mkCmd(String jalangidir, String wd) {
+            return String.format("cd '%s/browser_driver' && scripts/container/cycle '%s' '%s'", jalangidir, wd, rootRelativeMain.toString());
+        }
+
+        private void runInDocker() throws Exception {
+            // Create a client based on DOCKER_HOST and DOCKER_CERT_PATH env vars
+            final DockerClient docker = DefaultDockerClient.fromEnv().build();
+
+            checkAllCanBeShared(docker);
+
+            String imageName = "algobardo/tajsound:latest";
+
+            // Pull an image
+            docker.pull(imageName);
+
+            String cmd = mkCmd("/jalangilogger", "/wkd");
+            System.out.println("Running " + cmd);
+
+            final ContainerConfig containerConfig = ContainerConfig.builder()
+                    .image(imageName)
+                    .hostConfig(hf)
+                    .cmd("bash", "-c", cmd)
+                    .attachStderr(true)
+                    .attachStdout(true)
+                    .build();
+
+            final ContainerCreation creation = docker.createContainer(containerConfig);
+
+            System.out.println(creation);
+
+            final String id = creation.id();
+
+            // Start container
+            docker.startContainer(id);
+
+            docker.waitContainer(id);
+
+            System.out.println("Docker log:");
+            System.out.println(docker.logs(id,
+                    DockerClient.LogsParam.stdout(),
+                    DockerClient.LogsParam.stderr())
+                    .readFully());
+
+            // Remove container
+            docker.removeContainer(id);
+
+            // Close the docker client
+            docker.close();
+        }
+
+        public DrivenHTMLLogger() { }
+
+        private boolean isDockerEnvironment() {
+            return new File("/.dockerenv").exists();
+        }
+
+        private void captureLog() {
+            try {
+                Process p = exec(jalangilogger.resolve("browser_driver"), true, "bash", "-c", mkCmd(jalangilogger.toAbsolutePath().toString(), instrumentationDir.toAbsolutePath().toString()));
+                Thread.sleep(1000);
+                if (!p.isAlive()) {
+                    throw new RuntimeException();
+                }
+                int res = p.waitFor();
+                if (res != 0) throw new RuntimeException("Failed generating log\n" + p.getErrorStream());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public Path log() throws IOException {
+            try {
+                instrument(Environment.DRIVEN_BROWSER);
+            } catch (InstrumentationSyntaxErrorException e) {
+                Path log = createEmptyLog();
+                Path logWithMeta = addMeta(log, "syntax error");
+                return logWithMeta;
+            }
+
+            try {
+                if(isDockerEnvironment()) {
+                    captureLog();
+                }
+                else {
+                    runInDocker();
+                }
+            }
+            catch(Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            Path log = postProcessLog(instrumentationDir.resolve("NEW_LOG_FILE.log"));
+            Path logWithMeta = addMeta(log, "success"); // XXX we do not know that?!
+            return logWithMeta;
         }
     }
 
@@ -425,6 +575,7 @@ public class Logger {
         NODE,
         NODE_GLOBAL,
         NASHORN,
-        BROWSER
+        BROWSER,
+        DRIVEN_BROWSER
     }
 }

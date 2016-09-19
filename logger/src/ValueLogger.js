@@ -22,12 +22,13 @@
         var isNode = typeof require === 'function' && typeof require('fs') === 'object';
         var isNashorn = typeof Java === 'object' && typeof Java.type === 'function';
         var isBrowser = typeof window !== 'undefined';
+        var isProtractor = isBrowser && window.location.href.indexOf("file://")!=0
 
         if (isBrowser || isNode) {
             env.makeMap = function () {
                 return new Map();
             },
-            env.setTimeout = setTimeout;
+                env.setTimeout = setTimeout;
         }
         if (isNode) {
             env.appendStringToFile = function (string, file) {
@@ -68,14 +69,26 @@
                     }
                 };
             },
-            env.setTimeout = function(f){
-                var Timer = Java.type('java.util.Timer');
-                var timer = new Timer('jsEventLoop', false);
-                timer.schedule(f, 0);
-            }
+                env.setTimeout = function(f){
+                    var Timer = Java.type('java.util.Timer');
+                    var timer = new Timer('jsEventLoop', false);
+                    timer.schedule(f, 0);
+                }
         }
 
-        if (isBrowser) {
+        if (isBrowser && isProtractor) {
+            var loggedEntriesMap = env.makeMap();
+            window.logEntries = [];
+            env.log = function (iid, entry) {
+                entry.sourceLocation = getFullLocation(sandbox.sid, iid);
+                if (entry.sourceLocation == undefined) {
+                    return;
+                }
+                window.logEntries.push(entry);
+            };
+        }
+
+        if (isBrowser && !isProtractor) {
             var sendEntries = true;
             var entriesToSend = [];
             var numberOfEntriesToSendEachTime = 10000;
@@ -594,5 +607,3 @@
 
     sandbox.analysis = new MyAnalysis();
 })(J$);
-
-

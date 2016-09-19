@@ -8,3 +8,11 @@ logger/dist
 logger/build
 logger/build
 .idea/workspace.xml
+.DS_Store
+*.iml
+*.ipr
+.idea/
+build/
+browser_driver/in
+browser_driver/out
+.gradle

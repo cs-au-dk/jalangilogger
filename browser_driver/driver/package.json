@@ -1,0 +1,8 @@
+{
+  "name": "tracifier-driver",
+  "version": "0.0.1",
+  "dependencies": {
+    "mkdirp": "0.5.1",
+    "yargs": "3.32.0"
+  }
+}

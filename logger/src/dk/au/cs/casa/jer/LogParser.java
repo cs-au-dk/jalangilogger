@@ -19,9 +19,8 @@ import dk.au.cs.casa.jer.entries.SourceLocation;
 import dk.au.cs.casa.jer.entries.ValueDescription;
 import dk.au.cs.casa.jer.entries.VariableOrPropertyEntry;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
@@ -31,13 +30,13 @@ import java.util.Set;
  */
 public class LogParser {
 
-    private final Path logFile;
+    private final URL logFile;
 
     private Set<IEntry> entries = null;
 
     private Metadata metadata = null;
 
-    public LogParser(Path logFile) {
+    public LogParser(URL logFile) {
         this.logFile = logFile;
     }
 
@@ -108,11 +107,11 @@ public class LogParser {
         return builder.create();
     }
 
-    private static Set<IEntry> parseEntries(Path logFile) {
+    private static Set<IEntry> parseEntries(URL logFile) {
         Gson gson = makeGsonParser();
         String line = null;
         Set<IEntry> entries = new HashSet<>();
-        try (FileReader fr = new FileReader(logFile.toFile()); BufferedReader br = new BufferedReader(fr)) {
+        try (InputStream iss = logFile.openStream(); BufferedReader br = new BufferedReader(new InputStreamReader(iss))) {
             //First line contains the metadata
             br.readLine();
             while ((line = br.readLine()) != null) {
@@ -150,8 +149,9 @@ public class LogParser {
         return metadata;
     }
 
-    private Metadata parseMetadata(Path logFile) {
-        try (FileReader fr = new FileReader(logFile.toFile()); BufferedReader br = new BufferedReader(fr)) {
+    private Metadata parseMetadata(URL logFile) {
+
+        try (InputStream iss = logFile.openStream(); BufferedReader br = new BufferedReader(new InputStreamReader(iss))) {
             //First line contains the metadata
             return new Metadata(br.readLine());
         } catch (IOException e) {

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+
+ip=$(ifconfig en0 | grep inet | awk '$1=="inet" {print $2}') && echo "My IP is: $ip"
+xhost + ${ip}
+echo "DISPLAY:" ${ip}:0
+docker run -it --privileged -e DISPLAY=${ip}:0 --rm -v $(pwd)/out:/out --network="host" algobardo/jalangi2toolkit:latest $@
+
+# Running and recording
+# http://afterdesign.net/2016/02/07/recording-headless-selenium-tests-to-mp4.html

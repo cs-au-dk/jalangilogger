@@ -1,0 +1,15 @@
+#!/bin/bash
+
+PROG="$@"
+touch /tmp/recordstop
+
+VIDEO_OPT=""
+if [ "$TRACIFIER_VIDEO" = true ] ; then
+    VIDEO_OPT="--listen-tcp"
+    PROG="wrap $@"
+fi
+
+echo "Program is:"
+echo $PROG
+
+xvfb-run $VIDEO_OPT --server-num 44 --auth-file /tmp/xvfb.auth --server-args='-ac -screen 0 1280x1024x24' $PROG #</dev/null >/dev/null 2>&1 &

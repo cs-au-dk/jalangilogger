@@ -1,0 +1,51 @@
+#!/bin/bash
+
+CACHE=""
+DEBUG="false"
+KIOSK=""
+PROXY="false"
+URL=""
+NOGUI="false"
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --h)
+            echo "Usage: chrome [--debug] [--proxy] [--url=<url>]"
+            exit 0
+            ;;
+        --debug)
+            DEBUG="true"
+            ;;
+        --kiosk)
+            KIOSK="--kiosk"
+            ;;
+        --no-cache)
+            CACHE="--disk-cache-dir=/dev/null --media-cache-dir=/dev/null"
+            ;;
+        --proxy)
+            PROXY="true"
+            ;;
+        --nogui)
+            NOGUI="true"
+            ;;
+        --url=*)
+            URL="${1#*=}"
+            ;;
+        *)
+            echo "Error: Invalid argument: $1."
+            exit 1
+    esac
+    shift
+done
+
+PROXYOPTS=""
+if [[ "$PROXY" == "true" ]] ; then
+	PROXYOPTS="--proxy-server='127.0.0.1:8081' --proxy-bypass-list=''"
+fi
+
+DEBUGOPTS=""
+if [[ "$DEBUG" == "true" ]] ; then
+	DEBUGOPTS="--remote-debugging-port=9222"
+fi
+
+google-chrome-stable --unlimited-storage --allow-file-access --allow-file-access-from-files --no-default-browser-check --no-first-run $URL $CACHE $KIOSK $PROXYOPTS $DEBUGOPTS

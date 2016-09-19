@@ -1,0 +1,7 @@
+#!/bin/bash
+
+
+docker run -it --privileged --rm -v $(pwd)/out:/out --net=host algobardo/jalangi2toolkit:latest $@
+
+# Running and recording
+# http://afterdesign.net/2016/02/07/recording-headless-selenium-tests-to-mp4.html

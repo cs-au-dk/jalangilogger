@@ -1,0 +1,59 @@
+apply plugin: 'java'
+apply plugin: "jacoco"
+apply plugin: 'maven-publish'
+apply plugin: 'idea'
+
+
+sourceCompatibility = 1.8
+
+version = '1.0'//TODO: Fix version
+
+repositories {
+    mavenCentral()
+
+    flatDir {
+        dirs 'lib'
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'logger/src/'
+        }
+        resources {
+            srcDir 'logger/res/'
+        }
+    }
+    test {
+        java {
+            srcDir 'logger/test'
+        }
+    }
+}
+
+compileJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+}
+
+jacoco {
+    toolVersion = "0.7.6.201602180812"
+    reportsDir = file("$buildDir/customJacocoReportDir")
+}
+
+dependencies {
+
+    // Main
+    compile group: 'commons-io', name: 'commons-io', version: '2.5'
+    compile group: 'com.google.code.gson', name: 'gson', version: '2.3.1'
+    compile group: 'net.htmlparser.jericho', name: 'jericho-html', version: '3.3'
+    compile group: 'log4j', name: 'log4j', version: '1.2.17'
+    compile group: 'org.json', name: 'json', version: '20160810'
+    compile 'com.spotify:docker-client:6.0.0'
+    
+    // Testing
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testCompile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
+
+}
