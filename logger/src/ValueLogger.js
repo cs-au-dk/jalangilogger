@@ -454,11 +454,11 @@
         };
 
         this.getField = function (iid, base, offset, val, isComputed, isOpAssign, isMethodCall) {
-            env.log(iid, {entryKind: "read-property", name: s(offset), value: p(val)});
+            env.log(iid, {entryKind: "read-property", base: p(base), name: s(offset), value: p(val)});
         };
 
         this.putField = function (iid, base, offset, val, isComputed, isOpAssign) {
-            env.log(iid, {entryKind: "write-property", name: s(offset), value: p(val)});
+            env.log(iid, {entryKind: "write-property", base: p(base), name: s(offset), value: p(val)});
         };
 
         this.invokeFunPre = function (iid, f, base, args, isConstructor, isMethod, functionIid) {

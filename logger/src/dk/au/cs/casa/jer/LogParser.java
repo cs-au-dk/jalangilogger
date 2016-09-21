@@ -33,7 +33,7 @@ public class LogParser {
 
     private final Path logFile;
 
-    private Set<IEntry> entries = new HashSet<>();
+    private Set<IEntry> entries = null;
 
     private Metadata metadata;
 
@@ -93,7 +93,7 @@ public class LogParser {
                         case "write-variable":
                         case "read-property":
                         case "write-property":
-                            return ctx.deserialize(json, VariableOrPropertyEntry.class);
+                                                    return ctx.deserialize(json, VariableOrPropertyEntry.class);
                         case "function-exit":
                             return ctx.deserialize(json, FunctionExitEntry.class);
                         case "function-entry":

@@ -18,7 +18,7 @@ public class VariableOrPropertyEntry extends Entry {
     }
 
     public ValueDescription getBase() {
-        return varOrProp;
+        return base;
     }
 
     public ValueDescription getValueDescription() {
