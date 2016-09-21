@@ -527,6 +527,9 @@
             if (typeof val === 'function' || typeof val === 'object') {
                 allocationSites.set(val, {sid: sandbox.sid, iid: iid});
             }
+            if (typeof val === 'function') {
+                allocationSites.set(val.prototype, {sid:sandbox.sid, iid:iid});
+            }
         }
 
         function s(val) {
