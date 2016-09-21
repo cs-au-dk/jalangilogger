@@ -10,6 +10,26 @@ public class Metadata {
         jsonRep = gson.fromJson(jsonMetadata, JSONRep.class);
     }
 
+    public Metadata () {
+         jsonRep = new JSONRep();
+    }
+
+    public void setSha(String sha) {
+        jsonRep.sha = sha;
+    }
+
+    public void setTime(long time) {
+        jsonRep.time = time;
+    }
+
+    public void setRoot(String root) {
+        jsonRep.root = root;
+    }
+
+    public void setResult(String result) {
+        jsonRep.result = result;
+    }
+
     public String getSha() {
         return jsonRep.sha;
     }

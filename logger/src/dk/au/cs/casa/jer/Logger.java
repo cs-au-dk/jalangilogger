@@ -1,10 +1,13 @@
 package dk.au.cs.casa.jer;
 
+import com.google.gson.Gson;
+
 import java.awt.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -41,9 +44,9 @@ public class Logger {
 
     private final List<Path> preambles;
 
-    private final int timeLimit;
+    private Metadata metadata;
 
-    private boolean shaFromMainFile = false;
+    private final int timeLimit;
 
     private final Environment environment;
 
@@ -51,28 +54,36 @@ public class Logger {
      * Produces a log file for the run of a single main file
      */
     public Logger(Path root, Path rootRelativeMain, List<Path> preambles, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
-        this(isolateInNewRoot(root, rootRelativeMain), rootRelativeMain.getParent(), rootRelativeMain, preambles, timeLimit, environment, node, jalangilogger, jjs);
-        this.shaFromMainFile = true;
+        this(isolateInNewRoot(root, rootRelativeMain, environment), rootRelativeMain.getParent(), rootRelativeMain, preambles, timeLimit, environment, node, jalangilogger, jjs, initMeta(root, rootRelativeMain));
     }
-
+    public Logger(Path root, Path rootRelativeTestDir, Path rootRelativeMain, List<Path> preambles, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
+        this(root, rootRelativeTestDir, rootRelativeMain, preambles, timeLimit, environment, node, jalangilogger, jjs, initMeta(root, rootRelativeTestDir));
+    }
     /**
      * Produces a log file for the run of a main file in a directory
      */
-    public Logger(Path root, Path rootRelativeTestDir, Path rootRelativeMain, List<Path> preambles, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
+    public Logger(Path root, Path rootRelativeTestDir, Path rootRelativeMain, List<Path> preambles, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs, Metadata metadata) {
         if(rootRelativeTestDir.isAbsolute()){
             throw new IllegalArgumentException("rootRelativeTestDir must be relative");
         }
         if(rootRelativeMain.isAbsolute()){
             throw new IllegalArgumentException("rootRelativeMain must be relative");
         }
+
+        if (environment == Environment.BROWSER && isJsFile(rootRelativeMain)) {
+            this.rootRelativeMain = createHTMLWrapper(root, rootRelativeTestDir, rootRelativeMain.getFileName());
+        } else {
+            this.rootRelativeMain = rootRelativeMain;
+        }
+
         checkAbsolutePreambles(preambles);
+        this.metadata = metadata;
         this.jjs = jjs;
         this.environment = environment;
         this.timeLimit = timeLimit;
         this.preambles = preambles;
         this.root = root;
         this.rootRelativeTestDir = rootRelativeTestDir;
-        this.rootRelativeMain = rootRelativeMain;
         this.node = node;
         this.jalangilogger = jalangilogger;
         try {
@@ -101,7 +112,7 @@ public class Logger {
      *
      * @return the new root directory
      */
-    private static Path isolateInNewRoot(Path root, Path rootRelativeMain) {
+    private static Path isolateInNewRoot(Path root, Path rootRelativeMain, Environment environment) {
         try {
             Path newRoot = createTempDirectory();
             Path isolated = newRoot.resolve(rootRelativeMain);
@@ -111,6 +122,28 @@ public class Logger {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static Path createHTMLWrapper(Path root, Path rootRelativeTestDir, Path jsFileName) {
+        String [] HTMLWrap = new String[] {"<!DOCTYPE html>",
+                "<html>",
+                "<head>",
+                format("<script src=\"%s\"></script>", jsFileName),
+                "</head>",
+                "<body></body>",
+                "</html>"};
+        Path htmlWrapperRelative = rootRelativeTestDir.resolve("wrapper.html");
+        Path htmlWrapper = root.resolve(htmlWrapperRelative);
+        try {
+            Files.write(htmlWrapper, Arrays.asList(HTMLWrap), StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return htmlWrapperRelative;
+    }
+
+    private static boolean isJsFile(Path rootRelativeMain) {
+        return rootRelativeMain.getFileName().toString().endsWith(".js");
     }
 
     private static Path filterLogFile(Path inputLog) throws IOException {
@@ -125,22 +158,25 @@ public class Logger {
         return filtered;
     }
 
-    private Path addMeta(Path log, String exitStatus) throws IOException {
-        Path shaRoot;
-        if (shaFromMainFile) {
-            shaRoot = rootRelativeMain;
-        } else {
-            shaRoot = rootRelativeTestDir;
-        }
-        String hash = HashUtil.shaDirOrFile(root.resolve(shaRoot));
-        long time = System.currentTimeMillis();
-        String root = shaRoot.toString();
-        String meta = format("{'sha':'%s', 'time':'%d', 'root':'%s', 'result':'%s'}".replaceAll("'", "\""), hash, time, root, exitStatus);
+    private Path addMeta(Path log, String result) throws IOException {
+        this.metadata.setResult(result);
+        Gson gson = new Gson();
+        String metaJson = gson.toJson(this.metadata.jsonRep);
+
         List<String> lines = Files.readAllLines(log);
-        lines.add(0, meta);
+        lines.add(0, metaJson);
         Path outputLog = log.getParent().resolve(log.getFileName().toString() + ".metaed");
         Files.write(outputLog, lines);
         return outputLog;
+    }
+
+    private static Metadata initMeta(Path root, Path shaRoot) {
+        Metadata metadata = new Metadata();
+        metadata.setTime(System.currentTimeMillis());
+        metadata.setRoot(shaRoot.toString());
+        String hash = HashUtil.shaDirOrFile(root.resolve(shaRoot));
+        metadata.setSha(hash);
+        return metadata;
     }
 
     private Process exec(Path pwd, String... cmd) throws IOException {

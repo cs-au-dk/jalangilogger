@@ -35,7 +35,7 @@ public class LogParser {
 
     private Set<IEntry> entries = null;
 
-    private Metadata metadata;
+    private Metadata metadata = null;
 
     public LogParser(Path logFile) {
         this.logFile = logFile;
