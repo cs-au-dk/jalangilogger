@@ -81,6 +81,32 @@
             var numberOfEntriesToSendEachTime = 10000;
             var loggedEntriesMap = env.makeMap();
 
+            function stopBrowserInteraction() {
+                if (!sendEntries) //the data has already been sent
+                    return;
+
+                var urlLocation = location.pathname;
+                var htmlFileName = urlLocation.substr(urlLocation.indexOf("/instrumentedHtmlFiles/") + "/instrumentedHtmlFiles/".length);
+                var logFileName = ""; //Jalangi makes a folder with the name of the html file, which we do not want in this path
+                var directoriesInHTMLFileName = htmlFileName.split("/");
+                for (var i = 0; i < directoriesInHTMLFileName.length - 1; i++) {
+                    if (directoriesInHTMLFileName[i].indexOf(".html") != -1)
+                        continue;
+                    logFileName += directoriesInHTMLFileName[i] + "/"
+                }
+                logFileName += directoriesInHTMLFileName[directoriesInHTMLFileName.length - 1];
+                logFileName = logFileName.substring(0, logFileName.length - 4) + "log";
+
+                var xmlhttp = new XMLHttpRequest();
+                xmlhttp.open("POST", "http://127.0.0.1:3000/printToFile", false);
+                xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                xmlhttp.send("fileName=" + logFileName);
+                sendEntries = false;
+                console.log("Send printToFileCommand");
+                notifyExit = false;
+                close();
+            }
+
             function sendLoggedEntries(callback) {
                 var xmlhttp = new XMLHttpRequest();
                 if (callback) {
@@ -95,35 +121,9 @@
                 xmlhttp.send("entries=" + entriesToSend);
                 entriesToSend = [];
             }
-
             window.onkeyup = function (event) {
                 if (event.keyCode == 80) {
-                    callback = function () {
-                        if (!sendEntries) //the data has already been sent
-                            return;
-
-                        var urlLocation = location.pathname;
-                        var htmlFileName = urlLocation.substr(urlLocation.indexOf("/instrumentedHtmlFiles/") + "/instrumentedHtmlFiles/".length);
-                        var logFileName = ""; //Jalangi makes a folder with the name of the html file, which we do not want in this path
-                        var directoriesInHTMLFileName = htmlFileName.split("/");
-                        for (var i = 0; i < directoriesInHTMLFileName.length - 1; i++) {
-                            if (directoriesInHTMLFileName[i].indexOf(".html") != -1)
-                                continue;
-                            logFileName += directoriesInHTMLFileName[i] + "/"
-                        }
-                        logFileName += directoriesInHTMLFileName[directoriesInHTMLFileName.length - 1];
-                        logFileName = logFileName.substring(0, logFileName.length - 4) + "log";
-
-                        var xmlhttp = new XMLHttpRequest();
-                        xmlhttp.open("POST", "http://127.0.0.1:3000/printToFile", false);
-                        xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                        xmlhttp.send("fileName=" + logFileName);
-                        sendEntries = false;
-                        console.log("Send printToFileCommand");
-                        notifyExit = false;
-                        close();
-                    };
-                    sendLoggedEntries(callback);
+                    sendLoggedEntries(stopBrowserInteraction);
                 }
             };
             function shouldSendEntry(entry) {
