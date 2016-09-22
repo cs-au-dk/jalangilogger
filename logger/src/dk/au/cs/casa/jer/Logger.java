@@ -71,7 +71,7 @@ public class Logger {
         }
 
         if (environment == Environment.BROWSER && isJsFile(rootRelativeMain)) {
-            this.rootRelativeMain = createHTMLWrapper(root, rootRelativeTestDir, rootRelativeMain.getFileName());
+            this.rootRelativeMain = createHTMLWrapper(root, rootRelativeTestDir, rootRelativeMain.getFileName(), preambles);
         } else {
             this.rootRelativeMain = rootRelativeMain;
         }
@@ -124,18 +124,27 @@ public class Logger {
         }
     }
 
-    private static Path createHTMLWrapper(Path root, Path rootRelativeTestDir, Path jsFileName) {
-        String [] HTMLWrap = new String[] {"<!DOCTYPE html>",
+    private static Path createHTMLWrapper(Path root, Path rootRelativeTestDir, Path jsFileName, List<Path> preambles) {
+        List<Path> scriptSources = new ArrayList();
+        scriptSources.addAll(preambles);
+        scriptSources.add(jsFileName);
+        List<String> HTMLWrap = new ArrayList<>();
+        HTMLWrap.addAll(Arrays.asList(
+                "<!DOCTYPE html>",
                 "<html>",
-                "<head>",
-                format("<script src=\"%s\"></script>", jsFileName),
+                "<head>"));
+        HTMLWrap.addAll(scriptSources.stream()
+                .map(source -> String.format("<script src=\"%s\"></script>", source))
+                .collect(Collectors.toList())
+        );
+        HTMLWrap.addAll(Arrays.asList(
                 "</head>",
                 "<body></body>",
-                "</html>"};
+                "</html>"));
         Path htmlWrapperRelative = rootRelativeTestDir.resolve("wrapper.html");
         Path htmlWrapper = root.resolve(htmlWrapperRelative);
         try {
-            Files.write(htmlWrapper, Arrays.asList(HTMLWrap), StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+            Files.write(htmlWrapper, HTMLWrap, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
