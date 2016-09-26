@@ -132,14 +132,16 @@ public class Logger {
         HTMLWrap.addAll(Arrays.asList(
                 "<!DOCTYPE html>",
                 "<html>",
-                "<head>"));
+                "<head>",
+                "</head>",
+                "<body>"
+        ));
         HTMLWrap.addAll(scriptSources.stream()
                 .map(source -> String.format("<script src=\"%s\"></script>", source))
                 .collect(Collectors.toList())
         );
         HTMLWrap.addAll(Arrays.asList(
-                "</head>",
-                "<body></body>",
+                "</body>",
                 "</html>"));
         Path htmlWrapperRelative = rootRelativeTestDir.resolve("wrapper.html");
         Path htmlWrapper = root.resolve(htmlWrapperRelative);
@@ -212,8 +214,8 @@ public class Logger {
     private void instrument(Environment environment) throws IOException, InstrumentationSyntaxErrorException {
         Path instrument_js = jalangilogger.resolve("node_modules/jalangi2").resolve("src/js/commands/instrument.js").toAbsolutePath();
         String script = instrument_js.toString();
-        String out = instrumentationDir.resolve(rootRelativeTestDir).getParent().toAbsolutePath().toString();
-        String in = rootRelativeTestDir.toString();
+        String out = instrumentationDir.toAbsolutePath().toString();
+        String in = ".";
         ArrayList<String> cmd = new ArrayList<>(Arrays.asList(node.toString(), script, "--inlineIID", "--analysis", analysis.toString(), "--outputDir", out));
         switch (environment) {
             case BROWSER:
