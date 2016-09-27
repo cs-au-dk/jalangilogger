@@ -1,10 +1,10 @@
 FROM ubuntu:16.10
 
-RUN apt-get update
+RUN apt-get update -y
 
 # UTILITIES
 
-RUN apt-get install -y lsof ffmpeg git
+RUN apt-get install -y lsof ffmpeg git curl
 
 # MITMPROXY 
 
@@ -28,12 +28,15 @@ ENV MITMPROXY_DIR /mitmproxy
 #RUN update-ca-certificates
 
 
+
 # GOOGLE CHROME and PROTRACTOR
 
 WORKDIR /tmp
-RUN apt-get install -y npm nodejs-legacy
+RUN curl -sL https://deb.nodesource.com/setup_7.x | bash 
+RUN apt-get update
+RUN apt-get install -y nodejs
 RUN npm install -g http-server
-RUN npm install -g protractor mocha jasmine && \
+RUN npm install -g protractor@5.1.1 mocha jasmine && \
     webdriver-manager update && \
     apt-get install -y xvfb wget default-jre && \
     wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \

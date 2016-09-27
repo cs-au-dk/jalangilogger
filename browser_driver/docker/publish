@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker push algobardo/tajsound:latest
+docker push algobardo/tajsound:1.1

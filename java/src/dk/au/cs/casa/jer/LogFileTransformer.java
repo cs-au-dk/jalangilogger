@@ -15,9 +15,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.Optional.empty;
 
 /**
  * Transforms source locations in a log file:
@@ -48,14 +52,16 @@ public class LogFileTransformer {
     }
 
     private List<String> transform(Map<Integer, SourcePosition> inlineJSOffsetSourceLocations, List<String> lines) {
-        return lines.stream().map(line -> {
+        return lines.stream().flatMap(line -> {
             try {
                 JsonObject untransformedJSON = gson.fromJson(line, JsonObject.class);
                 JsonObject transformedJSON = iterateThroughJsonObjectAndChangeSL(untransformedJSON, inlineJSOffsetSourceLocations);
                 String transformedLine = transformedJSON.toString();
-                return transformedLine;
+                return Stream.of(transformedLine);
             } catch (Exception e) {
-                throw new RuntimeException("Something went wrong during transformation of line: " + line, e);
+                System.err.println("Something went wrong during transformation of line: " + line + ": "  + e);
+                //throw new RuntimeException("Something went wrong during transformation of line: " + line, e);
+                return Stream.empty();
             }
         }).collect(Collectors.toList());
     }
@@ -190,15 +196,22 @@ public class LogFileTransformer {
             return inlineJSOffsetSourceLocations;
         }
         BufferedReader reader = new BufferedReader(new FileReader(mainFile.toFile()));
+
+        Pattern pattern = Pattern.compile("<script[^<.]*>");
+        Pattern typePattern = Pattern.compile("type=['\"]text\\/javascript['\"]");
+        Pattern anyTypePattern = Pattern.compile("type=");
+        Pattern externalPattern = Pattern.compile("<script.*src=.*>");
+
         String line = reader.readLine();
         int lineNumber = 0;
         while (line != null) {
-            Pattern internalPattern = Pattern.compile("<script.*>");
-            Pattern externalPattern = Pattern.compile("<script.*src=.*>");
+            Matcher matcher = pattern.matcher(line);
+            Matcher typeMatcher = typePattern.matcher(line);
+            Matcher anyTypeMatcher = anyTypePattern.matcher(line);
+            Matcher externalMatcher = externalPattern.matcher(line);
 
-            Matcher internalMatcher = internalPattern.matcher(line);
-            if (internalMatcher.find() && !externalPattern.matcher(line).matches()) {
-                String match = internalMatcher.group();
+            if (matcher.find() && (typeMatcher.find() || !anyTypeMatcher.find()) && !externalMatcher.matches())  {
+                String match = matcher.group();
                 int columnNumber = match.length() + line.indexOf(match);
                 inlineJSOffsetSourceLocations.put(inlineJSOffsetSourceLocations.size(), new SourcePosition(lineNumber, columnNumber));
             }

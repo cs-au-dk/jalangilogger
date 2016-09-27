@@ -81,7 +81,7 @@ public class Logger {
             throw new IllegalArgumentException("rootRelativeMain must be relative");
         }
 
-        if (environment == Environment.BROWSER && isJsFile(rootRelativeMain)) {
+        if ((environment == Environment.BROWSER || environment == Environment.HEADLESS_BROWSER) && isJsFile(rootRelativeMain)) {
             this.rootRelativeMain = createHTMLWrapper(root, rootRelativeMain, preambles);
         } else {
             this.rootRelativeMain = rootRelativeMain;
@@ -359,8 +359,8 @@ public class Logger {
         try {
             if (environment == Environment.NASHORN || environment == Environment.NODE || environment == Environment.NODE_GLOBAL) {
                 return new JSLogger(environment).log();
-            } else if (environment == Environment.BROWSER) {
-                return new HTMLLogger().log();
+            } else if (environment == Environment.BROWSER || environment == Environment.HEADLESS_BROWSER) {
+                return new HTMLLogger(environment == Environment.HEADLESS_BROWSER).log();
             } else if (environment == Environment.DRIVEN_BROWSER) {
                 return new DrivenHTMLLogger().log();
             }
@@ -384,6 +384,10 @@ public class Logger {
         switch (environment) {
             case DRIVEN_BROWSER:
             case BROWSER:
+                cmd.add("--instrumentInline");
+                cmd.add("--inlineJalangi");
+                break;
+            case HEADLESS_BROWSER:
                 cmd.add("--instrumentInline");
                 cmd.add("--inlineJalangi");
                 break;
@@ -467,6 +471,7 @@ public class Logger {
         NODE_GLOBAL,
         NASHORN,
         BROWSER,
+        HEADLESS_BROWSER,
         DRIVEN_BROWSER
     }
 
@@ -478,10 +483,13 @@ public class Logger {
 
         private final Path logfile;
 
-        public HTMLLogger() {
+        private final boolean headless;
+
+        public HTMLLogger(boolean headless) {
             this.serverDir = temp.resolve("server");
             this.logfile = serverDir.resolve("logfile.log");
             this.hardTimeLimit = (int) (timeLimit * 1.5);
+            this.headless = headless;
         }
 
         private void startServer() {
@@ -511,7 +519,13 @@ public class Logger {
                 }
             }
 
-            waitForServerToStop(runningServer[0]);
+            if(!headless) {
+                waitForServerToStop(runningServer[0]);
+            }
+            else {
+                // in headless mode startServerAndOpenBrowser is blocking until the page has loaded
+                runningServer[0].stop();
+            }
 
             runningServer[0].persistEntries(logfile);
 
@@ -556,13 +570,22 @@ public class Logger {
             }
         }
 
+        /**
+         * Starts the server and open the browser.
+         * In headless mode this call is blocking until the page has loaded or a timeout reached
+         */
         private JettyLoggerServer.RunningServer startServerAndOpenBrowser(JettyLoggerServer server) {
             JettyLoggerServer.RunningServer runningServer = server.startServer();
             try {
                 String serverLocation = String.format("localhost:%d", runningServer.getURI().getPort());
                 String queryParameters = String.format("softTimeLimit=%d&hardTimeLimit=%d", timeLimit, hardTimeLimit);
                 URI uri = new URI("http", serverLocation, "/" + rootRelativeMain.toString(), queryParameters, null);
-                Desktop.getDesktop().browse(uri);
+                if(!headless) {
+                    Desktop.getDesktop().browse(uri);
+                }
+                else {
+                    new BrowserDriver().browse(uri, hardTimeLimit);
+                }
             } catch (URISyntaxException | IOException e) {
                 throw new RuntimeException(e);
             }
@@ -570,7 +593,7 @@ public class Logger {
         }
 
         public RawLogFile log() throws InstrumentationSyntaxErrorException, InstrumentationTimeoutException, IOException {
-            instrument(Environment.BROWSER);
+            instrument(headless ? Environment.HEADLESS_BROWSER : Environment.BROWSER);
             long before = System.currentTimeMillis();
             startServer(); // will wait for server to terminate
             long after = System.currentTimeMillis();

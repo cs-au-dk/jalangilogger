@@ -6,6 +6,7 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import dk.au.cs.casa.jer.entries.*;
 import dk.au.cs.casa.jer.entries.AllocationSiteObjectDescription;
 import dk.au.cs.casa.jer.entries.BuiltinObjectDescription;
 import dk.au.cs.casa.jer.entries.CallEntry;
@@ -23,6 +24,12 @@ import dk.au.cs.casa.jer.entries.SourceLocation;
 import dk.au.cs.casa.jer.entries.ValueDescription;
 import dk.au.cs.casa.jer.entries.VariableOrPropertyEntry;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.LinkedHashSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -37,7 +44,7 @@ public class LogParser {
 
     private final RawLogFile rawLogFile;
 
-    private Set<IEntry> entries = null;
+    private LinkedHashSet<IEntry> entries = null;
 
     private Metadata metadata = null;
 
@@ -140,8 +147,8 @@ public class LogParser {
         }
     }
 
-    private static Set<IEntry> parseEntries(List<String> logFileEntries) {
-        Set<IEntry> entries = new HashSet<>();
+    private static LinkedHashSet<IEntry> parseEntries(List<String> logFileEntries) {
+        LinkedHashSet<IEntry> entries = new LinkedHashSet<>();
         Gson gson = makeGsonParser();
         for (String line : logFileEntries) {
             try {
@@ -159,7 +166,7 @@ public class LogParser {
         return obj.get("fileName").getAsString().replace("_orig_", "");
     }
 
-    public Set<IEntry> getEntries() {
+    public LinkedHashSet<IEntry> getEntries() {
         if (entries == null) {
             List<String> linesWithoutMeta = rawLogFile.getLines().subList(1, rawLogFile.getLines().size());
             entries = parseEntries(linesWithoutMeta);

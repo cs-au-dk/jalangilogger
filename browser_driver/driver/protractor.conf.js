@@ -1,6 +1,7 @@
 var argv = require('yargs')
     .usage('Usage: protractor protractor.conf.js [--proxy] --url <url>')
     .option('compareUrl', { demand: false, type: 'string' })
+    .option('fullscreen', { default: true, type: 'boolean' })
     .option('mode', { default: 'generate-trace', demand: false, choices: ['detect-errors', 'generate-trace'] })
     .option('outdir', { default: 'out', demand: false, type: 'string' })
     .option('spec', { demand: false, type: 'string' })
@@ -11,7 +12,10 @@ var argv = require('yargs')
 //console.log("Running Protractor, with args:")
 //console.log(argv)
 
-var chromeArgs = ['--no-sandbox', '--show-fps-counter=true', '-kiosk'];
+var chromeArgs = ['--no-sandbox', '--show-fps-counter=true'];
+if (argv.fullscreen) {
+    chromeArgs.push('-kiosk');
+}
 if (argv.proxy) {
     chromeArgs.push('--proxy-server=127.0.0.1:8081', '--proxy-bypass-list=\'\'');
 }

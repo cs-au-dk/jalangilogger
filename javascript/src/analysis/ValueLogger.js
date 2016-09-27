@@ -25,14 +25,35 @@ function consoleLog(text) {
         }
     }
 
+    var natives = {
+        Array: {
+            forEach: Array.prototype.forEach,
+            push: Array.prototype.push,
+            slice: Array.prototype.slice
+        },
+        JSON: {
+            ref: JSON,
+            stringify: JSON.stringify
+        },
+        Map: {
+            ref: Map,
+            forEach: Map.prototype.forEach,
+            has: Map.prototype.has,
+            set: Map.prototype.set
+        },
+        String: {
+            slice: String.prototype.slice
+        }
+    };
+
     function getFullLocation(sid, iid) {
         var location = sandbox.iidToLocation(sid, iid);
         if (location === undefined || location === "undefined" || location.startsWith("(eval")) {
             return undefined;
         }
-        location = location.slice(1, location.length - 1);
+        location = natives.String.slice.call(location, 1, location.length - 1);
         var components = location.split(":");
-        var fileName = components.slice(0, components.length - 4).join(':');
+        var fileName = natives.Array.slice.call(components, 0, components.length - 4).join(':');
         var lineNumber = components[components.length - 4];
         var columnNumber = components[components.length - 3];
         if (typeof lineNumber === 'string' && lineNumber.indexOf('iid') === 0) {
@@ -66,9 +87,9 @@ function consoleLog(text) {
 
         if (isBrowser || isNode) {
             env.makeMap = function () {
-                return new Map();
-            },
-                env.setTimeout = setTimeout;
+                return new natives.Map.ref();
+            };
+            env.setTimeout = setTimeout;
         }
         if (isNode) {
             env.appendStringToFile = function (string, file) {
@@ -127,7 +148,7 @@ function consoleLog(text) {
             var loggedEntriesMap = env.makeMap();
             window.logEntries = [];
             env.log = function (entry) {
-                window.logEntries.push(entry);
+                natives.Array.push.call(window.logEntries, entry);
             };
         }
 
@@ -239,6 +260,9 @@ function consoleLog(text) {
                     callback();
                 }
                 entriesToSend = [];
+                if(callback === stopBrowserInteraction) {
+                    window.J$.stopBrowserInteraction = true;
+                }
             }
 
             window.onkeyup = function (event) {
@@ -256,10 +280,10 @@ function consoleLog(text) {
             };
 
             env.log = function (entry) {
-                if (!sendEntries || !shouldSendEntry(JSON.stringify(entry)))
+                if (!sendEntries || !shouldSendEntry(natives.JSON.stringify.call(natives.JSON.ref, entry)))
                     return;
 
-                entriesToSend.push(entry);
+                natives.Array.push.call(entriesToSend, entry);
                 var currentTime = new Date().getTime();
                 var tooMuchTimeHasPassedSinceLastLog = (currentTime - lastLogTime) > 1000;
                 if (entriesToSend.length >= numberOfEntriesToSendEachTime || tooMuchTimeHasPassedSinceLastLog) {
@@ -272,7 +296,7 @@ function consoleLog(text) {
                 if (notifyExit) {
                     return "Are you sure you want to navigate away?";
                 }
-            }
+            };
 
         } else if (isNashorn || isNode) {
             function loadPreambles(preambles) {
@@ -293,7 +317,7 @@ function consoleLog(text) {
                     var arg = args[i];
                     if (isPreambleOption(arg)) {
                         var preamble = args[++i];
-                        preambles.push(preamble);
+                        natives.Array.push.call(preambles, preamble);
                     }
                 }
                 return preambles;
@@ -309,11 +333,11 @@ function consoleLog(text) {
             loadPreambles(preambles);
             var loggedEntriesMap = env.makeMap();
             env.log = function (entry) {
-                var entryString = JSON.stringify(entry);
+                var entryString = natives.JSON.stringify(entry);
 
-                if (!(loggedEntriesMap.has(entryString))) {
+                if (!(natives.Map.has.call(loggedEntriesMap, entryString))) {
                     env.appendStringToFile(LOG_FILE_NAME, entryString + "\n");
-                    loggedEntriesMap.set(entryString, 1);
+                    natives.Map.set.call(loggedEntriesMap, entryString, 1);
                 }
             }
         }
@@ -368,13 +392,24 @@ function consoleLog(text) {
             TAJS_assertEquals = function () {
             };
             TAJS_make = function (s) {
-                switch (s) {
-                    case "AnyStr":
-                        return "TAJS_make('AnyStr');"
-                    case "AnyNum":
-                        return 42;
-                    case "AnyBool":
-                        return true;
+                if(arguments.length > 1) {
+                    var min = 1;
+                    var max = arguments.length - 1;
+                    return arguments[Math.floor(Math.random() * (max - min + 1)) + min];
+                }
+                else {
+                    switch (s) {
+                        case "AnyStr":
+                            return "TAJS_make('AnyStr');"
+                        case "AnyNum":
+                            return 42;
+                        case "AnyBool":
+                            return true;
+                        case "AnyStrUInt":
+                            return '0';
+                        case "AnyStrNotUInt":
+                            return "TAJS_make('AnyStrNotUInt')";
+                    }
                 }
                 return;
             };
@@ -396,10 +431,10 @@ function consoleLog(text) {
             };
             TAJS_record = function () {
 
-            }
+            };
             TAJS_restrictTo = function () {
 
-            }
+            };
         },
         print: function () {
             print = function () {
@@ -455,7 +490,7 @@ function consoleLog(text) {
                     throw new Error('Invalid ID: ' + ID);
                 }
                 var isNonPrimitive = typeof value === 'function' || (typeof value === 'object' && value !== null);
-                if (!isNonPrimitive || map.has(value)) {
+                if (!isNonPrimitive || natives.Map.has.call(map, value)) {
                     return;
                 }
                 map.set(value, ID);
@@ -519,14 +554,14 @@ function consoleLog(text) {
                 'parseFloat',
                 'parseInt',
                 'unescape'];
-            commonGlobalNames.forEach(function (ID) {
+            natives.Array.forEach.call(commonGlobalNames, function (ID) {
                 var globalProperty = global[ID];
                 if (globalProperty) {
                     registerBuiltin(ID, globalProperty);
                 }
             });
             // add non-primitives from objects with constructor-like names, and their prototypes
-            map.forEach(function (ID, value) {
+            natives.Map.forEach.call(map, function (ID, value) {
                 if (typeof ID !== 'string') {
                     throw new Error('Invalid ID: ' + ID);
                 }
@@ -534,7 +569,7 @@ function consoleLog(text) {
                 if (!isConstructorLike) {
                     return;
                 }
-                Object.getOwnPropertyNames(value).forEach(function (valuePropertyName) {
+                natives.Array.forEach.call(Object.getOwnPropertyNames(value), function (valuePropertyName) {
                     var propertyValueID = ID + "." + valuePropertyName;
                     if (isBanned(propertyValueID, value, valuePropertyName)) {
                         return;
@@ -544,7 +579,7 @@ function consoleLog(text) {
                 });
                 var prototype = value.prototype;
                 if (prototype) {
-                    Object.getOwnPropertyNames(prototype).forEach(function (prototypePropertyName) {
+                    natives.Array.forEach.call(Object.getOwnPropertyNames(prototype), function (prototypePropertyName) {
                         var prototypePropertyValueID = ID + ".prototype." + prototypePropertyName;
                         if (isBanned(prototypePropertyValueID, prototype, prototypePropertyName)) {
                             return;
@@ -618,9 +653,25 @@ function consoleLog(text) {
         function makeArrayValue(args, forbidStringAbstraction) {
             var result = [];
             for (var i = 0; i < args.length; i++)
-                result.push(makeValue(args[i], forbidStringAbstraction));
+                natives.Array.push.call(result, makeValue(args[i], forbidStringAbstraction));
             return result;
         }
+
+        this.getOutputAsString = function (from, to) {
+            var existingArrayToJSON = Array.prototype.toJSON;
+            Array.prototype.toJSON = null;
+
+            var entries = window.logEntries;
+            if (typeof from === 'number' && typeof to === 'number') {
+                entries = natives.Array.slice.call(entries, from, to);
+            }
+
+            var result = natives.JSON.stringify.call(natives.JSON.ref, entries);
+
+            Array.prototype.toJSON = existingArrayToJSON;
+
+            return result;
+        };
 
         this.read = function (iid, name, val, isGlobal, isScriptLocal) {
             logEntry(iid, {entryKind: "read-variable", name: makeValueForPropertyName(name), value: makeValue(val)});
@@ -730,6 +781,9 @@ function consoleLog(text) {
             logEntry(iid, {entryKind: 'dynamic-code', code: code + ''});
         };
 
+        /* called when loaded using the jalangi2 version that is used by tracifier  */
+        this.onText = function () {};
+
         function registerAllocation(iid, val, sid) {
             if (typeof sid == "undefined") {
                 sid = sandbox.sid;
@@ -760,4 +814,10 @@ function consoleLog(text) {
     }
 
     sandbox.analysis = new MyAnalysis();
+
+    sandbox.analysis.startTag =
+        sandbox.analysis.endTag =
+            sandbox.analysis.documentType =
+                sandbox.analysis.removeInjectedScripts =
+                    function () {};
 })(J$);

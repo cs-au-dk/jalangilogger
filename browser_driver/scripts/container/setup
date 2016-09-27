@@ -16,6 +16,10 @@ echo "Starting http server in $1"
 
 ls "$1"
 
-(cd "$1" && nohup http-server -p 8083 >/dev/null 2>&1 &)
+(cd "$1" && nohup http-server -p 8083 &)
+
+RES=$?
 
 sleep 1
+
+exit $RES
