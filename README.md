@@ -49,6 +49,7 @@ Set<IEntry> logEntries = new dk.au.cs.casa.jer.LogParser("myLog.log").getEntries
 
 ```
 $ ./gradlew jar
+$ ls -l build/libs/jalangilogger-1.0.jar
 ```
 
 ## Collecting more values
