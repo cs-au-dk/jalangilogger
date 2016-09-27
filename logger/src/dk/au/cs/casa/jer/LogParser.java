@@ -121,6 +121,7 @@ public class LogParser {
                         entries.add(e);
                     }
                 } catch (Exception e) {
+                    e.printStackTrace();
                     System.err.println(String.format("Error during parsing of line: %n%s", line));
                 }
             }

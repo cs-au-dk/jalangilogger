@@ -70,7 +70,7 @@ public class Logger {
      * Produces a log file for the run of a single main file
      */
     public Logger(Path root, Path rootRelativeMain, List<Path> preambles, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
-        this(isolateInNewRoot(root, rootRelativeMain, environment), rootRelativeMain.getParent(), rootRelativeMain, preambles, timeLimit, environment, node, jalangilogger, jjs, initMeta(root, rootRelativeMain));
+        this(isolateInNewRoot(root, rootRelativeMain, environment), rootRelativeMain.getParent() == null ? Paths.get("") : rootRelativeMain.getParent(), rootRelativeMain, preambles, timeLimit, environment, node, jalangilogger, jjs, initMeta(root, rootRelativeMain));
     }
     public Logger(Path root, Path rootRelativeTestDir, Path rootRelativeMain, List<Path> preambles, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
         this(root, rootRelativeTestDir, rootRelativeMain, preambles, timeLimit, environment, node, jalangilogger, jjs, initMeta(root, rootRelativeTestDir));
