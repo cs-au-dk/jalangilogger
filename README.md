@@ -45,6 +45,11 @@ Set<IEntry> logEntries = new dk.au.cs.casa.jer.LogParser("myLog.log").getEntries
 - The script [scripts/make-log-reader-jar.sh](scripts/make-log-reader-jar.sh) produces a jar file at dist/jer.jar.
 - jer.jar depends on gson, it is present at [logger/lib/gson-2.3.1.jar](logger/lib/gson-2.3.1.jar)
 
+### Build jar with gradle
+
+```
+$ ./gradlew jar
+```
 
 ## Collecting more values
 
