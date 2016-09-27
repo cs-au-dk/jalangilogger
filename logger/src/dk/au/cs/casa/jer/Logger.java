@@ -380,10 +380,9 @@ public class Logger {
             String imageName = "algobardo/tajsound:latest";
 
             // Pull an image
-            docker.pull(imageName);
+            //docker.pull(imageName);
 
             String cmd = mkCmd("/jalangilogger", "/wkd");
-            System.out.println("Running " + cmd);
 
             final ContainerConfig containerConfig = ContainerConfig.builder()
                     .image(imageName)
@@ -394,8 +393,6 @@ public class Logger {
                     .build();
 
             final ContainerCreation creation = docker.createContainer(containerConfig);
-
-            System.out.println(creation);
 
             final String id = creation.id();
 
