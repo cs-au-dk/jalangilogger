@@ -131,7 +131,7 @@ public class LogFileTransformer {
 
     private JSONObject updateSourceLocationFromEventFileToSLInOriginalFile(Path eventHandlerFile, JSONObject obj) throws IOException, JSONException {
         String lineToSearchForInOriginalFile = getLineToSearchForFromEventHandlerFile(eventHandlerFile, obj);
-        BufferedReader reader = new BufferedReader(new FileReader(rootRelativeMain.toFile()));
+        BufferedReader reader = new BufferedReader(new FileReader(root.resolve(rootRelativeMain).toFile()));
         String line = reader.readLine();
         int lineNumber = 1;
         boolean stringFound = false;

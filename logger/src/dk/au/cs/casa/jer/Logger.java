@@ -3,33 +3,22 @@ package dk.au.cs.casa.jer;
 import com.google.gson.Gson;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.LogStream;
-import com.spotify.docker.client.exceptions.DockerCertificateException;
-import com.spotify.docker.client.messages.AuthConfig;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
-import com.spotify.docker.client.messages.ContainerInfo;
-import com.spotify.docker.client.messages.ExecCreation;
 import com.spotify.docker.client.messages.HostConfig;
-import com.spotify.docker.client.messages.PortBinding;
 
 import java.awt.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -41,8 +30,6 @@ import static java.lang.String.format;
 public class Logger {
 
     private final Path root;
-
-    private final Path rootRelativeTestDir;
 
     private final Path rootRelativeMain;
 
@@ -69,25 +56,23 @@ public class Logger {
     /**
      * Produces a log file for the run of a single main file
      */
-    public Logger(Path root, Path rootRelativeMain, List<Path> preambles, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
-        this(isolateInNewRoot(root, rootRelativeMain, environment), rootRelativeMain.getParent() == null ? Paths.get("") : rootRelativeMain.getParent(), rootRelativeMain, preambles, timeLimit, environment, node, jalangilogger, jjs, initMeta(root, rootRelativeMain));
+    public static Logger makeLoggerForIndependentMainFile(Path main, List<Path> preambles, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
+        Path newRoot = isolateInNewRoot(main);
+        return makeLoggerForDirectoryWithMainFile(newRoot, newRoot.relativize(main), preambles, timeLimit, environment, node, jalangilogger, jjs);
     }
-    public Logger(Path root, Path rootRelativeTestDir, Path rootRelativeMain, List<Path> preambles, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
-        this(root, rootRelativeTestDir, rootRelativeMain, preambles, timeLimit, environment, node, jalangilogger, jjs, initMeta(root, rootRelativeTestDir));
+    public static Logger makeLoggerForDirectoryWithMainFile(Path root, Path rootRelativeMain, List<Path> preambles, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
+        return new Logger(root, rootRelativeMain, preambles, timeLimit, environment, node, jalangilogger, jjs, initMeta(root, rootRelativeMain.getFileName()));
     }
     /**
      * Produces a log file for the run of a main file in a directory
      */
-    public Logger(Path root, Path rootRelativeTestDir, Path rootRelativeMain, List<Path> preambles, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs, Metadata metadata) {
-        if(rootRelativeTestDir.isAbsolute()){
-            throw new IllegalArgumentException("rootRelativeTestDir must be relative");
-        }
+    public Logger(Path root, Path rootRelativeMain, List<Path> preambles, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs, Metadata metadata) {
         if(rootRelativeMain.isAbsolute()){
             throw new IllegalArgumentException("rootRelativeMain must be relative");
         }
 
         if (environment == Environment.BROWSER && isJsFile(rootRelativeMain)) {
-            this.rootRelativeMain = createHTMLWrapper(root, rootRelativeTestDir, rootRelativeMain.getFileName(), preambles);
+            this.rootRelativeMain = createHTMLWrapper(root, rootRelativeMain, preambles);
         } else {
             this.rootRelativeMain = rootRelativeMain;
         }
@@ -99,7 +84,6 @@ public class Logger {
         this.timeLimit = timeLimit;
         this.preambles = preambles;
         this.root = root;
-        this.rootRelativeTestDir = rootRelativeTestDir;
         this.node = node;
         this.jalangilogger = jalangilogger;
         try {
@@ -128,22 +112,22 @@ public class Logger {
      *
      * @return the new root directory
      */
-    private static Path isolateInNewRoot(Path root, Path rootRelativeMain, Environment environment) {
+    private static Path isolateInNewRoot(Path main) {
         try {
             Path newRoot = createTempDirectory();
-            Path isolated = newRoot.resolve(rootRelativeMain);
+            Path isolated = newRoot.resolve(main);
             Files.createDirectories(isolated.getParent());
-            Files.copy(root.resolve(rootRelativeMain), isolated);
+            Files.copy(main, isolated);
             return newRoot;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static Path createHTMLWrapper(Path root, Path rootRelativeTestDir, Path jsFileName, List<Path> preambles) {
+    private static Path createHTMLWrapper(Path root, Path rootRelativeMain, List<Path> preambles) {
         List<Path> scriptSources = new ArrayList<>();
         scriptSources.addAll(preambles);
-        scriptSources.add(jsFileName);
+        scriptSources.add(rootRelativeMain);
         List<String> HTMLWrap = new ArrayList<>();
         HTMLWrap.addAll(Arrays.asList(
                 "<!DOCTYPE html>",
@@ -159,7 +143,7 @@ public class Logger {
         HTMLWrap.addAll(Arrays.asList(
                 "</body>",
                 "</html>"));
-        Path htmlWrapperRelative = rootRelativeTestDir.resolve("wrapper.html");
+        Path htmlWrapperRelative = root.resolve("jalangilogger_wrapper.html");
         Path htmlWrapper = root.resolve(htmlWrapperRelative);
         try {
             Files.write(htmlWrapper, HTMLWrap, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
@@ -197,11 +181,11 @@ public class Logger {
         return outputLog;
     }
 
-    private static Metadata initMeta(Path root, Path shaRoot) {
+    private static Metadata initMeta(Path root, Path main) {
         Metadata metadata = new Metadata();
         metadata.setTime(System.currentTimeMillis());
-        metadata.setRoot(shaRoot.toString());
-        String hash = HashUtil.shaDirOrFile(root.resolve(shaRoot));
+        metadata.setRoot(main.toString());
+        String hash = HashUtil.shaDirOrFile(root);
         metadata.setSha(hash);
         return metadata;
     }
