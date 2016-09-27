@@ -27,7 +27,7 @@ sourceSets {
     }
     test {
         java {
-            srcDir 'logger/test'
+            srcDir 'logger/test/java'
         }
     }
 }

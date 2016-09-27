@@ -1,5 +1,6 @@
 package dk.au.cs.casa.jer;
 
+import dk.au.cs.casa.jer.entries.StringDescription;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -8,10 +9,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -43,16 +41,21 @@ public class LogFileTransformer {
     }
 
     private List<String> transform(Map<Integer, SourcePosition> inlineJSOffsetSourceLocations, List<String> lines) {
-        return lines.stream().map(line -> {
+        List<String> l = new LinkedList<>();
+        lines.forEach(line -> {
             try {
                 JSONObject untransformedJSON = new JSONObject(line);
                 JSONObject transformedJSON = iterateThroughJSONObjectAndChangeSL(untransformedJSON, inlineJSOffsetSourceLocations);
                 String transformedLine = transformedJSON.toString();
-                return transformedLine;
+                l.add(transformedLine);
             } catch (Exception e) {
-                throw new RuntimeException("Something went wrong during transformation of line: " + line, e);
+                if (!Logger.muteWarnings) {
+                    System.err.println(String.format("Error during parsing of line: %s\n %s", line, e));
+                }
+                //throw new RuntimeException("Something went wrong during transformation of line: " + line, e);
             }
-        }).collect(Collectors.toList());
+        });
+        return l;
     }
 
     //Takes an JSONObject and iterates through it, to find all source locations and then change these to
@@ -186,13 +189,17 @@ public class LogFileTransformer {
         BufferedReader reader = new BufferedReader(new FileReader(mainFile.toFile()));
         String line = reader.readLine();
         int lineNumber = 0;
-        while (line != null) {
-            Pattern internalPattern = Pattern.compile("<script.*>");
-            Pattern externalPattern = Pattern.compile("<script.*src=.*>");
+        Pattern pattern = Pattern.compile("<script[^<.]*>");
+        Pattern typePattern = Pattern.compile("type=['\"]text\\/javascript['\"]");
+        Pattern anyTypePattern = Pattern.compile("type=");
 
-            Matcher internalMatcher = internalPattern.matcher(line);
-            if (internalMatcher.find() && !externalPattern.matcher(line).matches()) {
-                String match = internalMatcher.group();
+        while (line != null) {
+            Matcher matcher = pattern.matcher(line);
+            Matcher typeMatcher = typePattern.matcher(line);
+            Matcher anyTypeMatcher = anyTypePattern.matcher(line);
+
+            if (matcher.find() && (typeMatcher.find() || !anyTypeMatcher.find()))  {
+                String match = matcher.group();
                 int columnNumber = match.length() + line.indexOf(match);
                 inlineJSOffsetSourceLocations.put(inlineJSOffsetSourceLocations.size(), new SourcePosition(lineNumber, columnNumber));
             }

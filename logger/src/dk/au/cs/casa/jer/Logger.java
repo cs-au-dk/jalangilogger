@@ -3,16 +3,13 @@ package dk.au.cs.casa.jer;
 import com.google.gson.Gson;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.LogStream;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.HostConfig;
 
 import java.awt.*;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
+import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -36,6 +33,8 @@ import static java.lang.String.format;
  * Produces a log file
  */
 public class Logger {
+
+    private static org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(Logger.class);
 
     private static String tempDirectoryPrefix = Logger.class.getCanonicalName();
 
@@ -66,6 +65,8 @@ public class Logger {
     private final Environment environment;
 
     private Metadata metadata;
+
+    public static final boolean muteWarnings = true;
 
     /**
      * Produces a log file for the run of a main file in a directory
@@ -273,17 +274,17 @@ public class Logger {
             pb.redirectError(ProcessBuilder.Redirect.INHERIT);
         }
         if (pwd != null) {
-            pb.directory(pwd.toFile());
+            pb.directory(pwd.toAbsolutePath().toFile());
         }
         //pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-        System.out.printf("Starting (at %s): %s%n", pwd, String.join(" ", Arrays.asList(cmd)));
+        System.out.printf("Starting (at %s): %s%n", pwd.toAbsolutePath(), String.join(" ", Arrays.asList(cmd)));
         Process p = pb.start();
         return p;
     }
 
     public RawLogFile log() throws IOException {
-        return log(true);
+        return log(false);
     }
 
     public RawLogFile log(boolean emptyTempDirectoryWhenDone) throws IOException {
@@ -380,6 +381,8 @@ public class Logger {
             boolean timedOut = !exec.waitFor(instrumentationTimeLimit, TimeUnit.SECONDS);
             if (timedOut) {
                 throw new InstrumentationTimeoutException();
+            } else {
+                log.info("Instrumentation succeeded");
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -552,7 +555,7 @@ public class Logger {
 
             checkAllCanBeShared(docker);
 
-            String imageName = "algobardo/tajsound:latest";
+            String imageName = "algobardo/tajsound:1.1";
 
             // Pull an image
             //docker.pull(imageName);
@@ -563,8 +566,6 @@ public class Logger {
                     .image(imageName)
                     .hostConfig(hf)
                     .cmd("bash", "-c", cmd)
-                    .attachStderr(true)
-                    .attachStdout(true)
                     .build();
 
             final ContainerCreation creation = docker.createContainer(containerConfig);
@@ -574,13 +575,31 @@ public class Logger {
             // Start container
             docker.startContainer(id);
 
+            LogStream logStream = docker.logs(id,
+                    DockerClient.LogsParam.stdout(),
+                    DockerClient.LogsParam.stderr(),
+                    DockerClient.LogsParam.follow());
+
+            try {
+                logStream.attach(
+                        new OutputStream() {
+                            @Override
+                            public void write(int b) throws IOException {
+                                System.out.write(b);
+                            }
+                        },
+                        new OutputStream() {
+                            @Override
+                            public void write(int b) throws IOException {
+                                System.err.write(b);
+                            }
+                        });
+            } catch (IOException e) {
+            }
+
             docker.waitContainer(id);
 
-            System.out.println("Docker log:");
-            System.out.println(docker.logs(id,
-                    DockerClient.LogsParam.stdout(),
-                    DockerClient.LogsParam.stderr())
-                    .readFully());
+            logStream.readFully();
 
             // Remove container
             docker.removeContainer(id);
@@ -610,6 +629,7 @@ public class Logger {
         }
 
         public RawLogFile log() throws IOException, InstrumentationSyntaxErrorException, InstrumentationTimeoutException {
+
             instrument(Environment.DRIVEN_BROWSER);
 
             try {

@@ -2,14 +2,35 @@
     var notifyExit = true;
     var entryIndex = 0;
 
+    var natives = {
+        Array: {
+            forEach: Array.prototype.forEach,
+            push: Array.prototype.push,
+            slice: Array.prototype.slice
+        },
+        JSON: {
+            ref: JSON,
+            stringify: JSON.stringify
+        },
+        Map: {
+            ref: Map,
+            forEach: Map.prototype.forEach,
+            has: Map.prototype.has,
+            set: Map.prototype.set
+        },
+        String: {
+            slice: String.prototype.slice
+        }
+    };
+
     function getFullLocation(sid, iid) {
         var location = sandbox.iidToLocation(sid, iid);
         if (location === undefined || location === "undefined" || location.startsWith("(eval")) {
             return undefined;
         }
-        location = location.slice(1, location.length - 1);
+        location = natives.String.slice.call(location, 1, location.length - 1);
         var components = location.split(":");
-        var fileName = components.slice(0, components.length - 4).join(':');
+        var fileName = natives.Array.slice.call(components, 0, components.length - 4).join(':');
         var lineNumber = components[components.length - 4];
         var columnNumber = components[components.length - 3];
         if (typeof lineNumber === 'string' && lineNumber.indexOf('iid') === 0) {
@@ -32,9 +53,9 @@
 
         if (isBrowser || isNode) {
             env.makeMap = function () {
-                return new Map();
-            },
-                env.setTimeout = setTimeout;
+                return new natives.Map.ref();
+            };
+            env.setTimeout = setTimeout;
         }
         if (isNode) {
             env.appendStringToFile = function (string, file) {
@@ -93,7 +114,7 @@
             var loggedEntriesMap = env.makeMap();
             window.logEntries = [];
             env.log = function (entry) {
-                window.logEntries.push(entry);
+                natives.Array.push.call(window.logEntries, entry);
             };
         }
 
@@ -106,7 +127,7 @@
             var hash = window.location.hash;
             var parameterArray = hash.split("#")[1].split("&");
             var parameterObject = {};
-            parameterArray.forEach(function (p) {
+            natives.Array.forEach.call(parameterArray, function (p) {
                 var nameAndValue = p.split('=');
                 parameterObject[nameAndValue[0]] = nameAndValue[1];
             });
@@ -200,7 +221,7 @@
                 }
                 xmlhttp.open("POST", "http://127.0.0.1:3000/sendEntries", true);
                 xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                var entries = encodeURIComponent(JSON.stringify(entriesToSend));
+                var entries = encodeURIComponent(natives.JSON.stringify.call(natives.JSON.ref, entriesToSend));
                 try {
                     xmlhttp.send("entries=" + entries);
                 } catch (e) {
@@ -218,16 +239,15 @@
             function shouldSendEntry(entry) {
                 if (entry in loggedEntriesMap)
                     return false;
-                else
-                    loggedEntriesMap[entry] = 1;
+                loggedEntriesMap[entry] = 1;
                 return true;
             };
 
             env.log = function (entry) {
-                if (!sendEntries || !shouldSendEntry(JSON.stringify(entry)))
+                if (!sendEntries || !shouldSendEntry(natives.JSON.stringify.call(natives.JSON.ref, entry)))
                     return;
 
-                entriesToSend.push(entry);
+                natives.Array.push.call(entriesToSend, entry);
                 if (entriesToSend.length >= numberOfEntriesToSendEachTime) {
                     sendLoggedEntries();
                 }
@@ -271,7 +291,7 @@
                     var arg = args[i];
                     if (isPreambleOption(arg)) {
                         var preamble = args[++i];
-                        preambles.push(preamble);
+                        natives.Array.push.call(preambles, preamble);
                     }
                 }
                 return preambles;
@@ -287,11 +307,11 @@
             loadPreambles(preambles);
             var loggedEntriesMap = env.makeMap();
             env.log = function (entry) {
-                var entryString = JSON.stringify(entry);
+                var entryString = natives.JSON.stringify.call(natives.JSON.ref, entry);
 
-                if (!(loggedEntriesMap.has(entryString))) {
+                if (!(natives.Map.has.call(loggedEntriesMap, entryString))) {
                     env.appendStringToFile(LOG_FILE_NAME, entryString + "\n");
-                    loggedEntriesMap.set(entryString, 1);
+                    natives.Map.set.call(loggedEntriesMap, entryString, 1);
                 }
             }
         }
@@ -337,6 +357,8 @@
             };
             TAJS_assert = function (a) {
             };
+            TAJS_invariant = function (a) {
+            };
             TAJS_newObject = function () {
                 return {};
             };
@@ -374,10 +396,13 @@
             };
             TAJS_record = function () {
 
-            }
+            };
             TAJS_restrictTo = function () {
 
-            }
+            };
+            TAJS_restrictToType = function (x) {
+                return x;
+            };
         },
         print: function () {
             print = function () {
@@ -433,7 +458,7 @@
                     throw new Error('Invalid ID: ' + ID);
                 }
                 var isNonPrimitive = typeof value === 'function' || (typeof value === 'object' && value !== null);
-                if (!isNonPrimitive || map.has(value)) {
+                if (!isNonPrimitive || natives.Map.has.call(map, value)) {
                     return;
                 }
                 map.set(value, ID);
@@ -497,14 +522,14 @@
                 'parseFloat',
                 'parseInt',
                 'unescape'];
-            commonGlobalNames.forEach(function (ID) {
+            natives.Array.forEach.call(commonGlobalNames, function (ID) {
                 var globalProperty = global[ID];
                 if (globalProperty) {
                     registerBuiltin(ID, globalProperty);
                 }
             });
             // add non-primitives from objects with constructor-like names, and their prototypes
-            map.forEach(function (ID, value) {
+            natives.Map.forEach.call(map, function (ID, value) {
                 if (typeof ID !== 'string') {
                     throw new Error('Invalid ID: ' + ID);
                 }
@@ -512,7 +537,7 @@
                 if (!isConstructorLike) {
                     return;
                 }
-                Object.getOwnPropertyNames(value).forEach(function (valuePropertyName) {
+                natives.Array.forEach.call(Object.getOwnPropertyNames(value), function (valuePropertyName) {
                     var propertyValueID = ID + "." + valuePropertyName;
                     if (isBanned(propertyValueID, value, valuePropertyName)) {
                         return;
@@ -522,7 +547,7 @@
                 });
                 var prototype = value.prototype;
                 if (prototype) {
-                    Object.getOwnPropertyNames(prototype).forEach(function (prototypePropertyName) {
+                    natives.Array.forEach.call(Object.getOwnPropertyNames(prototype), function (prototypePropertyName) {
                         var prototypePropertyValueID = ID + ".prototype." + prototypePropertyName;
                         if (isBanned(prototypePropertyValueID, prototype, prototypePropertyName)) {
                             return;
@@ -596,9 +621,25 @@
         function makeArrayValue(args, forbidStringAbstraction) {
             var result = [];
             for (var i = 0; i < args.length; i++)
-                result.push(makeValue(args[i], forbidStringAbstraction));
+                natives.Array.push.call(result, makeValue(args[i], forbidStringAbstraction));
             return result;
         }
+
+        this.getOutputAsString = function (from, to) {
+            var existingArrayToJSON = Array.prototype.toJSON;
+            Array.prototype.toJSON = null;
+
+            var entries = window.logEntries;
+            if (typeof from === 'number' && typeof to === 'number') {
+                entries = natives.Array.slice.call(entries, from, to);
+            }
+
+            var result = natives.JSON.stringify.call(natives.JSON.ref, entries);
+
+            Array.prototype.toJSON = existingArrayToJSON;
+
+            return result;
+        };
 
         this.read = function (iid, name, val, isGlobal, isScriptLocal) {
             logEntry(iid, {entryKind: "read-variable", name: makeValueForPropertyName(name), value: makeValue(val)});
@@ -640,11 +681,13 @@
 
             if ((f === nativeCall || f === nativeApply) && f) {
                 // if Function.prototype.apply/call is used, register an extra call entry
+                /*
                 var newF = base;
                 var newBase = args[0];
-                var newArgs = f === nativeCall ? Array.prototype.slice.call(args, 1, args.length) : args[1] || [];
+                var newArgs = f === nativeCall ? natives.Array.slice.call(args, 1, args.length) : args[1] || [];
                 var newFAllocationSite = allocationSites.get(newF);
                 this.invokeFunPre(iid, newF, newBase, newArgs, false, newBase !== undefined, newFAllocationSite ? newFAllocationSite.iid : undefined);
+                */
             } else if ((nativeSetTimeout === f || nativeSetInterval === f) && (typeof args[0] !== 'function')) {
                 var args2 = [];
                 for (var i = 0; i < args.length; i++) {
@@ -696,6 +739,9 @@
             logEntry(iid, {entryKind: 'dynamic-code', code: code + ''});
         };
 
+        /* called when loaded using the jalangi2 version that is used by tracifier  */
+        this.onText = function () {};
+
         function registerAllocation(iid, val, sid) {
             if (typeof sid == "undefined") {
                 sid = sandbox.sid;
@@ -726,4 +772,10 @@
     }
 
     sandbox.analysis = new MyAnalysis();
+
+    sandbox.analysis.startTag =
+        sandbox.analysis.endTag =
+            sandbox.analysis.documentType =
+                sandbox.analysis.removeInjectedScripts =
+                    function () {};
 })(J$);
