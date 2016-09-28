@@ -19,6 +19,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -48,7 +49,7 @@ public class Logger {
 
     private final List<Path> preambles;
 
-    private final Set<Path> onlyInclude;
+    private final Optional<Set<Path>> onlyInclude;
 
     private final int timeLimit;
 
@@ -59,7 +60,7 @@ public class Logger {
     /**
      * Produces a log file for the run of a main file in a directory
      */
-    public Logger(Path root, Path rootRelativeMain, List<Path> preambles, Set<Path> onlyInclude, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs, Metadata metadata) {
+    public Logger(Path root, Path rootRelativeMain, List<Path> preambles, Optional<Set<Path>> onlyInclude, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs, Metadata metadata) {
         if (rootRelativeMain.isAbsolute()) {
             throw new IllegalArgumentException("rootRelativeMain must be relative");
         }
@@ -92,13 +93,13 @@ public class Logger {
     /**
      * Produces a log file for the run of a single main file
      */
-    public static Logger makeLoggerForIndependentMainFile(Path main, List<Path> preambles, Set<Path> onlyInclude, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
+    public static Logger makeLoggerForIndependentMainFile(Path main, List<Path> preambles, Optional<Set<Path>> onlyInclude, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
         Path root = isolateInNewRoot(main);
         Path rootRelativeMain = root.relativize(root.resolve(main.getFileName()));
         return makeLoggerForDirectoryWithMainFile(root, rootRelativeMain, preambles, onlyInclude, timeLimit, environment, node, jalangilogger, jjs);
     }
 
-    public static Logger makeLoggerForDirectoryWithMainFile(Path root, Path rootRelativeMain, List<Path> preambles, Set<Path> onlyInclude, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
+    public static Logger makeLoggerForDirectoryWithMainFile(Path root, Path rootRelativeMain, List<Path> preambles, Optional<Set<Path>> onlyInclude, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
         return new Logger(root, rootRelativeMain, preambles, onlyInclude, timeLimit, environment, node, jalangilogger, jjs, initMeta(root, rootRelativeMain.getFileName()));
     }
 
@@ -238,9 +239,9 @@ public class Logger {
             case BROWSER:
                 cmd.add("--instrumentInline");
                 cmd.add("--inlineJalangi");
-                if (!onlyInclude.isEmpty()) {
+                if (onlyInclude.isPresent()) {
                     cmd.add("--inlineJalangi");
-                    List<String> stringPaths = onlyInclude.stream()
+                    List<String> stringPaths = onlyInclude.get().stream()
                             .map(p -> p.toAbsolutePath().toString())
                             .collect(Collectors.toList());
                     cmd.add(String.join(":" /* FIXME should be the system separator */, stringPaths));

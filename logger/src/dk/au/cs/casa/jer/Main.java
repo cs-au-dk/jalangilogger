@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -17,7 +17,7 @@ public class Main {
         Logger logger;
         List<Path> preambles = new ArrayList<>();
         int defaultTimeLimit = 60;
-        Set<Path> onlyInclude = new HashSet<>();
+        Optional<Set<Path>> onlyInclude = Optional.empty();
         if (args.length > 4) {
             Path mainFile = Paths.get(args[0]);
             Path node = Paths.get(args[1]);
