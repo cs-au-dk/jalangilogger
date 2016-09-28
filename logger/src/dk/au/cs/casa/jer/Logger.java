@@ -19,6 +19,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -47,28 +48,19 @@ public class Logger {
 
     private final List<Path> preambles;
 
-    private Metadata metadata;
+    private final Set<Path> onlyInclude;
 
     private final int timeLimit;
 
     private final Environment environment;
 
-    /**
-     * Produces a log file for the run of a single main file
-     */
-    public static Logger makeLoggerForIndependentMainFile(Path main, List<Path> preambles, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
-        Path root = isolateInNewRoot(main);
-        Path rootRelativeMain = root.relativize(root.resolve(main.getFileName()));
-        return makeLoggerForDirectoryWithMainFile(root, rootRelativeMain, preambles, timeLimit, environment, node, jalangilogger, jjs);
-    }
-    public static Logger makeLoggerForDirectoryWithMainFile(Path root, Path rootRelativeMain, List<Path> preambles, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
-        return new Logger(root, rootRelativeMain, preambles, timeLimit, environment, node, jalangilogger, jjs, initMeta(root, rootRelativeMain.getFileName()));
-    }
+    private Metadata metadata;
+
     /**
      * Produces a log file for the run of a main file in a directory
      */
-    public Logger(Path root, Path rootRelativeMain, List<Path> preambles, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs, Metadata metadata) {
-        if(rootRelativeMain.isAbsolute()){
+    public Logger(Path root, Path rootRelativeMain, List<Path> preambles, Set<Path> onlyInclude, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs, Metadata metadata) {
+        if (rootRelativeMain.isAbsolute()) {
             throw new IllegalArgumentException("rootRelativeMain must be relative");
         }
 
@@ -84,6 +76,7 @@ public class Logger {
         this.environment = environment;
         this.timeLimit = timeLimit;
         this.preambles = preambles;
+        this.onlyInclude = onlyInclude;
         this.root = root;
         this.node = node;
         this.jalangilogger = jalangilogger;
@@ -96,12 +89,17 @@ public class Logger {
         this.analysis = jalangilogger.resolve("logger/src/ValueLogger.js").toAbsolutePath();
     }
 
-    private void checkAbsolutePreambles(List<Path> preambles) {
-        for (Path preamble : preambles) {
-            if (!preamble.isAbsolute()) {
-                throw new IllegalArgumentException(format("Preambles must be absolute %s", preamble));
-            }
-        }
+    /**
+     * Produces a log file for the run of a single main file
+     */
+    public static Logger makeLoggerForIndependentMainFile(Path main, List<Path> preambles, Set<Path> onlyInclude, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
+        Path root = isolateInNewRoot(main);
+        Path rootRelativeMain = root.relativize(root.resolve(main.getFileName()));
+        return makeLoggerForDirectoryWithMainFile(root, rootRelativeMain, preambles, onlyInclude, timeLimit, environment, node, jalangilogger, jjs);
+    }
+
+    public static Logger makeLoggerForDirectoryWithMainFile(Path root, Path rootRelativeMain, List<Path> preambles, Set<Path> onlyInclude, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
+        return new Logger(root, rootRelativeMain, preambles, onlyInclude, timeLimit, environment, node, jalangilogger, jjs, initMeta(root, rootRelativeMain.getFileName()));
     }
 
     private static Path createTempDirectory() throws IOException {
@@ -169,6 +167,23 @@ public class Logger {
         return filtered;
     }
 
+    private static Metadata initMeta(Path root, Path main) {
+        Metadata metadata = new Metadata();
+        metadata.setTime(System.currentTimeMillis());
+        metadata.setRoot(main.toString());
+        String hash = HashUtil.shaDirOrFile(root);
+        metadata.setSha(hash);
+        return metadata;
+    }
+
+    private void checkAbsolutePreambles(List<Path> preambles) {
+        for (Path preamble : preambles) {
+            if (!preamble.isAbsolute()) {
+                throw new IllegalArgumentException(format("Preambles must be absolute %s", preamble));
+            }
+        }
+    }
+
     private Path addMeta(Path log, String result) throws IOException {
         this.metadata.setResult(result);
         Gson gson = new Gson();
@@ -181,22 +196,13 @@ public class Logger {
         return outputLog;
     }
 
-    private static Metadata initMeta(Path root, Path main) {
-        Metadata metadata = new Metadata();
-        metadata.setTime(System.currentTimeMillis());
-        metadata.setRoot(main.toString());
-        String hash = HashUtil.shaDirOrFile(root);
-        metadata.setSha(hash);
-        return metadata;
-    }
-
     private Process exec(Path pwd, String... cmd) throws IOException {
         return exec(pwd, false, cmd);
     }
 
     private Process exec(Path pwd, boolean redirectOutput, String... cmd) throws IOException {
         ProcessBuilder pb = new ProcessBuilder(cmd);
-        if(redirectOutput) {
+        if (redirectOutput) {
             pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
             pb.redirectError(ProcessBuilder.Redirect.INHERIT);
         }
@@ -232,6 +238,13 @@ public class Logger {
             case BROWSER:
                 cmd.add("--instrumentInline");
                 cmd.add("--inlineJalangi");
+                if (!onlyInclude.isEmpty()) {
+                    cmd.add("--inlineJalangi");
+                    List<String> stringPaths = onlyInclude.stream()
+                            .map(p -> p.toAbsolutePath().toString())
+                            .collect(Collectors.toList());
+                    cmd.add(String.join(":" /* FIXME should be the system separator */, stringPaths));
+                }
                 break;
             case NASHORN:
                 cmd.add("--inlineJalangiAndAnlysesInSingleJSFile");
@@ -265,6 +278,28 @@ public class Logger {
         return transformed;
     }
 
+    private Path createEmptyLog() {
+        try {
+            return File.createTempFile("NEW_LOG_FILE", ".log").toPath();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void addPreambles(List<String> cmd) {
+        for (Path preamble : preambles) {
+            cmd.add("--preamble");
+            cmd.add(preamble.toString());
+        }
+    }
+
+    public enum Environment {
+        NODE,
+        NODE_GLOBAL,
+        NASHORN,
+        BROWSER,
+        DRIVEN_BROWSER
+    }
 
     private class HTMLLogger {
 
@@ -336,6 +371,9 @@ public class Logger {
                         jalangilogger.toAbsolutePath().toString() + ":/jalangilogger"
                 ).build();
 
+        public DrivenHTMLLogger() {
+        }
+
         private void checkAllCanBeShared(DockerClient docker) throws Exception {
             final ContainerConfig containerConfig = ContainerConfig.builder()
                     .image("busybox:latest")
@@ -345,7 +383,7 @@ public class Logger {
             final ContainerCreation creation = docker.createContainer(containerConfig);
             String id = creation.id();
             docker.startContainer(id);
-            if(docker.waitContainer(id).statusCode() != 0) {
+            if (docker.waitContainer(id).statusCode() != 0) {
                 String msg = String.format("Check the docker configuration, both %s and %s need to be among the 'shared folders'", instrumentationDir.toAbsolutePath().toString(), jalangilogger.toAbsolutePath().toString());
                 throw new RuntimeException(msg);
             }
@@ -398,8 +436,6 @@ public class Logger {
             docker.close();
         }
 
-        public DrivenHTMLLogger() { }
-
         private boolean isDockerEnvironment() {
             return new File("/.dockerenv").exists();
         }
@@ -430,14 +466,12 @@ public class Logger {
             }
 
             try {
-                if(isDockerEnvironment()) {
+                if (isDockerEnvironment()) {
                     captureLog();
-                }
-                else {
+                } else {
                     runInDocker();
                 }
-            }
-            catch(Exception e) {
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
 
@@ -471,16 +505,16 @@ public class Logger {
 
         private String run() throws IOException {
             List<String> cmd;
-            switch (environment){
+            switch (environment) {
                 case NODE:
                 case NODE_GLOBAL:
-                Path direct_js = jalangilogger.resolve("node_modules/jalangi2").resolve("src/js/commands/direct.js").toAbsolutePath();
+                    Path direct_js = jalangilogger.resolve("node_modules/jalangi2").resolve("src/js/commands/direct.js").toAbsolutePath();
                     String script = direct_js.toString();
-                    Path commandLineMain = environment == Environment.NODE? rootRelativeMain: makeGlobalifier(rootRelativeMain);
-                    cmd = new ArrayList<>(Arrays.asList(new String[] {node.toString(), script, "--analysis", analysis.toString(), commandLineMain.toString()}));
+                    Path commandLineMain = environment == Environment.NODE ? rootRelativeMain : makeGlobalifier(rootRelativeMain);
+                    cmd = new ArrayList<>(Arrays.asList(new String[]{node.toString(), script, "--analysis", analysis.toString(), commandLineMain.toString()}));
                     break;
                 case NASHORN:
-                    cmd = new ArrayList<>(Arrays.asList(new String[] {jjs.toString(), rootRelativeMain.toString(), "--"}));
+                    cmd = new ArrayList<>(Arrays.asList(new String[]{jjs.toString(), rootRelativeMain.toString(), "--"}));
                     break;
                 default:
                     throw new UnsupportedOperationException("Unhandled environment kind: " + environment);
@@ -533,30 +567,7 @@ public class Logger {
         }
     }
 
-    private Path createEmptyLog() {
-        try {
-            return File.createTempFile("NEW_LOG_FILE", ".log").toPath();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void addPreambles(List<String> cmd) {
-        for (Path preamble : preambles) {
-            cmd.add("--preamble");
-            cmd.add(preamble.toString());
-        }
-    }
-
     private class InstrumentationSyntaxErrorException extends Exception {
 
-    }
-
-    public enum Environment {
-        NODE,
-        NODE_GLOBAL,
-        NASHORN,
-        BROWSER,
-        DRIVEN_BROWSER
     }
 }
