@@ -115,7 +115,7 @@ public class LogFileTransformer {
             SourcePosition sourcePosition = inlineJSOffsetSourceLocations.get(inlineScriptNumber);
             int newLineNumber = lineNumber + sourcePosition.line;
             int newColumnNumber = columnNumber + (lineNumber == 1 ? sourcePosition.column : 0);
-            obj.put("fileName", rootRelativeMain);
+            obj.put("fileName", rootRelativeMain.getFileName());
             obj.put("lineNumber", newLineNumber);
             obj.put("columnNumber", newColumnNumber);
         } else if (inlineHandlerNumber != -1) {
@@ -124,7 +124,10 @@ public class LogFileTransformer {
             obj = updateSourceLocationFromEventFileToSLInOriginalFile(eventHandlerFile, obj);
         } else if (fileNamePath.isAbsolute()) {
             final Path relativized = instrumentationRoot.relativize(fileNamePath.getParent()).resolve(correctedFileName);
-            obj.put("fileName", relativized.toString());
+            Path rootRelativeFile = root.resolve(relativized);
+            Path main = root.resolve(rootRelativeMain);
+            final Path mainRelativeFile = main.getParent().relativize(rootRelativeFile);
+            obj.put("fileName", mainRelativeFile.toString());
         }
         return obj;
     }
@@ -147,7 +150,7 @@ public class LogFileTransformer {
             }
             line = line.replace("&lt;", "<").replace("&gt;", ">");
             if ((!inScript || line.indexOf(lineToSearchForInOriginalFile) < scriptStartIndex) && line.contains(lineToSearchForInOriginalFile)) {
-                obj.put("fileName", rootRelativeMain);
+                obj.put("fileName", rootRelativeMain.getFileName());
                 obj.put("lineNumber", lineNumber);
                 obj.put("columnNumber", line.indexOf(lineToSearchForInOriginalFile) + obj.getInt("columnNumber"));
                 stringFound = true;

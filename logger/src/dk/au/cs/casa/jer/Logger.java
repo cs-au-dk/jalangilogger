@@ -57,8 +57,9 @@ public class Logger {
      * Produces a log file for the run of a single main file
      */
     public static Logger makeLoggerForIndependentMainFile(Path main, List<Path> preambles, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
-        Path newRoot = isolateInNewRoot(main);
-        return makeLoggerForDirectoryWithMainFile(newRoot, newRoot.relativize(main), preambles, timeLimit, environment, node, jalangilogger, jjs);
+        Path root = isolateInNewRoot(main);
+        Path rootRelativeMain = root.relativize(root.resolve(main.getFileName()));
+        return makeLoggerForDirectoryWithMainFile(root, rootRelativeMain, preambles, timeLimit, environment, node, jalangilogger, jjs);
     }
     public static Logger makeLoggerForDirectoryWithMainFile(Path root, Path rootRelativeMain, List<Path> preambles, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
         return new Logger(root, rootRelativeMain, preambles, timeLimit, environment, node, jalangilogger, jjs, initMeta(root, rootRelativeMain.getFileName()));
@@ -115,8 +116,7 @@ public class Logger {
     private static Path isolateInNewRoot(Path main) {
         try {
             Path newRoot = createTempDirectory();
-            Path isolated = newRoot.resolve(main);
-            Files.createDirectories(isolated.getParent());
+            Path isolated = newRoot.resolve(main.getFileName());
             Files.copy(main, isolated);
             return newRoot;
         } catch (IOException e) {
