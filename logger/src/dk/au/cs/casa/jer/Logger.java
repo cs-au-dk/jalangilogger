@@ -240,9 +240,10 @@ public class Logger {
                 cmd.add("--instrumentInline");
                 cmd.add("--inlineJalangi");
                 if (onlyInclude.isPresent()) {
-                    cmd.add("--inlineJalangi");
+                    cmd.add("--only_include");
                     List<String> stringPaths = onlyInclude.get().stream()
-                            .map(p -> p.toAbsolutePath().toString())
+                            .map(p -> root.relativize(p.toAbsolutePath()))
+                            .map(p -> p.toString())
                             .collect(Collectors.toList());
                     cmd.add(String.join(":" /* FIXME should be the system separator */, stringPaths));
                 }
