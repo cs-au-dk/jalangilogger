@@ -111,11 +111,11 @@ public class LogFileTransformer {
         final String correctedFileName = fileNamePath.getFileName().toString().replace("_orig_.js", ".js");
         int inlineScriptNumber = findInlineNumber("inline-(.*).js", correctedFileName);
         int inlineHandlerNumber = findInlineNumber("event-handler-(.*).js", correctedFileName);
-        if (inlineScriptNumber != -1 && inlineJSOffsetSourceLocations.containsKey(inlineScriptNumber /* ignore garbage files from previous runs */)) {
+        if (inlineScriptNumber != -1) {
             SourcePosition sourcePosition = inlineJSOffsetSourceLocations.get(inlineScriptNumber);
             int newLineNumber = lineNumber + sourcePosition.line;
             int newColumnNumber = columnNumber + (lineNumber == 1 ? sourcePosition.column : 0);
-            obj.put("fileName", rootRelativeMain.getFileName());
+            obj.put("fileName", rootRelativeMain.getFileName().toString());
             obj.put("lineNumber", newLineNumber);
             obj.put("columnNumber", newColumnNumber);
         } else if (inlineHandlerNumber != -1) {
@@ -150,7 +150,7 @@ public class LogFileTransformer {
             }
             line = line.replace("&lt;", "<").replace("&gt;", ">");
             if ((!inScript || line.indexOf(lineToSearchForInOriginalFile) < scriptStartIndex) && line.contains(lineToSearchForInOriginalFile)) {
-                obj.put("fileName", rootRelativeMain.getFileName());
+                obj.put("fileName", rootRelativeMain.getFileName().toString());
                 obj.put("lineNumber", lineNumber);
                 obj.put("columnNumber", line.indexOf(lineToSearchForInOriginalFile) + obj.getInt("columnNumber"));
                 stringFound = true;
