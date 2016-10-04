@@ -142,8 +142,8 @@ public class Logger {
         HTMLWrap.addAll(Arrays.asList(
                 "</body>",
                 "</html>"));
-        Path htmlWrapperRelative = root.resolve("jalangilogger_wrapper.html");
-        Path htmlWrapper = root.resolve(htmlWrapperRelative);
+        Path htmlWrapper = root.resolve("jalangilogger_wrapper.html");
+        Path htmlWrapperRelative = root.relativize(htmlWrapper);
         try {
             Files.write(htmlWrapper, HTMLWrap, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
         } catch (IOException e) {
