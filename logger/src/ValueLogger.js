@@ -316,7 +316,7 @@
 
         var allocationSites = env.makeMap/*<Object, {sid: SID, iid: IID}>*/();
         var builtins = makeBuiltinsMap();
-        var nextConstructorCallCallSiteIID = false;
+        var nextConstructorCallCallSiteGIID = false;
         var nativeCall = Function.prototype.call;
         var nativeApply = Function.prototype.apply;
         var nativeSetTimeout = typeof setTimeout === 'undefined' ? undefined : setTimeout;
@@ -480,7 +480,7 @@
             }
             var isUserConstructorCall = isConstructor && (functionIid !== undefined);
             if (isUserConstructorCall) {
-                nextConstructorCallCallSiteIID = iid;
+                nextConstructorCallCallSiteGIID = J$.getGlobalIID(iid);
             }
             env.log(iid, {entryKind: "call", function: p(f), base: p(base), arguments: pa(args)});
 
@@ -511,9 +511,10 @@
         };
 
         this.functionEnter = function (iid, f, dis, args) {
-            if (nextConstructorCallCallSiteIID) {
-                registerAllocation(nextConstructorCallCallSiteIID, dis);
-                nextConstructorCallCallSiteIID = undefined;
+            if (nextConstructorCallCallSiteGIID) {
+                var sid_iid = nextConstructorCallCallSiteGIID.split(":");
+                registerAllocation(sid_iid[1], dis, sid_iid[0]);
+                nextConstructorCallCallSiteGIID = undefined;
             }
             env.log(iid, {entryKind: "function-entry", base: p(dis), arguments: pa(args)});
         };
@@ -536,12 +537,15 @@
             env.log(iid, {entryKind: 'dynamic-code', code: code + ''});
         };
 
-        function registerAllocation(iid, val) {
+        function registerAllocation(iid, val, sid) {
+            if(typeof sid == "undefined") {
+                sid = sandbox.sid;
+            }
             if (typeof val === 'function' || typeof val === 'object') {
-                allocationSites.set(val, {sid: sandbox.sid, iid: iid});
+                allocationSites.set(val, {sid: sid, iid: iid});
             }
             if (typeof val === 'function') {
-                allocationSites.set(val.prototype, {sid:sandbox.sid, iid:iid});
+                allocationSites.set(val.prototype, {sid: sid, iid:iid});
             }
         }
 
