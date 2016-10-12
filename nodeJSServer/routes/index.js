@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 
-var consoleLines = [];
+var entries = [];
 
 var gracefulShutdown = function(server) {
                 server.close(function() {
@@ -17,7 +17,13 @@ router.post('/sendEntries', function(req, res, next) {
 	 console.log("Received entries")
 	 res.status(204); //No Content response
 	 res.setHeader('Access-Control-Allow-Origin', 'null');
-	 consoleLines.push(req.body["entries"]);
+     var entriesString = req.body["entries"];
+    try {
+        JSON.parse(entriesString).forEach(entry => entries.push(entry));
+    } catch (e) {
+        console.error(entriesString);
+        throw e;
+    }
   	 res.end();
 });
 
@@ -36,20 +42,21 @@ router.post('/printToFile', function(req, res, next){
     	else {
     	  var file;
           var USE_OLD_MODE = false;
-          if(USE_OLD_MODE){
+          if (USE_OLD_MODE){
             file = fs.createWriteStream("UnchangedLogFiles/" + relativeFilePath);
-          }else{
-            file = fs.createWriteStream("logfile");
+          } else {
+              file = fs.createWriteStream("logfile");
           }
-            file.on('error', function(err) { console.error(err) });
-			file.on('open', function (fd) {consoleLines.forEach(function(v) { 
-                file.write(v + '\n')
-            });  
-                file.end; consoleLines = [];
-                //kill server after printToFile!!!
-                req.socket.server.close();
-                gracefulShutdown(req.socket.server);            
+          file.on('error', function(err) { console.error(err) });
+          file.on('open', function (fd) {
+            entries.forEach(function(v) {
+              file.write(JSON.stringify(v) + '\n')
             });
+            file.end; entries = [];
+            //kill server after printToFile!!!
+            req.socket.server.close();
+            gracefulShutdown(req.socket.server);
+          });
 		}
 	});
 

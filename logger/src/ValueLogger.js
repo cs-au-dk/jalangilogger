@@ -131,7 +131,8 @@
                 }
                 xmlhttp.open("POST", "http://127.0.0.1:3000/sendEntries", true);
                 xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                xmlhttp.send("entries=" + entriesToSend);
+                var entries = encodeURIComponent(JSON.stringify(entriesToSend));
+                xmlhttp.send("entries=" + entries);
                 entriesToSend = [];
             }
             window.onkeyup = function (event) {
@@ -139,6 +140,15 @@
                     sendLoggedEntries(stopBrowserInteraction);
                 }
             };
+            var enableAutoClosingAfterLoading = false;
+            if(enableAutoClosingAfterLoading) {
+                window.onload = function() {
+                    setTimeout(function() {
+                        sendLoggedEntries(stopBrowserInteraction);
+                    }, 3000)
+                };
+            }
+
             function shouldSendEntry(entry) {
                 if (entry in loggedEntriesMap)
                     return false;
@@ -155,7 +165,7 @@
                 if (!sendEntries || !shouldSendEntry(JSON.stringify(entry)))
                     return;
 
-                entriesToSend.push(JSON.stringify(entry) + "\n");
+                entriesToSend.push(entry);
                 if (entriesToSend.length >= numberOfEntriesToSendEachTime) {
                     sendLoggedEntries();
                 }

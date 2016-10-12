@@ -142,8 +142,8 @@ public class Logger {
         HTMLWrap.addAll(Arrays.asList(
                 "</body>",
                 "</html>"));
-        Path htmlWrapperRelative = root.resolve("jalangilogger_wrapper.html");
-        Path htmlWrapper = root.resolve(htmlWrapperRelative);
+        Path htmlWrapper = root.resolve("jalangilogger_wrapper.html");
+        Path htmlWrapperRelative = root.relativize(htmlWrapper);
         try {
             Files.write(htmlWrapper, HTMLWrap, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
         } catch (IOException e) {
@@ -240,9 +240,10 @@ public class Logger {
                 cmd.add("--instrumentInline");
                 cmd.add("--inlineJalangi");
                 if (onlyInclude.isPresent()) {
-                    cmd.add("--inlineJalangi");
+                    cmd.add("--only_include");
                     List<String> stringPaths = onlyInclude.get().stream()
-                            .map(p -> p.toAbsolutePath().toString())
+                            .map(p -> root.relativize(p.toAbsolutePath()))
+                            .map(p -> p.toString())
                             .collect(Collectors.toList());
                     cmd.add(String.join(":" /* FIXME should be the system separator */, stringPaths));
                 }
