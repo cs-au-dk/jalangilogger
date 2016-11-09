@@ -8,13 +8,14 @@
         }
         location = location.slice(1, location.length - 1);
         var components = location.split(":");
-        var lineNumber = components[1];
-        var columnNumber = components[2];
+        var fileName = components.slice(0, components.length-2).join(':');
+        var lineNumber = components[components.length-2];
+        var columnNumber = components[components.length-1];
         if (typeof lineNumber === 'string' && lineNumber.indexOf('iid') === 0) {
             lineNumber = -1;
             columnNumber = -1;
         }
-        return {fileName: components[0], lineNumber: lineNumber, columnNumber: columnNumber};
+        return {fileName: fileName, lineNumber: lineNumber, columnNumber: columnNumber};
     }
 
     var env = (function setupMode() {
