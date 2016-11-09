@@ -8,9 +8,9 @@
         }
         location = location.slice(1, location.length - 1);
         var components = location.split(":");
-        var fileName = components.slice(0, components.length-2).join(':');
-        var lineNumber = components[components.length-2];
-        var columnNumber = components[components.length-1];
+        var fileName = components.slice(0, components.length-4).join(':');
+        var lineNumber = components[components.length-4];
+        var columnNumber = components[components.length-3];
         if (typeof lineNumber === 'string' && lineNumber.indexOf('iid') === 0) {
             lineNumber = -1;
             columnNumber = -1;
