@@ -4,49 +4,68 @@ import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 
 public class Metadata {
+
     JSONRep jsonRep;
+
     public Metadata(String jsonMetadata) {
         Gson gson = new Gson();
         jsonRep = gson.fromJson(jsonMetadata, JSONRep.class);
     }
 
-    public Metadata () {
-         jsonRep = new JSONRep();
-    }
-
-    public void setSha(String sha) {
-        jsonRep.sha = sha;
-    }
-
-    public void setTime(long time) {
-        jsonRep.time = time;
-    }
-
-    public void setRoot(String root) {
-        jsonRep.root = root;
-    }
-
-    public void setResult(String result) {
-        jsonRep.result = result;
+    public Metadata() {
+        jsonRep = new JSONRep();
     }
 
     public String getSha() {
         return jsonRep.sha;
     }
 
+    public void setSha(String sha) {
+        jsonRep.sha = sha;
+    }
+
     public long getTime() {
         return jsonRep.time;
+    }
+
+    public void setTime(long time) {
+        jsonRep.time = time;
     }
 
     public String getRoot() {
         return jsonRep.root;
     }
 
+    public void setRoot(String root) {
+        jsonRep.root = root;
+    }
+
     public String getResult() {
         return jsonRep.result;
     }
 
+    public void setResult(String result) {
+        jsonRep.result = result;
+    }
+
+    public String getEnvironment() {
+        return jsonRep.environment;
+    }
+
+    public void setEnvironment(String environment) {
+        jsonRep.environment = environment;
+    }
+
+    public String getEnvironmentVersion() {
+        return jsonRep.environmentVersion;
+    }
+
+    public void setEnvironmentVersion(String environmentVersion) {
+        jsonRep.environmentVersion = environmentVersion;
+    }
+
     private class JSONRep {
+
         @SerializedName("sha")
         public String sha;
 
@@ -58,5 +77,11 @@ public class Metadata {
 
         @SerializedName("result")
         public String result;
+
+        @SerializedName("environment")
+        public String environment;
+
+        @SerializedName("environmentVersion")
+        public String environmentVersion;
     }
 }

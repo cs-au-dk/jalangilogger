@@ -12,6 +12,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -100,7 +101,60 @@ public class Logger {
     }
 
     public static Logger makeLoggerForDirectoryWithMainFile(Path root, Path rootRelativeMain, List<Path> preambles, Optional<Set<Path>> onlyInclude, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
-        return new Logger(root, rootRelativeMain, preambles, onlyInclude, timeLimit, environment, node, jalangilogger, jjs, initMeta(root, rootRelativeMain.getFileName()));
+        return new Logger(root, rootRelativeMain, preambles, onlyInclude, timeLimit, environment, node, jalangilogger, jjs, initMeta(root, rootRelativeMain.getFileName(), environment, getEnvironmentVersion(environment, node)));
+    }
+
+    private static String getEnvironmentVersion(Environment environment, Path node) {
+        if (environment == Environment.NODE || environment == Environment.NODE_GLOBAL) {
+            String nodeVersion = getFirstStdOutLine(node, "--version");
+            return nodeVersion;
+        }
+        return "?"; // TODO support more version schemes
+    }
+
+    private static String getFirstStdOutLine(Path bin, String arg) {
+        boolean debug = false;
+        String[] cmd = new String[]{bin.toAbsolutePath().toString(), arg};
+        try {
+            if (debug) {
+                System.out.printf("Executing: %s\n", String.join(" ", cmd));
+            }
+            final ProcessBuilder pb = new ProcessBuilder(cmd);
+            Process process = pb.start();
+            BufferedReader brStd = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            BufferedReader brErr = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+
+            String lineStd;
+            String lineErr = null;
+            List<String> lineStds = new ArrayList<>();
+            List<String> lineErrs = new ArrayList<>();
+            while ((lineStd = brStd.readLine()) != null || (lineErr = brErr.readLine()) != null) {
+                PrintStream stream;
+                String line;
+                if (lineStd != null) {
+                    stream = System.out;
+                    line = lineStd;
+                    lineStds.add(lineStd);
+                } else {
+                    stream = System.err;
+                    line = lineErr;
+                    lineErrs.add(lineErr);
+                }
+                if (debug) {
+                    stream.printf("Process ::: %s%n", line);
+                }
+            }
+            process.waitFor();
+            if (process.exitValue() != 0) {
+                throw new RuntimeException("Process exited with exit code: " + process.exitValue());
+            }
+            if (lineStds.size() != 1) {
+                throw new RuntimeException("Unexpected output from process: " + lineStds);
+            }
+            return lineStds.get(0);
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static Path createTempDirectory() throws IOException {
@@ -168,12 +222,14 @@ public class Logger {
         return filtered;
     }
 
-    private static Metadata initMeta(Path root, Path main) {
+    private static Metadata initMeta(Path root, Path main, Environment environment, String environmentVersion) {
         Metadata metadata = new Metadata();
         metadata.setTime(System.currentTimeMillis());
         metadata.setRoot(main.toString());
         String hash = HashUtil.shaDirOrFile(root);
         metadata.setSha(hash);
+        metadata.setEnvironment(environment.toString());
+        metadata.setEnvironmentVersion(environmentVersion);
         return metadata;
     }
 
