@@ -295,14 +295,6 @@ public class Logger {
             case BROWSER:
                 cmd.add("--instrumentInline");
                 cmd.add("--inlineJalangi");
-                if (onlyInclude.isPresent()) {
-                    cmd.add("--only_include");
-                    List<String> stringPaths = onlyInclude.get().stream()
-                            .map(p -> root.relativize(p.toAbsolutePath()))
-                            .map(p -> p.toString())
-                            .collect(Collectors.toList());
-                    cmd.add(String.join(":" /* FIXME should be the system separator */, stringPaths));
-                }
                 break;
             case NASHORN:
                 cmd.add("--inlineJalangiAndAnlysesInSingleJSFile");
@@ -310,6 +302,14 @@ public class Logger {
             case NODE:
             case NODE_GLOBAL:
                 break;
+        }
+        if (onlyInclude.isPresent()) {
+            cmd.add("--only_include");
+            List<String> stringPaths = onlyInclude.get().stream()
+                    .map(p -> root.relativize(p.toAbsolutePath()))
+                    .map(p -> p.toString())
+                    .collect(Collectors.toList());
+            cmd.add(String.join(":" /* FIXME should be the system separator */, stringPaths));
         }
         cmd.add(in);
         Process exec = exec(root, cmd.toArray(new String[]{}));
