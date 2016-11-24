@@ -198,11 +198,12 @@ public class LogFileTransformer {
         String line = reader.readLine();
         int lineNumber = 0;
         while (line != null) {
-            Pattern pattern = Pattern.compile("<script.*>");
-            Matcher matcher = pattern.matcher(line);
+            Pattern internalPattern = Pattern.compile("<script.*>");
+            Pattern externalPattern = Pattern.compile("<script.*src=.*>");
 
-            if (matcher.find()) {
-                String match = matcher.group();
+            Matcher internalMatcher = internalPattern.matcher(line);
+            if (internalMatcher.find() && !externalPattern.matcher(line).matches()) {
+                String match = internalMatcher.group();
                 int columnNumber = match.length() + line.indexOf(match);
                 inlineJSOffsetSourceLocations.put(inlineJSOffsetSourceLocations.size(), new SourcePosition(lineNumber, columnNumber));
             }
