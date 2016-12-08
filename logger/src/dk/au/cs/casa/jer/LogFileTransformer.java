@@ -56,7 +56,6 @@ public class LogFileTransformer {
         String line = reader.readLine();
         while (line != null) {
             JSONObject readedJsonObj = new JSONObject(line);
-
             JSONObject JsonObjToBeWritten = iterateThroughJSONObjectAndChangeSL(readedJsonObj, inlineJSOffsetSourceLocations);
             linesToBeWritten.add(JsonObjToBeWritten.toString());
 
@@ -77,7 +76,7 @@ public class LogFileTransformer {
             String key = keys.next();
             Object next = obj.get(key);
 
-            if (next instanceof String) {
+            if (next instanceof String || next instanceof Number || next instanceof Boolean) {
                 //Do nothing.
             } else if (next instanceof JSONObject) {
                 JSONObject nextJSON = (JSONObject) next;

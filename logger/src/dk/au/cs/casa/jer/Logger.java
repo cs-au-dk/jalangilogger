@@ -212,6 +212,7 @@ public class Logger {
 
     private static Path filterLogFile(Path inputLog) throws IOException {
         List<String> lines = Files.readAllLines(inputLog).stream()
+                // TODO find the source of these special-cases!
                 .map(String::trim)
                 .filter(l -> !l.isEmpty())
                 .map(l -> l.startsWith(",") ? l.substring(1) : l)
@@ -230,6 +231,7 @@ public class Logger {
         metadata.setSha(hash);
         metadata.setEnvironment(environment.toString());
         metadata.setEnvironmentVersion(environmentVersion);
+        metadata.setLogVersion("0.1");
         return metadata;
     }
 

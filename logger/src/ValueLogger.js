@@ -1,5 +1,6 @@
 (function (sandbox) {
     var notifyExit = true;
+    var entryIndex = 0;
 
     function getFullLocation(sid, iid) {
         var location = sandbox.iidToLocation(sid, iid);
@@ -8,9 +9,9 @@
         }
         location = location.slice(1, location.length - 1);
         var components = location.split(":");
-        var fileName = components.slice(0, components.length-4).join(':');
-        var lineNumber = components[components.length-4];
-        var columnNumber = components[components.length-3];
+        var fileName = components.slice(0, components.length - 4).join(':');
+        var lineNumber = components[components.length - 4];
+        var columnNumber = components[components.length - 3];
         if (typeof lineNumber === 'string' && lineNumber.indexOf('iid') === 0) {
             lineNumber = -1;
             columnNumber = -1;
@@ -23,7 +24,7 @@
         var isNode = typeof require === 'function' && typeof require('fs') === 'object';
         var isNashorn = typeof Java === 'object' && typeof Java.type === 'function';
         var isBrowser = typeof window !== 'undefined';
-        var isProtractor = isBrowser && window.location.href.indexOf("file://")!=0
+        var isProtractor = isBrowser && window.location.href.indexOf("file://") != 0
 
         if (isBrowser || isNode) {
             env.makeMap = function () {
@@ -57,6 +58,7 @@
             env.arguments = (eval /* global */)(arguments);
             env.makeMap = function () {
                 var HashMap = Java.type("java.util.HashMap");
+                var ArrayList = Java.type("java.util.ArrayList");
                 var map = new HashMap();
                 return {
                     set: function (k, v) {
@@ -67,10 +69,16 @@
                     },
                     get: function (k) {
                         return map.get(k);
+                    },
+                    forEach: function (cb) {
+                        new ArrayList(map.entrySet()).forEach(function (e) {
+                            cb(e.getValue(), e.getKey())
+                        });
+                        return undefined;
                     }
                 };
             },
-                env.setTimeout = function(f){
+                env.setTimeout = function (f) {
                     var Timer = Java.type('java.util.Timer');
                     var timer = new Timer('jsEventLoop', false);
                     timer.schedule(f, 0);
@@ -80,11 +88,7 @@
         if (isBrowser && isProtractor) {
             var loggedEntriesMap = env.makeMap();
             window.logEntries = [];
-            env.log = function (iid, entry) {
-                entry.sourceLocation = getFullLocation(sandbox.sid, iid);
-                if (entry.sourceLocation == undefined) {
-                    return;
-                }
+            env.log = function (entry) {
                 window.logEntries.push(entry);
             };
         }
@@ -136,15 +140,16 @@
                 xmlhttp.send("entries=" + entries);
                 entriesToSend = [];
             }
+
             window.onkeyup = function (event) {
                 if (event.keyCode == 80) {
                     sendLoggedEntries(stopBrowserInteraction);
                 }
             };
             var enableAutoClosingAfterLoading = false;
-            if(enableAutoClosingAfterLoading) {
-                window.onload = function() {
-                    setTimeout(function() {
+            if (enableAutoClosingAfterLoading) {
+                window.onload = function () {
+                    setTimeout(function () {
                         sendLoggedEntries(stopBrowserInteraction);
                     }, 3000)
                 };
@@ -158,11 +163,7 @@
                 return true;
             };
 
-            env.log = function (iid, entry) {
-                entry.sourceLocation = getFullLocation(sandbox.sid, iid);
-                if (entry.sourceLocation == undefined) {
-                    return;
-                }
+            env.log = function (entry) {
                 if (!sendEntries || !shouldSendEntry(JSON.stringify(entry)))
                     return;
 
@@ -211,11 +212,7 @@
             var preambles = extractPreambles();
             loadPreambles(preambles);
             var loggedEntriesMap = env.makeMap();
-            env.log = function (iid, entry) {
-                entry.sourceLocation = getFullLocation(sandbox.sid, iid);
-                if (entry.sourceLocation == undefined) {
-                    return;
-                }
+            env.log = function (entry) {
                 var entryString = JSON.stringify(entry);
 
                 if (!(loggedEntriesMap.has(entryString))) {
@@ -298,6 +295,12 @@
             TAJS_newArray = function () {
                 return [];
             };
+            TAJS_load = function () {
+
+            };
+            TAJS_record = function () {
+
+            }
         },
         print: function () {
             print = function () {
@@ -322,6 +325,15 @@
     preambles.TAJS();
     preambles.print();
 
+    function logEntry(iid, entry) {
+        entry.sourceLocation = getFullLocation(sandbox.sid, iid);
+        if (entry.sourceLocation == undefined) {
+            return;
+        }
+        entry.index = entryIndex++;
+        entry.index = -1; // TODO support indexes on entries
+        env.log(entry);
+    }
 
     function MyAnalysis() {
 
@@ -339,52 +351,111 @@
         function makeBuiltinsMap() {
             var map = env.makeMap/*<Object, Path>*/();
 
-            function register(k, v) {
-                if (k === null
-                    || (typeof k !== 'object' && typeof k !== 'function')
-                    || map.has(k)) {
+            function registerBuiltin(ID, value) {
+                if (typeof ID !== 'string') {
+                    throw new Error('Invalid ID: ' + ID);
+                }
+                var isNonPrimitive = typeof value === 'function' || (typeof value === 'object' && value !== null);
+                if (!isNonPrimitive || map.has(value)) {
                     return;
                 }
-                map.set(k, v);
+                map.set(value, ID);
             }
 
-            var roots = {
-                Object: Object,
-                Function: Function,
-                Array: Array,
-                RegExp: RegExp,
-                Date: Date,
-                Math: Math,
-                'Object.prototype': Object.prototype,
-                'Function.prototype': Function.prototype,
-                'Array.prototype': Array.prototype,
-                'RegExp.prototype': RegExp,
-                'Date.prototype': Date.prototype
-            };
+
+            var bannedIDs = [
+                'Function.prototype.arguments',
+                'Function.prototype.callee'
+            ];
+
+            function isBanned(ID, obj, prop) {
+                var isGetter = Object.getOwnPropertyDescriptor(obj, prop).get !== undefined;
+                return bannedIDs.indexOf(ID) !== -1 || isGetter;
+            }
 
             var global = Function('return this')();
-            register(global, '<the global object>');
-            register(Object, 'Object');
-            register(Function, 'Function');
-            register(Array, 'Array');
-            register(RegExp, 'RegExp');
-            register(Date, 'Date');
-            register(Math, 'Math');
-            for (var prefix in roots) {
-                var root = roots[prefix];
-                Object.getOwnPropertyNames(root).forEach(
-                    function (propertyName) {
-                        if (prefix === "Function.prototype" && (propertyName === "arguments" || propertyName === "caller")) {
+            registerBuiltin('<the global object>', global);
+            // add selected globals
+            var commonGlobalNames = [
+                'Array',
+                'ArrayBuffer',
+                'Boolean',
+                'Buffer',
+                'DataView',
+                'Date',
+                'Error',
+                'Float32Array',
+                'Float64Array',
+                'Function',
+                'Int16Array',
+                'Int32Array',
+                'Int8Array',
+                'JSON',
+                'Map',
+                'Math',
+                'Number',
+                'Object',
+                'Promise',
+                'RangeError',
+                'ReferenceError',
+                'RegExp',
+                'Set',
+                'String',
+                'Symbol',
+                'SyntaxError',
+                'TypeError',
+                'URIError',
+                'Uint16Array',
+                'Uint32Array',
+                'Uint8Array',
+                'Uint8ClampedArray',
+                'WeakMap',
+                'WeakSet',
+                'console',
+                'decodeURI',
+                'decodeURIComponent',
+                'encodeURI',
+                'encodeURIComponent',
+                'escape',
+                'isFinite',
+                'parseFloat',
+                'parseInt',
+                'unescape'];
+            commonGlobalNames.forEach(function (ID) {
+                var globalProperty = global[ID];
+                if (globalProperty) {
+                    registerBuiltin(ID, globalProperty);
+                }
+            });
+            // add non-primitives from objects with constructor-like names, and their prototypes
+            map.forEach(function (ID, value) {
+                if (typeof ID !== 'string') {
+                    throw new Error('Invalid ID: ' + ID);
+                }
+                var isConstructorLike = typeof value === 'function' && ID[0] === ID[0].toUpperCase();
+                if (!isConstructorLike) {
+                    return;
+                }
+                Object.getOwnPropertyNames(value).forEach(function (valuePropertyName) {
+                    var propertyValueID = ID + "." + valuePropertyName;
+                    if (isBanned(propertyValueID, value, valuePropertyName)) {
+                        return;
+                    }
+                    var propertyValue = value[valuePropertyName];
+                    registerBuiltin(propertyValueID, propertyValue);
+                });
+                var prototype = value.prototype;
+                if (prototype) {
+                    Object.getOwnPropertyNames(prototype).forEach(function (prototypePropertyName) {
+                        var prototypePropertyValueID = ID + ".prototype." + prototypePropertyName;
+                        if (isBanned(prototypePropertyValueID, prototype, prototypePropertyName)) {
                             return;
                         }
-                        var propertyValue = root[propertyName];
-                        if (typeof propertyValue === 'function' || typeof propertyValue === 'object') {
-                            var path = prefix + '.' + propertyName; //console.log(prefix + "   " + propertyName)
-                            register(propertyValue, path);
-                        }
-                    }
-                );
-            }
+                        var prototypePropertyValue = prototype[prototypePropertyName];
+                        registerBuiltin(prototypePropertyValueID, prototypePropertyValue);
+                    });
+                }
+            });
             return map;
         }
 
@@ -404,20 +475,31 @@
             return {objectKind: "other"};
         }
 
-        function p(val) {
-            if (typeof val === "function" || (typeof val === "object" && val !== null)) {
-                return {valueKind: "abstract-object", value: describeObject(val)};
-            }
-            return {valueKind: "abstract-primitive", value: describePrimitive(val)};
+        function makeValueForObject(val) {
+            return {valueKind: "abstract-object", value: describeObject(val)};
         }
 
-        function describePrimitive(val) {
+        function makeValueForNonStringPrimitive(val) {
+            return {valueKind: "abstract-primitive", value: describeNonStringPrimitive(val)};
+        }
+
+        function makeValue(val) {
+            if (typeof val === "function" || (typeof val === "object" && val !== null)) {
+                return makeValueForObject(val);
+            }
+            if (typeof val === "string") {
+                return makeValueForString(val, true);
+            }
+            return makeValueForNonStringPrimitive(val);
+        }
+
+        function describeNonStringPrimitive(val) {
             var t = typeof val;
             if (t == "undefined" || t == "boolean" || val === null)
                 return val + '';
             if (t == "number") {
-                if (val == 0 || val == 1)
-                    return val + '';
+                if (-100 < val && val < 100 && (val % 1) == 0)
+                    return val + ''; // small integers
                 if (isNaN(val))
                     return "NUM_NAN";
                 if (!isFinite(val))
@@ -426,63 +508,40 @@
                     return "NUM_UINT";
                 return "NUM_OTHER";
             }
-            if (t == "string") {
-                if (val.indexOf(' ') === -1 && val.indexOf('\n') === -1 && val.indexOf('\t') === -1 && val !== '' /* avoid toNumber string-manipulations */) {
-                    var n = +val;
-                    if (val === 'NaN' || val.match("^-?[0-9]+[e][-|+][0-9]+$") /* exponentials should be logged to STR_OTHERNUM */) {
-                        return "STR_OTHERNUM";
-                    } else if (!isNaN(n) && val.match("^[0-9]+$")) {
-                        if (n >= 0 && n <= 4294967295 && (n % 1) == 0) {
-                            return "STR_UINT";
-                        }
-                        return "STR_OTHERNUM";
-                    } else if (val.match("^-?[0-9]*\\.[0-9]+[e][-|+][0-9]+$")
-                        || val.match("^-?[0-9]*\\.[0-9]+$")
-                        || val.match("^-?[0-9]+\\.[0-9]*$")
-                        || val.match("^-[0-9]+$")
-                        || val === "Infinity"
-                        || val === "-Infinity") {
-                        return "STR_OTHERNUM";
-                    }
-                }
-                if (val.match("^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*$") && !isReservedName(val)) {
-                    //identifiers - Not precise - See http://stackoverflow.com/questions/2008279/validate-a-javascript-function-name/2008444#2008444
-                    return "STR_IDENTIFIER";
-                }
-                if (val.match("^[_$a-zA-Z0-9\xA0-\uFFFF]*$")) {
-                    //identifierParts - Not precise - See http://stackoverflow.com/questions/2008279/validate-a-javascript-function-name/2008444#2008444
-                    return "STR_IDENTIFIERPARTS";
-                }
-                //if()
-                //return "STR_JSON" //TODO STR_JSON abstraction
-
-                return "STR_OTHER"
-
-            }
             return "???";
         }
 
-        function pa(args) {
+        function makeArrayValue(args) {
             var result = [];
             for (var i = 0; i < args.length; i++)
-                result.push(p(args[i]));
+                result.push(makeValue(args[i]));
             return result;
         }
 
         this.read = function (iid, name, val, isGlobal, isScriptLocal) {
-            env.log(iid, {entryKind: "read-variable", name: s(name), value: p(val)});
+            logEntry(iid, {entryKind: "read-variable", name: makeValueForPropertyName(name), value: makeValue(val)});
         };
 
         this.write = function (iid, name, val, lhs, isGlobal, isScriptLocal) {
-            env.log(iid, {entryKind: "write-variable", name: s(name), value: p(val)});
+            logEntry(iid, {entryKind: "write-variable", name: makeValueForPropertyName(name), value: makeValue(val)});
         };
 
         this.getField = function (iid, base, offset, val, isComputed, isOpAssign, isMethodCall) {
-            env.log(iid, {entryKind: "read-property", base: p(base), name: s(offset), value: p(val)});
+            logEntry(iid, {
+                entryKind: "read-property",
+                base: makeValue(base),
+                name: makeValueForPropertyName(offset),
+                value: makeValue(val)
+            });
         };
 
         this.putField = function (iid, base, offset, val, isComputed, isOpAssign) {
-            env.log(iid, {entryKind: "write-property", base: p(base), name: s(offset), value: p(val)});
+            logEntry(iid, {
+                entryKind: "write-property",
+                base: makeValue(base),
+                name: makeValueForPropertyName(offset),
+                value: makeValue(val)
+            });
         };
 
         this.invokeFunPre = function (iid, f, base, args, isConstructor, isMethod, functionIid) {
@@ -493,7 +552,12 @@
             if (isUserConstructorCall) {
                 nextConstructorCallCallSiteGIID = J$.getGlobalIID(iid);
             }
-            env.log(iid, {entryKind: "call", function: p(f), base: p(base), arguments: pa(args)});
+            logEntry(iid, {
+                entryKind: "call",
+                function: makeValue(f),
+                base: makeValue(base),
+                arguments: makeArrayValue(args)
+            });
 
             if ((f === nativeCall || f === nativeApply) && f) {
                 // if Function.prototype.apply/call is used, register an extra call entry
@@ -527,17 +591,17 @@
                 registerAllocation(sid_iid[1], dis, sid_iid[0]);
                 nextConstructorCallCallSiteGIID = undefined;
             }
-            env.log(iid, {entryKind: "function-entry", base: p(dis), arguments: pa(args)});
+            logEntry(iid, {entryKind: "function-entry", base: makeValue(dis), arguments: makeArrayValue(args)});
         };
 
         this.functionExit = function (iid, returnVal, wrappedExceptionVal) {
             var entry = {entryKind: "function-exit"};
             if (wrappedExceptionVal) {
-                entry.exceptionValue = p(wrappedExceptionVal.exception);
+                entry.exceptionValue = makeValue(wrappedExceptionVal.exception);
             } else {
-                entry.returnValue = p(returnVal);
+                entry.returnValue = makeValue(returnVal);
             }
-            env.log(iid, entry);
+            logEntry(iid, entry);
         };
 
         this.literal = function (iid, val, hasGetterSetter) {
@@ -545,79 +609,36 @@
         };
 
         this.instrumentCodePre = function (iid, code) {
-            env.log(iid, {entryKind: 'dynamic-code', code: code + ''});
+            logEntry(iid, {entryKind: 'dynamic-code', code: code + ''});
         };
 
         function registerAllocation(iid, val, sid) {
-            if(typeof sid == "undefined") {
+            if (typeof sid == "undefined") {
                 sid = sandbox.sid;
             }
             if (typeof val === 'function' || typeof val === 'object') {
                 allocationSites.set(val, {sid: sid, iid: iid});
             }
             if (typeof val === 'function') {
-                allocationSites.set(val.prototype, {sid: sid, iid:iid});
+                allocationSites.set(val.prototype, {sid: sid, iid: iid});
             }
         }
 
-        function s(val) {
+        function makeValueForString(val, allowAbstraction) {
+            var limit = 50;
+            if (allowAbstraction && val.length > limit) {
+                return {valueKind: "prefix-string", value: val.substring(0, limit)};
+            }
+            return {valueKind: "concrete-string", value: val};
+        }
+
+        function makeValueForPropertyName(val) {
             if (typeof val == "string") {
-                return {valueKind: "concrete-string", value: val};
+                return makeValueForString(val, false);
             } else {
-                return p(val);
+                return makeValue(val);
             }
         }
-
-        /**
-         * Checks whether the given string is a reserved name.
-         */
-        function isReservedName(s) {
-            if (s == "")
-                return false;
-            switch (s.charAt(0)) {
-                case 'a':
-                    return s == "abstract";
-                case 'b':
-                    return s == "boolean" || s == "break" || s == "byte";
-                case 'c':
-                    return s == "case" || s == "catch" || s == "char" || s == "class"
-                        || s == "const" || s == "continue";
-                case 'd':
-                    return s == "debugger" || s == "default" || s == "delete" || s == "do"
-                        || s == "double";
-                case 'e':
-                    return s == "else" || s == "enum" || s == "export" || s == "extends";
-                case 'f':
-                    return s == "false" || s == "final" || s == "finally" || s == "float"
-                        || s == "for" || s == "function";
-                case 'g':
-                    return s == "goto";
-                case 'i':
-                    return s == "if" || s == "implements" || s == "import" || s == "in"
-                        || s == "instanceof" || s == "int" || s == "interface";
-                case 'l':
-                    return s == "long";
-                case 'n':
-                    return s == "native" || s == "new" || s == "null";
-                case 'p':
-                    return s == "package" || s == "private" || s == "protected" || s == "public";
-                case 'r':
-                    return s == "return";
-                case 's':
-                    return s == "short" || s == "static" || s == "super" || s == "switch"
-                        || s == "synchronized";
-                case 't':
-                    return s == "this" || s == "throw" || s == "throws" || s == "transient"
-                        || s == "true" || s == "try" || s == "typeof";
-                case 'v':
-                    return s == "var" || s == "void" || s == "volatile";
-                case 'w':
-                    return s == "while" || s == "with";
-                default:
-                    return false;
-            }
-        }
-
     }
 
     sandbox.analysis = new MyAnalysis();

@@ -5,11 +5,13 @@ import java.util.List;
 public class CallEntry extends Entry {
 
     private final ValueDescription function;
+
     private final ValueDescription base;
+
     private final List<ValueDescription> arguments;
 
-    public CallEntry(SourceLocation sourceLocation, ValueDescription function, ValueDescription base, List<ValueDescription> arguments) {
-        super(sourceLocation);
+    public CallEntry(int index, SourceLocation sourceLocation, ValueDescription function, ValueDescription base, List<ValueDescription> arguments) {
+        super(index, sourceLocation);
         this.function = function;
         this.base = base;
         this.arguments = arguments;
@@ -18,13 +20,13 @@ public class CallEntry extends Entry {
     public ValueDescription getFunction() {
         return function;
     }
-    
-    public ValueDescription getBase(){
-    	return base;
+
+    public ValueDescription getBase() {
+        return base;
     }
-    
-    public List<ValueDescription> getArguments(){
-    	return arguments;
+
+    public List<ValueDescription> getArguments() {
+        return arguments;
     }
 
     @Override
@@ -33,7 +35,7 @@ public class CallEntry extends Entry {
     }
 
     @Override
-    public String toString () {
+    public String toString() {
         return "CallEntry{" +
                 "function=" + function +
                 ", base=" + base +

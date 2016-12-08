@@ -15,13 +15,16 @@ import dk.au.cs.casa.jer.entries.IEntry;
 import dk.au.cs.casa.jer.entries.ObjectDescription;
 import dk.au.cs.casa.jer.entries.OtherDescription;
 import dk.au.cs.casa.jer.entries.OtherObjectDescription;
+import dk.au.cs.casa.jer.entries.PrefixStringDescription;
 import dk.au.cs.casa.jer.entries.SourceLocation;
 import dk.au.cs.casa.jer.entries.ValueDescription;
 import dk.au.cs.casa.jer.entries.VariableOrPropertyEntry;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
-import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -44,11 +47,12 @@ public class LogParser {
         GsonBuilder builder = new GsonBuilder();
         builder.registerTypeAdapter(VariableOrPropertyEntry.class, (JsonDeserializer<VariableOrPropertyEntry>) (json, typeOfT, context) -> {
             JsonObject obj = json.getAsJsonObject();
+            int index = obj.has("index") ? context.deserialize(obj.get("index"), Integer.class) : -1;
             SourceLocation sourceLocation = context.deserialize(obj.get("sourceLocation"), SourceLocation.class);
             ValueDescription name = context.deserialize(obj.get("name"), ValueDescription.class);
             ValueDescription base = context.deserialize(obj.get("base"), ValueDescription.class);
             ValueDescription value = context.deserialize(obj.get("value"), ValueDescription.class);
-            return new VariableOrPropertyEntry(sourceLocation, name, base, value);
+            return new VariableOrPropertyEntry(index, sourceLocation, name, base, value);
         });
         builder.registerTypeAdapter(SourceLocation.class, (JsonDeserializer<SourceLocation>) (json, typeOfT, context) -> {
             JsonObject obj = json.getAsJsonObject();
@@ -60,6 +64,8 @@ public class LogParser {
             switch (valueKind) {
                 case "concrete-string":
                     return new ConcreteStringDescription(obj.get("value").getAsString());
+                case "prefix-string":
+                    return new PrefixStringDescription(obj.get("value").getAsString());
                 case "abstract-primitive":
                     return new OtherDescription(obj.get("value").getAsString());
                 case "abstract-object":
@@ -92,7 +98,7 @@ public class LogParser {
                         case "write-variable":
                         case "read-property":
                         case "write-property":
-                                                    return ctx.deserialize(json, VariableOrPropertyEntry.class);
+                            return ctx.deserialize(json, VariableOrPropertyEntry.class);
                         case "function-exit":
                             return ctx.deserialize(json, FunctionExitEntry.class);
                         case "function-entry":

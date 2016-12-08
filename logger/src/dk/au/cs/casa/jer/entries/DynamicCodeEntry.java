@@ -3,8 +3,8 @@ package dk.au.cs.casa.jer.entries;
 public class DynamicCodeEntry extends Entry {
     private final String source;
 
-    DynamicCodeEntry (SourceLocation sourceLocation, String source) {
-        super(sourceLocation);
+    DynamicCodeEntry (int index, SourceLocation sourceLocation, String source) {
+        super(index, sourceLocation);
         this.source = source;
     }
 

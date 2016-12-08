@@ -64,6 +64,14 @@ public class Metadata {
         jsonRep.environmentVersion = environmentVersion;
     }
 
+    public String getLogVersion() {
+        return jsonRep.logVersion;
+    }
+
+    public void setLogVersion(String logVersion) {
+        jsonRep.logVersion = logVersion;
+    }
+
     private class JSONRep {
 
         @SerializedName("sha")
@@ -83,5 +91,8 @@ public class Metadata {
 
         @SerializedName("environmentVersion")
         public String environmentVersion;
+
+        @SerializedName("logVersion")
+        public String logVersion;
     }
 }
