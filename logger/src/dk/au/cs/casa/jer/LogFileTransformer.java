@@ -49,8 +49,8 @@ public class LogFileTransformer {
                 JSONObject transformedJSON = iterateThroughJSONObjectAndChangeSL(untransformedJSON, inlineJSOffsetSourceLocations);
                 String transformedLine = transformedJSON.toString();
                 return transformedLine;
-            } catch (RuntimeException e) {
-                throw new RuntimeException("Something went wrong during transformation of line: " + line);
+            } catch (Exception e) {
+                throw new RuntimeException("Something went wrong during transformation of line: " + line, e);
             }
         }).collect(Collectors.toList());
     }
