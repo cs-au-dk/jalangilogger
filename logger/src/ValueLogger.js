@@ -483,12 +483,12 @@
             return {valueKind: "abstract-primitive", value: describeNonStringPrimitive(val)};
         }
 
-        function makeValue(val) {
+        function makeValue(val, forbidStringAbstraction) {
             if (typeof val === "function" || (typeof val === "object" && val !== null)) {
                 return makeValueForObject(val);
             }
             if (typeof val === "string") {
-                return makeValueForString(val, true);
+                return makeValueForString(val, forbidStringAbstraction);
             }
             return makeValueForNonStringPrimitive(val);
         }
@@ -511,10 +511,10 @@
             return "???";
         }
 
-        function makeArrayValue(args) {
+        function makeArrayValue(args, forbidStringAbstraction) {
             var result = [];
             for (var i = 0; i < args.length; i++)
-                result.push(makeValue(args[i]));
+                result.push(makeValue(args[i], forbidStringAbstraction));
             return result;
         }
 
@@ -556,7 +556,7 @@
                 entryKind: "call",
                 function: makeValue(f),
                 base: makeValue(base),
-                arguments: makeArrayValue(args)
+                arguments: makeArrayValue(args, f === eval || f === Function /* forbid abstraction of strings to the dynamic code functions: Function & eval */)
             });
 
             if ((f === nativeCall || f === nativeApply) && f) {
@@ -624,9 +624,9 @@
             }
         }
 
-        function makeValueForString(val, allowAbstraction) {
+        function makeValueForString(val, forbidAbstraction) {
             var limit = 50;
-            if (allowAbstraction && val.length > limit) {
+            if (!forbidAbstraction && val.length > limit) {
                 return {valueKind: "prefix-string", value: val.substring(0, limit)};
             }
             return {valueKind: "concrete-string", value: val};
@@ -634,7 +634,7 @@
 
         function makeValueForPropertyName(val) {
             if (typeof val == "string") {
-                return makeValueForString(val, false);
+                return makeValueForString(val, true);
             } else {
                 return makeValue(val);
             }
