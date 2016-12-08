@@ -2,7 +2,9 @@ package dk.au.cs.casa.jer;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dk.au.cs.casa.jer.entries.AllocationSiteObjectDescription;
 import dk.au.cs.casa.jer.entries.BuiltinObjectDescription;
@@ -20,120 +22,132 @@ import dk.au.cs.casa.jer.entries.SourceLocation;
 import dk.au.cs.casa.jer.entries.ValueDescription;
 import dk.au.cs.casa.jer.entries.VariableOrPropertyEntry;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 
 /**
  * Parser for an entire ValueLogger log file.
  */
 public class LogParser {
 
-    private final URL logFile;
+    private final RawLogFile rawLogFile;
 
     private Set<IEntry> entries = null;
 
     private Metadata metadata = null;
 
-    public LogParser(URL logFile) {
-        this.logFile = logFile;
+    public LogParser(RawLogFile rawLogFile) {
+        this.rawLogFile = rawLogFile;
     }
 
     private static Gson makeGsonParser() {
+        Map<String, Object> cache = new HashMap<>();
         GsonBuilder builder = new GsonBuilder();
-        builder.registerTypeAdapter(VariableOrPropertyEntry.class, (JsonDeserializer<VariableOrPropertyEntry>) (json, typeOfT, context) -> {
-            JsonObject obj = json.getAsJsonObject();
-            int index = obj.has("index") ? context.deserialize(obj.get("index"), Integer.class) : -1;
-            SourceLocation sourceLocation = context.deserialize(obj.get("sourceLocation"), SourceLocation.class);
-            ValueDescription name = context.deserialize(obj.get("name"), ValueDescription.class);
-            ValueDescription base = context.deserialize(obj.get("base"), ValueDescription.class);
-            ValueDescription value = context.deserialize(obj.get("value"), ValueDescription.class);
-            return new VariableOrPropertyEntry(index, sourceLocation, name, base, value);
-        });
-        builder.registerTypeAdapter(SourceLocation.class, (JsonDeserializer<SourceLocation>) (json, typeOfT, context) -> {
-            JsonObject obj = json.getAsJsonObject();
-            return new SourceLocation(obj.get("lineNumber").getAsInt(), obj.get("columnNumber").getAsInt(), getFileName(obj));
-        });
-        builder.registerTypeAdapter(ValueDescription.class, (JsonDeserializer<ValueDescription>) (json, typeOfT, context) -> {
-            JsonObject obj = json.getAsJsonObject();
-            String valueKind = obj.get("valueKind").getAsString();
-            switch (valueKind) {
-                case "concrete-string":
-                    return new ConcreteStringDescription(obj.get("value").getAsString());
-                case "prefix-string":
-                    return new PrefixStringDescription(obj.get("value").getAsString());
-                case "abstract-primitive":
-                    return new OtherDescription(obj.get("value").getAsString());
-                case "abstract-object":
-                    return context.deserialize(obj.get("value"), ObjectDescription.class);
-                default:
-                    throw new RuntimeException("Unhandled case: " + valueKind);
-            }
-        });
-        builder.registerTypeAdapter(ObjectDescription.class, (JsonDeserializer<ObjectDescription>) (json, typeOfT, ctx) -> {
-            JsonObject obj = json.getAsJsonObject();
-            String objectKind = obj.get("objectKind").getAsString();
-            switch (objectKind) {
-                case "allocation-site":
-                    return ctx.deserialize(obj, AllocationSiteObjectDescription.class);
-                case "builtin":
-                    return ctx.deserialize(obj, BuiltinObjectDescription.class);
-                case "other":
-                    return ctx.deserialize(obj, OtherObjectDescription.class);
-                default:
-                    throw new RuntimeException("Unhandled case: " + objectKind);
-            }
-        });
-
-        builder.registerTypeAdapter(IEntry.class, (JsonDeserializer<IEntry>) (json, typeOfT, ctx) -> {
-                    String entryKind = json.getAsJsonObject().get("entryKind").getAsString();
-                    switch (entryKind) {
-                        case "dynamic-code":
-                            return ctx.deserialize(json, DynamicCodeEntry.class);
-                        case "read-variable":
-                        case "write-variable":
-                        case "read-property":
-                        case "write-property":
-                            return ctx.deserialize(json, VariableOrPropertyEntry.class);
-                        case "function-exit":
-                            return ctx.deserialize(json, FunctionExitEntry.class);
-                        case "function-entry":
-                            return ctx.deserialize(json, FunctionEntry.class);
-                        case "call":
-                            return ctx.deserialize(json, CallEntry.class);
-                        default:
-                            throw new RuntimeException("Unhandled case: " + entryKind);
-                    }
-                }
-        );
+        builder.registerTypeAdapter(VariableOrPropertyEntry.class, (JsonDeserializer<VariableOrPropertyEntry>) (json, typeOfT, context) ->
+                parseJsonWithCache(json, context, LogParser::makeVariableOrPropertyFromJson, cache));
+        builder.registerTypeAdapter(SourceLocation.class, (JsonDeserializer<SourceLocation>) (json, typeOfT, context) ->
+                parseJsonWithCache(json, context, LogParser::makeSourceLocationFromJson, cache));
+        builder.registerTypeAdapter(ValueDescription.class, (JsonDeserializer<ValueDescription>) (json, typeOfT, context) ->
+                parseJsonWithCache(json, context, LogParser::makeValueDescriptionFromJSON, cache));
+        builder.registerTypeAdapter(ObjectDescription.class, (JsonDeserializer<ObjectDescription>) (json, typeOfT, context) ->
+                parseJsonWithCache(json, context, LogParser::makeObjectDescriptionFromJson, cache));
+        builder.registerTypeAdapter(IEntry.class, (JsonDeserializer<IEntry>) (json, typeOfT, context) ->
+                parseJsonWithCache(json, context, LogParser::makeIEntryFromJson, cache));
         return builder.create();
     }
 
-    private static Set<IEntry> parseEntries(URL logFile) {
-        Gson gson = makeGsonParser();
-        String line = null;
+    private static IEntry makeIEntryFromJson(JsonElement json, JsonDeserializationContext ctx) {
+        String entryKind = json.getAsJsonObject().get("entryKind").getAsString();
+        switch (entryKind) {
+            case "dynamic-code":
+                return ctx.deserialize(json, DynamicCodeEntry.class);
+            case "read-variable":
+            case "write-variable":
+            case "read-property":
+            case "write-property":
+                return ctx.deserialize(json, VariableOrPropertyEntry.class);
+            case "function-exit":
+                return ctx.deserialize(json, FunctionExitEntry.class);
+            case "function-entry":
+                return ctx.deserialize(json, FunctionEntry.class);
+            case "call":
+                return ctx.deserialize(json, CallEntry.class);
+            default:
+                throw new RuntimeException("Unhandled case: " + entryKind);
+        }
+    }
+
+    private static ObjectDescription makeObjectDescriptionFromJson(JsonElement json, JsonDeserializationContext ctx) {
+        JsonObject obj = json.getAsJsonObject();
+        String objectKind = obj.get("objectKind").getAsString();
+        switch (objectKind) {
+            case "allocation-site":
+                return ctx.deserialize(obj, AllocationSiteObjectDescription.class);
+            case "builtin":
+                return ctx.deserialize(obj, BuiltinObjectDescription.class);
+            case "other":
+                return ctx.deserialize(obj, OtherObjectDescription.class);
+            default:
+                throw new RuntimeException("Unhandled case: " + objectKind);
+        }
+    }
+
+    private static VariableOrPropertyEntry makeVariableOrPropertyFromJson(JsonElement json, JsonDeserializationContext context) {
+        JsonObject obj = json.getAsJsonObject();
+        int index = obj.has("index") ? context.deserialize(obj.get("index"), Integer.class) : -1;
+        SourceLocation sourceLocation = context.deserialize(obj.get("sourceLocation"), SourceLocation.class);
+        ValueDescription name = context.deserialize(obj.get("name"), ValueDescription.class);
+        ValueDescription base = context.deserialize(obj.get("base"), ValueDescription.class);
+        ValueDescription value = context.deserialize(obj.get("value"), ValueDescription.class);
+        return new VariableOrPropertyEntry(index, sourceLocation, name, base, value);
+    }
+
+    private static SourceLocation makeSourceLocationFromJson(JsonElement json, JsonDeserializationContext context) {
+        JsonObject obj = json.getAsJsonObject();
+        return new SourceLocation(obj.get("lineNumber").getAsInt(), obj.get("columnNumber").getAsInt(), getFileName(obj));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T parseJsonWithCache(JsonElement json, JsonDeserializationContext context, BiFunction<JsonElement, JsonDeserializationContext, T> makeValueDescriptionFromJSON, Map<String, Object> cache) {
+        String rawString = json.toString();
+        if (!cache.containsKey(rawString)) {
+            return makeValueDescriptionFromJSON.apply(json, context);
+        }
+        return (T) cache.get(rawString);
+    }
+
+    private static ValueDescription makeValueDescriptionFromJSON(JsonElement json, JsonDeserializationContext context) {
+        JsonObject obj = json.getAsJsonObject();
+        String valueKind = obj.get("valueKind").getAsString();
+        switch (valueKind) {
+            case "concrete-string":
+                return new ConcreteStringDescription(obj.get("value").getAsString());
+            case "prefix-string":
+                return new PrefixStringDescription(obj.get("value").getAsString());
+            case "abstract-primitive":
+                return new OtherDescription(obj.get("value").getAsString());
+            case "abstract-object":
+                return context.deserialize(obj.get("value"), ObjectDescription.class);
+            default:
+                throw new RuntimeException("Unhandled case: " + valueKind);
+        }
+    }
+
+    private static Set<IEntry> parseEntries(List<String> logFileEntries) {
         Set<IEntry> entries = new HashSet<>();
-        try (InputStream iss = logFile.openStream(); BufferedReader br = new BufferedReader(new InputStreamReader(iss))) {
-            //First line contains the metadata
-            br.readLine();
-            while ((line = br.readLine()) != null) {
-                try {
-                    IEntry e = gson.fromJson(line, IEntry.class);
-                    if (e != null) {
-                        entries.add(e);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    System.err.println(String.format("Error during parsing of line: %n%s", line));
-                }
+        Gson gson = makeGsonParser();
+        for (String line : logFileEntries) {
+            try {
+                IEntry e = gson.fromJson(line, IEntry.class);
+                entries.add(e);
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.err.println(String.format("Error during parsing of line: %n%s", line));
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(String.format("Error during parsing of line: %n%s", line), e);
         }
         return entries;
     }
@@ -144,25 +158,18 @@ public class LogParser {
 
     public Set<IEntry> getEntries() {
         if (entries == null) {
-            entries = parseEntries(logFile);
+            List<String> linesWithoutMeta = rawLogFile.getLines().subList(1, rawLogFile.getLines().size());
+            entries = parseEntries(linesWithoutMeta);
         }
         return entries;
     }
 
     public Metadata getMetadata() {
         if (metadata == null) {
-            metadata = parseMetadata(logFile);
+            //First line contains the metadata
+            metadata = new Metadata(rawLogFile.getLines().get(0));
         }
         return metadata;
     }
-
-    private Metadata parseMetadata(URL logFile) {
-
-        try (InputStream iss = logFile.openStream(); BufferedReader br = new BufferedReader(new InputStreamReader(iss))) {
-            //First line contains the metadata
-            return new Metadata(br.readLine());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }
+

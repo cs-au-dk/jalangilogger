@@ -210,7 +210,7 @@ public class Logger {
         return rootRelativeMain.getFileName().toString().endsWith(".js");
     }
 
-    private static Path filterLogFile(Path inputLog) throws IOException {
+    private static List<String> filterLogFile(Path inputLog) throws IOException {
         List<String> lines = Files.readAllLines(inputLog).stream()
                 // TODO find the source of these special-cases!
                 .map(String::trim)
@@ -218,9 +218,7 @@ public class Logger {
                 .map(l -> l.startsWith(",") ? l.substring(1) : l)
                 .distinct()
                 .collect(Collectors.toList());
-        Path filtered = inputLog.getParent().resolve(inputLog.getFileName().toString() + ".filtered");
-        Files.write(filtered, lines);
-        return filtered;
+        return lines;
     }
 
     private static Metadata initMeta(Path root, Path main, Environment environment, String environmentVersion) {
@@ -243,16 +241,10 @@ public class Logger {
         }
     }
 
-    private Path addMeta(Path log, String result) throws IOException {
+    private String makeMeta(String result) {
         this.metadata.setResult(result);
         Gson gson = new Gson();
-        String metaJson = gson.toJson(this.metadata.jsonRep);
-
-        List<String> lines = Files.readAllLines(log);
-        lines.add(0, metaJson);
-        Path outputLog = log.getParent().resolve(log.getFileName().toString() + ".metaed");
-        Files.write(outputLog, lines);
-        return outputLog;
+        return gson.toJson(this.metadata.jsonRep);
     }
 
     private Process exec(Path pwd, String... cmd) throws IOException {
@@ -275,7 +267,7 @@ public class Logger {
         return p;
     }
 
-    public Path log() throws IOException {
+    public RawLogFile log() throws IOException {
         if (environment == Environment.NASHORN || environment == Environment.NODE || environment == Environment.NODE_GLOBAL) {
             return new JSLogger(environment).log();
         } else if (environment == Environment.BROWSER) {
@@ -332,17 +324,13 @@ public class Logger {
         }
     }
 
-    private Path postProcessLog(Path logFile) throws IOException {
-        Path filtered = filterLogFile(logFile);
-        Path transformed = new LogFileTransformer(root, instrumentationDir, rootRelativeMain).transform(filtered);
-        return transformed;
-    }
-
-    private Path createEmptyLog() {
+    private List<String> postProcessLog(Path logFile) {
         try {
-            return File.createTempFile("NEW_LOG_FILE", ".log").toPath();
+            List<String> filtered = filterLogFile(logFile);
+            List<String> transformed = new LogFileTransformer(root, instrumentationDir, rootRelativeMain).transform(filtered);
+            return transformed;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Could not post-process the log file", e);
         }
     }
 
@@ -351,6 +339,20 @@ public class Logger {
             cmd.add("--preamble");
             cmd.add(preamble.toString());
         }
+    }
+
+    private RawLogFile makeSyntaxErrorLog() throws IOException {
+        final List<String> lines = new ArrayList<>();
+        lines.add(makeMeta("syntax-error"));
+        lines.addAll(new ArrayList<>());
+        return new RawLogFile(lines);
+    }
+
+    private RawLogFile makeRawLogFile(String status, Path unprocessedlogFileLocation) {
+        final List<String> lines = new ArrayList<>();
+        lines.add(makeMeta(status));
+        lines.addAll(postProcessLog(unprocessedlogFileLocation));
+        return new RawLogFile(lines);
     }
 
     public enum Environment {
@@ -392,13 +394,11 @@ public class Logger {
             return p;
         }
 
-        public Path log() throws IOException {
+        public RawLogFile log() throws IOException {
             try {
                 instrument(Environment.BROWSER);
             } catch (InstrumentationSyntaxErrorException e) {
-                Path log = createEmptyLog();
-                Path logWithMeta = addMeta(log, "syntax error");
-                return logWithMeta;
+                return makeSyntaxErrorLog();
             }
             Process server = startServer();
             try {
@@ -411,9 +411,7 @@ public class Logger {
             } finally {
                 //stopServer(server);
             }
-            Path log = postProcessLog(serverDir.resolve("logfile"));
-            Path logWithMeta = addMeta(log, "success"); // XXX we do not know that?!
-            return logWithMeta;
+            return makeRawLogFile("success", serverDir.resolve("logfile")); // XXX we do not know that?!
         }
 
         private void waitForEnter() throws IOException {
@@ -516,13 +514,11 @@ public class Logger {
             }
         }
 
-        public Path log() throws IOException {
+        public RawLogFile log() throws IOException {
             try {
                 instrument(Environment.DRIVEN_BROWSER);
             } catch (InstrumentationSyntaxErrorException e) {
-                Path log = createEmptyLog();
-                Path logWithMeta = addMeta(log, "syntax error");
-                return logWithMeta;
+                return makeSyntaxErrorLog();
             }
 
             try {
@@ -535,9 +531,7 @@ public class Logger {
                 throw new RuntimeException(e);
             }
 
-            Path log = postProcessLog(instrumentationDir.resolve("NEW_LOG_FILE.log"));
-            Path logWithMeta = addMeta(log, "success"); // XXX we do not know that?!
-            return logWithMeta;
+            return makeRawLogFile("success", instrumentationDir.resolve("NEW_LOG_FILE.log")); // XXX we do not know that?!
         }
     }
 
@@ -549,18 +543,14 @@ public class Logger {
             this.environment = environment;
         }
 
-        public Path log() throws IOException {
+        public RawLogFile log() throws IOException {
             try {
                 instrument(environment);
             } catch (InstrumentationSyntaxErrorException e) {
-                Path log = createEmptyLog();
-                Path logWithMeta = addMeta(log, "syntax error");
-                return logWithMeta;
+                return makeSyntaxErrorLog();
             }
             String exitStatus = run();
-            Path log = postProcessLog(instrumentationDir.resolve("NEW_LOG_FILE.log"));
-            Path logWithMeta = addMeta(log, exitStatus);
-            return logWithMeta;
+            return makeRawLogFile(exitStatus, instrumentationDir.resolve("NEW_LOG_FILE.log"));
         }
 
         private String run() throws IOException {
@@ -605,8 +595,7 @@ public class Logger {
                 return "timeout";
             boolean failure = p.exitValue() != 0;
             p.destroy();
-            String exitStatus = failure ? "failure" : "success";
-            return exitStatus;
+            return failure ? "failure" : "success";
         }
 
         /**

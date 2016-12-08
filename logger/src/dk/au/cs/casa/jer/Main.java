@@ -30,8 +30,9 @@ public class Main {
             Path loggerDir = Paths.get(args[3]);
             logger = Logger.makeLoggerForDirectoryWithMainFile(root, mainFile, preambles, onlyInclude, defaultTimeLimit, getEnvironment(mainFile), node, loggerDir, null);
         }
-        final Path logFile = logger.log();
-        System.out.println("Log file is located at: " + logFile);
+        final List<String> lines = logger.log().getLines();
+
+        System.out.println(String.join("\n", lines));
     }
 
     private static Logger.Environment getEnvironment(Path mainFile) {

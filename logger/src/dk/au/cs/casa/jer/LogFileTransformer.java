@@ -1,21 +1,20 @@
 package dk.au.cs.casa.jer;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Transforms source locations in a log file:
@@ -38,38 +37,27 @@ public class LogFileTransformer {
         this.rootRelativeMain = rootRelativeMain;
     }
 
-    public Path transform(Path inputLog) throws IOException {
+    public List<String> transform(List<String> inputLog) throws IOException {
         Map<Integer, SourcePosition> inlineJSOffsetSourceLocations = fillInlineJSOffsetSourceLocationLineNumbers(root.resolve(rootRelativeMain));
-        Path modified = null;
-        try {
-            modified = transformFile(inlineJSOffsetSourceLocations, inputLog);
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
-        }
-        return modified;
+        return transform(inlineJSOffsetSourceLocations, inputLog);
     }
 
-    private Path transformFile(Map<Integer, SourcePosition> inlineJSOffsetSourceLocations, Path inputLog) throws IOException, JSONException { //UnchangedLogFiles/fileName
-        BufferedReader reader = new BufferedReader(new FileReader(inputLog.toFile()));
-        //Make directories to the changed log file
-        ArrayList<String> linesToBeWritten = new ArrayList<>();
-        String line = reader.readLine();
-        while (line != null) {
-            JSONObject readedJsonObj = new JSONObject(line);
-            JSONObject JsonObjToBeWritten = iterateThroughJSONObjectAndChangeSL(readedJsonObj, inlineJSOffsetSourceLocations);
-            linesToBeWritten.add(JsonObjToBeWritten.toString());
-
-            line = reader.readLine();
-        }
-        reader.close();
-        Path modified = inputLog.getParent().resolve(inputLog.getFileName().toString() + ".transformed");
-        Files.write(modified, linesToBeWritten);
-        return modified;
+    private List<String> transform(Map<Integer, SourcePosition> inlineJSOffsetSourceLocations, List<String> lines) {
+        return lines.stream().map(line -> {
+            try {
+                JSONObject untransformedJSON = new JSONObject(line);
+                JSONObject transformedJSON = iterateThroughJSONObjectAndChangeSL(untransformedJSON, inlineJSOffsetSourceLocations);
+                String transformedLine = transformedJSON.toString();
+                return transformedLine;
+            } catch (RuntimeException e) {
+                throw new RuntimeException("Something went wrong during transformation of line: " + line);
+            }
+        }).collect(Collectors.toList());
     }
 
     //Takes an JSONObject and iterates through it, to find all source locations and then change these to
     //fit with the sourcelocations from TAJS, and then returns the updated JSONobject, which should be written to file
-    private JSONObject iterateThroughJSONObjectAndChangeSL(JSONObject obj, Map<Integer, SourcePosition> inlineJSOffsetSourceLocations) throws IOException, JSONException {
+    private JSONObject iterateThroughJSONObjectAndChangeSL(JSONObject obj, Map<Integer, SourcePosition> inlineJSOffsetSourceLocations) {
         Iterator<String> keys = obj.keys();
 
         while (keys.hasNext()) {
@@ -99,7 +87,7 @@ public class LogFileTransformer {
 
     //This converts jalangis source locations into TAJS source locations. Jalangi handles event-handler and
     //inline js source locations different than TAJS does.
-    private JSONObject transformSourceLocation(JSONObject obj, Map<Integer, SourcePosition> inlineJSOffsetSourceLocations) throws IOException, JSONException {
+    private JSONObject transformSourceLocation(JSONObject obj, Map<Integer, SourcePosition> inlineJSOffsetSourceLocations) {
         String fileName = obj.getString("fileName");
         Integer lineNumber = obj.getInt("lineNumber");
         Integer columnNumber = obj.getInt("columnNumber");
@@ -131,51 +119,53 @@ public class LogFileTransformer {
         return obj;
     }
 
-    private JSONObject updateSourceLocationFromEventFileToSLInOriginalFile(Path eventHandlerFile, JSONObject obj) throws IOException, JSONException {
+    private JSONObject updateSourceLocationFromEventFileToSLInOriginalFile(Path eventHandlerFile, JSONObject obj) {
         String lineToSearchForInOriginalFile = getLineToSearchForFromEventHandlerFile(eventHandlerFile, obj);
-        BufferedReader reader = new BufferedReader(new FileReader(root.resolve(rootRelativeMain).toFile()));
-        String line = reader.readLine();
-        int lineNumber = 1;
-        boolean stringFound = false;
-        boolean inScript = false;
-        while (line != null) {
-            int scriptStartIndex = 0;
-            if (line.contains("<script")) {
-                scriptStartIndex = line.indexOf("<script");
-                inScript = true;
+        try (BufferedReader reader = new BufferedReader(new FileReader(root.resolve(rootRelativeMain).toFile()))) {
+            int lineNumber = 1;
+            boolean stringFound = false;
+            boolean inScript = false;
+            String line;
+            while ((line = reader.readLine()) != null) {
+                int scriptStartIndex = 0;
+                if (line.contains("<script")) {
+                    scriptStartIndex = line.indexOf("<script");
+                    inScript = true;
+                }
+                if (line.contains("</script>")) {
+                    inScript = false;
+                }
+                line = line.replace("&lt;", "<").replace("&gt;", ">");
+                if ((!inScript || line.indexOf(lineToSearchForInOriginalFile) < scriptStartIndex) && line.contains(lineToSearchForInOriginalFile)) {
+                    obj.put("fileName", rootRelativeMain.getFileName().toString());
+                    obj.put("lineNumber", lineNumber);
+                    obj.put("columnNumber", line.indexOf(lineToSearchForInOriginalFile) + obj.getInt("columnNumber"));
+                    stringFound = true;
+                }
+                lineNumber++;
             }
-            if (line.contains("</script>")) {
-                inScript = false;
+            if (!stringFound) {
+                throw new IllegalStateException("Eventhandler part of code not found in original file");
             }
-            line = line.replace("&lt;", "<").replace("&gt;", ">");
-            if ((!inScript || line.indexOf(lineToSearchForInOriginalFile) < scriptStartIndex) && line.contains(lineToSearchForInOriginalFile)) {
-                obj.put("fileName", rootRelativeMain.getFileName().toString());
-                obj.put("lineNumber", lineNumber);
-                obj.put("columnNumber", line.indexOf(lineToSearchForInOriginalFile) + obj.getInt("columnNumber"));
-                stringFound = true;
-            }
-            lineNumber++;
-            line = reader.readLine();
-        }
-        if (!stringFound) {
-            throw new IllegalStateException("Eventhandler part of code not found in original file");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         return obj;
     }
 
-    private String getLineToSearchForFromEventHandlerFile(Path eventHandlerFile, JSONObject obj)
-            throws JSONException, IOException {
+    private String getLineToSearchForFromEventHandlerFile(Path eventHandlerFile, JSONObject obj) {
         int lineNumber = obj.getInt("lineNumber");
-        BufferedReader reader = new BufferedReader(new FileReader(eventHandlerFile.toFile()));
-
-        String line = reader.readLine();
-        lineNumber--;
-        while (lineNumber > 0) {
-            line = reader.readLine();
+        try (BufferedReader reader = new BufferedReader(new FileReader(eventHandlerFile.toFile()))) {
+            String line = reader.readLine();
             lineNumber--;
+            while (lineNumber > 0) {
+                line = reader.readLine();
+                lineNumber--;
+            }
+            return line;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        reader.close();
-        return line;
     }
 
     private int findInlineNumber(String regexp, String fileName) {
