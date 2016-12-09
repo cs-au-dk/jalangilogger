@@ -380,7 +380,6 @@
                 'Array',
                 'ArrayBuffer',
                 'Boolean',
-                'Buffer',
                 'DataView',
                 'Date',
                 'Error',
