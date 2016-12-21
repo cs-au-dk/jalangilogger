@@ -404,14 +404,14 @@ public class Logger {
             try {
                 System.out.printf("Press 'p' in the browser when done interacting with the application.%n");
                 openBrowser();
-                server.waitFor();
-                //waitForEnter();
+                boolean timedOut = !server.waitFor(timeLimit, TimeUnit.SECONDS);
+                String status = timedOut ? "timeout" : "success";
+                return makeRawLogFile(status, serverDir.resolve("logfile"));
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             } finally {
-                //stopServer(server);
+                stopServer(server);
             }
-            return makeRawLogFile("success", serverDir.resolve("logfile")); // XXX we do not know that?!
         }
 
         private void waitForEnter() throws IOException {
