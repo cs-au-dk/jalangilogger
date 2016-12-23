@@ -103,24 +103,10 @@
                 if (!sendEntries) //the data has already been sent
                     return;
 
-                var urlLocation = location.pathname;
-                var htmlFileName = urlLocation.substr(urlLocation.indexOf("/instrumentedHtmlFiles/") + "/instrumentedHtmlFiles/".length);
-                var logFileName = ""; //Jalangi makes a folder with the name of the html file, which we do not want in this path
-                var directoriesInHTMLFileName = htmlFileName.split("/");
-                for (var i = 0; i < directoriesInHTMLFileName.length - 1; i++) {
-                    if (directoriesInHTMLFileName[i].indexOf(".html") != -1)
-                        continue;
-                    logFileName += directoriesInHTMLFileName[i] + "/"
-                }
-                logFileName += directoriesInHTMLFileName[directoriesInHTMLFileName.length - 1];
-                logFileName = logFileName.substring(0, logFileName.length - 4) + "log";
-
                 var xmlhttp = new XMLHttpRequest();
-                xmlhttp.open("POST", "http://127.0.0.1:3000/printToFile", false);
-                xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                xmlhttp.send("fileName=" + logFileName);
+                xmlhttp.open("POST", "http://127.0.0.1:3000/done", false);
+                xmlhttp.send();
                 sendEntries = false;
-                console.log("Send printToFileCommand");
                 notifyExit = false;
                 close();
             }
