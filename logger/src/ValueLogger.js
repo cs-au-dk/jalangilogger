@@ -20,7 +20,11 @@
     }
 
     var env = (function setupMode() {
-        var env = {};
+        var env = {
+            // invoked on J$:functionEnter and J$:conditional: should be enough to avoid infinite executions
+            terminator: function () {
+            } // default: usually the process is terminated externally.
+        };
         var isNode = typeof require === 'function' && typeof require('fs') === 'object';
         var isNashorn = typeof Java === 'object' && typeof Java.type === 'function';
         var isBrowser = typeof window !== 'undefined';
@@ -99,23 +103,50 @@
             var numberOfEntriesToSendEachTime = 10000;
             var loggedEntriesMap = env.makeMap();
 
+            /* XXX using the fragment part to encode the parameter! This makes browsers work on file-schemed URIs!?!?! */
+            var timeLimitArgument = window.location.hash.split('=')[1];
+            var timelimit = Number.parseInt(timeLimitArgument) || 0;
+            var timeLimit_ms = timelimit * 1000;
+
+            if (timeLimit_ms > 0) {
+                // handle infinite executions
+                var currentTime = +(new Date());
+                var endTime = currentTime + timeLimit_ms;
+                env.terminator = function () {
+                    var currentTime = +(new Date());
+                    if (currentTime > endTime) {
+                        sendLoggedEntries(stopBrowserInteraction);
+                        throw new Error(); // should make the browser responsive
+                    }
+                };
+                // handle crashes or finite executions
+                window.onload = function () {
+                    setTimeout(function () {
+                        sendLoggedEntries(stopBrowserInteraction);
+                    }, timeLimit_ms)
+                };
+            }
+
             function stopBrowserInteraction() {
                 if (!sendEntries) //the data has already been sent
                     return;
 
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("POST", "http://127.0.0.1:3000/done", false);
-                xmlhttp.send();
-                sendEntries = false;
-                notifyExit = false;
-                close();
+                try {
+                    xmlhttp.send();
+                } finally {
+                    sendEntries = false;
+                    notifyExit = false;
+                    close();
+                }
             }
 
             function sendLoggedEntries(callback) {
                 var xmlhttp = new XMLHttpRequest();
                 if (callback) {
                     xmlhttp.onreadystatechange = function () {
-                        if (xmlhttp.readyState == 4 && xmlhttp.status == 204) {
+                        if (xmlhttp.readyState == 4) {
                             callback();
                         }
                     };
@@ -123,7 +154,11 @@
                 xmlhttp.open("POST", "http://127.0.0.1:3000/sendEntries", true);
                 xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
                 var entries = encodeURIComponent(JSON.stringify(entriesToSend));
-                xmlhttp.send("entries=" + entries);
+                try {
+                    xmlhttp.send("entries=" + entries);
+                } catch (e) {
+                    callback();
+                }
                 entriesToSend = [];
             }
 
@@ -132,14 +167,6 @@
                     sendLoggedEntries(stopBrowserInteraction);
                 }
             };
-            var enableAutoClosingAfterLoading = false;
-            if (enableAutoClosingAfterLoading) {
-                window.onload = function () {
-                    setTimeout(function () {
-                        sendLoggedEntries(stopBrowserInteraction);
-                    }, 3000)
-                };
-            }
 
             function shouldSendEntry(entry) {
                 if (entry in loggedEntriesMap)
@@ -164,6 +191,20 @@
                     return "Are you sure you want to navigate away?";
                 }
             }
+
+
+            function getParameterByName(name, url) {
+                if (!url) {
+                    url = window.location.href;
+                }
+                name = name.replace(/[\[\]]/g, "\\$&");
+                var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                    results = regex.exec(url);
+                if (!results) return null;
+                if (!results[2]) return '';
+                return decodeURIComponent(results[2].replace(/\+/g, " "));
+            }
+
         } else if (isNashorn || isNode) {
             function loadPreambles(preambles) {
                 // eval evaluates in the global context if it's referenced by a variable
@@ -571,12 +612,17 @@
         };
 
         this.functionEnter = function (iid, f, dis, args) {
+            env.terminator();
             if (nextConstructorCallCallSiteGIID) {
                 var sid_iid = nextConstructorCallCallSiteGIID.split(":");
                 registerAllocation(sid_iid[1], dis, sid_iid[0]);
                 nextConstructorCallCallSiteGIID = undefined;
             }
             logEntry(iid, {entryKind: "function-entry", base: makeValue(dis), arguments: makeArrayValue(args)});
+        };
+
+        this.conditional = function () {
+            env.terminator();
         };
 
         this.functionExit = function (iid, returnVal, wrappedExceptionVal) {

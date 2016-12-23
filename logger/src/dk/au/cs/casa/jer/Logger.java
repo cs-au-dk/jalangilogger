@@ -13,6 +13,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -376,7 +378,13 @@ public class Logger {
         }
 
         private void openBrowser() throws IOException {
-            Desktop.getDesktop().browse(instrumentationDir.resolve(rootRelativeMain).toUri());
+            try {
+                URI uri = instrumentationDir.resolve(rootRelativeMain).toUri();
+                URI uriWithArgument = new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), null, String.format("timeLimit=%d", timeLimit) /* XXX using the fragment part to encode the parameter! This makes browsers work on file-schemed URIs!?!?! */);
+                Desktop.getDesktop().browse(uriWithArgument);
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         private Process startServer() throws IOException {
@@ -402,11 +410,22 @@ public class Logger {
             }
             Process server = startServer();
             try {
-                System.out.printf("Press 'p' in the browser when done interacting with the application.%n");
+                System.out.printf("Press 'p' in the browser when done interacting with the application (or wait for the timeout after %d seconds).%n", timeLimit);
                 openBrowser();
-                boolean timedOut = !server.waitFor(timeLimit, TimeUnit.SECONDS);
+                long before = System.currentTimeMillis();
+                server.waitFor((int) (timeLimit * 1.2 /* allow for a bit of browser-overhead */), TimeUnit.SECONDS);
+                long after = System.currentTimeMillis();
+                long duration = after - before;
+                boolean timedOut = duration > 1000 * timeLimit;
                 String status = timedOut ? "timeout" : "success";
-                return makeRawLogFile(status, serverDir.resolve("logfile"));
+                Path logfile = serverDir.resolve("logfile");
+                if (!Files.exists(logfile)) {
+                    if (!timedOut) {
+                        System.err.println("Log file does not exist, but we did not encounter a timeout!?!");
+                    }
+                    Files.createFile(logfile);
+                }
+                return makeRawLogFile(status, logfile);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             } finally {
