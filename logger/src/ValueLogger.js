@@ -104,26 +104,36 @@
             var loggedEntriesMap = env.makeMap();
 
             /* XXX using the fragment part to encode the parameter! This makes browsers work on file-schemed URIs!?!?! */
-            var timeLimitArgument = window.location.hash.split('=')[1];
-            var timelimit = Number.parseInt(timeLimitArgument) || 0;
-            var timeLimit_ms = timelimit * 1000;
+            var hash = window.location.hash;
+            var parameterArray = hash.split("#")[1].split("&");
+            var parameterObject = {};
+            parameterArray.forEach(function (p) {
+                var nameAndValue = p.split('=');
+                parameterObject[nameAndValue[0]] = nameAndValue[1];
+            });
+            var softTimelimit = Number.parseInt(parameterObject.softTimeLimit) || 0;
+            var softTimelimit_ms = softTimelimit * 1000;
+            var hardTimelimit = Number.parseInt(parameterObject.hardTimeLimit) || 0;
+            var hardTimelimit_ms = hardTimelimit * 1000;
 
-            if (timeLimit_ms > 0) {
-                // handle infinite executions
+            if (hardTimelimit_ms > 0) {
+                // handle infinite, synchronous executions
                 var currentTime = +(new Date());
-                var endTime = currentTime + timeLimit_ms;
+                var hardEndTime = currentTime + hardTimelimit_ms;
                 env.terminator = function () {
                     var currentTime = +(new Date());
-                    if (currentTime > endTime) {
+                    if (currentTime > hardEndTime) {
                         sendLoggedEntries(stopBrowserInteraction);
                         throw new Error(); // should make the browser responsive
                     }
                 };
+            }
+            if (softTimelimit_ms > 0) {
                 // handle crashes or finite executions
                 window.onload = function () {
                     setTimeout(function () {
                         sendLoggedEntries(stopBrowserInteraction);
-                    }, timeLimit_ms)
+                    }, softTimelimit_ms)
                 };
             }
 
@@ -498,6 +508,9 @@
                 return {objectKind: "builtin", canonicalName: builtins.get(val)};
             }
 
+            if (typeof val === 'symbol') {
+                return {objectKind: "other-symbol", toStringValue: val.toString()};
+            }
             return {objectKind: "other"};
         }
 
@@ -510,7 +523,7 @@
         }
 
         function makeValue(val, forbidStringAbstraction) {
-            if (typeof val === "function" || (typeof val === "object" && val !== null)) {
+            if (typeof val === "function" || (typeof val === "object" && val !== null) || typeof val === 'symbol') {
                 return makeValueForObject(val);
             }
             if (typeof val === "string") {
@@ -534,7 +547,7 @@
                     return "NUM_UINT";
                 return "NUM_OTHER";
             }
-            return "???";
+            return "TYPE_<" + t + ">";
         }
 
         function makeArrayValue(args, forbidStringAbstraction) {

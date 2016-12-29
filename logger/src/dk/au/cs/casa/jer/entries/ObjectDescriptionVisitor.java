@@ -6,4 +6,6 @@ public interface ObjectDescriptionVisitor<T> {
     T visit(AllocationSiteObjectDescription o);
 
     T visit(BuiltinObjectDescription o);
+
+    T visit(OtherSymbolDescription o);
 }

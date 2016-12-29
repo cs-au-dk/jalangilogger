@@ -17,6 +17,7 @@ import dk.au.cs.casa.jer.entries.IEntry;
 import dk.au.cs.casa.jer.entries.ObjectDescription;
 import dk.au.cs.casa.jer.entries.OtherDescription;
 import dk.au.cs.casa.jer.entries.OtherObjectDescription;
+import dk.au.cs.casa.jer.entries.OtherSymbolDescription;
 import dk.au.cs.casa.jer.entries.PrefixStringDescription;
 import dk.au.cs.casa.jer.entries.SourceLocation;
 import dk.au.cs.casa.jer.entries.ValueDescription;
@@ -89,6 +90,8 @@ public class LogParser {
                 return ctx.deserialize(obj, AllocationSiteObjectDescription.class);
             case "builtin":
                 return ctx.deserialize(obj, BuiltinObjectDescription.class);
+            case "other-symbol":
+                return ctx.deserialize(obj, OtherSymbolDescription.class);
             case "other":
                 return ctx.deserialize(obj, OtherObjectDescription.class);
             default:

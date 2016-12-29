@@ -34,6 +34,8 @@ import static java.lang.String.format;
  */
 public class Logger {
 
+    private static String tempDirectoryPrefix = Logger.class.getCanonicalName();
+
     private final Path root;
 
     private final Path rootRelativeMain;
@@ -54,6 +56,8 @@ public class Logger {
 
     private final Optional<Set<Path>> onlyInclude;
 
+    private final int instrumentationTimeLimit;
+
     private final int timeLimit;
 
     private final Environment environment;
@@ -63,7 +67,7 @@ public class Logger {
     /**
      * Produces a log file for the run of a main file in a directory
      */
-    public Logger(Path root, Path rootRelativeMain, List<Path> preambles, Optional<Set<Path>> onlyInclude, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs, Metadata metadata) {
+    public Logger(Path root, Path rootRelativeMain, List<Path> preambles, Optional<Set<Path>> onlyInclude, int instrumentationTimeLimit, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs, Metadata metadata) {
         if (rootRelativeMain.isAbsolute()) {
             throw new IllegalArgumentException("rootRelativeMain must be relative");
         }
@@ -78,6 +82,7 @@ public class Logger {
         this.metadata = metadata;
         this.jjs = jjs;
         this.environment = environment;
+        this.instrumentationTimeLimit = instrumentationTimeLimit;
         this.timeLimit = timeLimit;
         this.preambles = preambles;
         this.onlyInclude = onlyInclude;
@@ -96,14 +101,14 @@ public class Logger {
     /**
      * Produces a log file for the run of a single main file
      */
-    public static Logger makeLoggerForIndependentMainFile(Path main, List<Path> preambles, Optional<Set<Path>> onlyInclude, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
+    public static Logger makeLoggerForIndependentMainFile(Path main, List<Path> preambles, Optional<Set<Path>> onlyInclude, int instrumentationTimeLimit, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
         Path root = isolateInNewRoot(main);
         Path rootRelativeMain = root.relativize(root.resolve(main.getFileName()));
-        return makeLoggerForDirectoryWithMainFile(root, rootRelativeMain, preambles, onlyInclude, timeLimit, environment, node, jalangilogger, jjs);
+        return makeLoggerForDirectoryWithMainFile(root, rootRelativeMain, preambles, onlyInclude, instrumentationTimeLimit, timeLimit, environment, node, jalangilogger, jjs);
     }
 
-    public static Logger makeLoggerForDirectoryWithMainFile(Path root, Path rootRelativeMain, List<Path> preambles, Optional<Set<Path>> onlyInclude, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
-        return new Logger(root, rootRelativeMain, preambles, onlyInclude, timeLimit, environment, node, jalangilogger, jjs, initMeta(root, rootRelativeMain.getFileName(), environment, getEnvironmentVersion(environment, node)));
+    public static Logger makeLoggerForDirectoryWithMainFile(Path root, Path rootRelativeMain, List<Path> preambles, Optional<Set<Path>> onlyInclude, int instrumentationTimeLimit, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
+        return new Logger(root, rootRelativeMain, preambles, onlyInclude, instrumentationTimeLimit, timeLimit, environment, node, jalangilogger, jjs, initMeta(root, rootRelativeMain.getFileName(), environment, getEnvironmentVersion(environment, node), timeLimit));
     }
 
     private static String getEnvironmentVersion(Environment environment, Path node) {
@@ -160,7 +165,7 @@ public class Logger {
     }
 
     private static Path createTempDirectory() throws IOException {
-        return Files.createTempDirectory(Logger.class.getCanonicalName());
+        return Files.createTempDirectory(tempDirectoryPrefix);
     }
 
     /**
@@ -223,15 +228,20 @@ public class Logger {
         return lines;
     }
 
-    private static Metadata initMeta(Path root, Path main, Environment environment, String environmentVersion) {
+    private static Metadata initMeta(Path root, Path main, Environment environment, String environmentVersion, int timeLimit) {
         Metadata metadata = new Metadata();
         metadata.setTime(System.currentTimeMillis());
+        metadata.setTimeLimit(timeLimit);
         metadata.setRoot(main.toString());
         String hash = HashUtil.shaDirOrFile(root);
         metadata.setSha(hash);
         metadata.setEnvironment(environment.toString());
         metadata.setEnvironmentVersion(environmentVersion);
-        metadata.setLogVersion("0.1");
+
+        // Mini-changelog:
+        // 0.1 base
+        // 0.2 OtherSymbolDescription, instrumentation-timeout, timeLimit value
+        metadata.setLogVersion("0.2");
         return metadata;
     }
 
@@ -270,17 +280,34 @@ public class Logger {
     }
 
     public RawLogFile log() throws IOException {
-        if (environment == Environment.NASHORN || environment == Environment.NODE || environment == Environment.NODE_GLOBAL) {
-            return new JSLogger(environment).log();
-        } else if (environment == Environment.BROWSER) {
-            return new HTMLLogger().log();
-        } else if (environment == Environment.DRIVEN_BROWSER) {
-            return new DrivenHTMLLogger().log();
+        RawLogFile rawLogFile = _log();
+        Set<String> badLines = rawLogFile.getLines().stream().filter(l -> l.contains(tempDirectoryPrefix)).collect(Collectors.toSet());
+        if (!badLines.isEmpty()) {
+            System.err.println("Warning: Produced log that contains semi-bad entries (a likely reference to the tempDirectory):" + badLines);
+        }
+        return rawLogFile;
+    }
+
+    private RawLogFile _log() throws IOException {
+        try {
+            if (environment == Environment.NASHORN || environment == Environment.NODE || environment == Environment.NODE_GLOBAL) {
+                return new JSLogger(environment).log();
+            } else if (environment == Environment.BROWSER) {
+                return new HTMLLogger().log();
+            } else if (environment == Environment.DRIVEN_BROWSER) {
+                return new DrivenHTMLLogger().log();
+            }
+        } catch (InstrumentationTimeoutException e) {
+            return makeInstrumentationTimeoutLog();
+        } catch (InstrumentationSyntaxErrorException e) {
+            return makeSyntaxErrorLog();
+        } catch (InstrumentationException e) {
+            throw new RuntimeException(e);
         }
         throw new IllegalArgumentException("Unsupported environment: " + environment);
     }
 
-    private void instrument(Environment environment) throws IOException, InstrumentationSyntaxErrorException {
+    private void instrument(Environment environment) throws IOException, InstrumentationSyntaxErrorException, InstrumentationTimeoutException {
         Path instrument_js = jalangilogger.resolve("node_modules/jalangi2").resolve("src/js/commands/instrument.js").toAbsolutePath();
         String script = instrument_js.toString();
         String out = instrumentationDir.toAbsolutePath().toString();
@@ -310,7 +337,10 @@ public class Logger {
         cmd.add(in);
         Process exec = exec(root, cmd.toArray(new String[]{}));
         try {
-            exec.waitFor();
+            boolean timedOut = !exec.waitFor(instrumentationTimeLimit, TimeUnit.SECONDS);
+            if (timedOut) {
+                throw new InstrumentationTimeoutException();
+            }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -343,6 +373,13 @@ public class Logger {
         }
     }
 
+    private RawLogFile makeInstrumentationTimeoutLog() throws IOException {
+        final List<String> lines = new ArrayList<>();
+        lines.add(makeMeta("instrumentation-timeout"));
+        lines.addAll(new ArrayList<>());
+        return new RawLogFile(lines);
+    }
+
     private RawLogFile makeSyntaxErrorLog() throws IOException {
         final List<String> lines = new ArrayList<>();
         lines.add(makeMeta("syntax-error"));
@@ -369,8 +406,11 @@ public class Logger {
 
         private final Path serverDir;
 
+        private final int hardTimeLimit;
+
         public HTMLLogger() {
             this.serverDir = temp.resolve("server");
+            this.hardTimeLimit = (int) (timeLimit * 1.5);
         }
 
         private void stopServer(Process server) {
@@ -380,7 +420,7 @@ public class Logger {
         private void openBrowser() throws IOException {
             try {
                 URI uri = instrumentationDir.resolve(rootRelativeMain).toUri();
-                URI uriWithArgument = new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), null, String.format("timeLimit=%d", timeLimit) /* XXX using the fragment part to encode the parameter! This makes browsers work on file-schemed URIs!?!?! */);
+                URI uriWithArgument = new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), null, String.format("softTimeLimit=%d&hardTimeLimit=%d", timeLimit, hardTimeLimit) /* XXX using the fragment part to encode the parameter! This makes browsers work on file-schemed URIs!?!?! */);
                 Desktop.getDesktop().browse(uriWithArgument);
             } catch (URISyntaxException e) {
                 throw new RuntimeException(e);
@@ -402,21 +442,17 @@ public class Logger {
             return p;
         }
 
-        public RawLogFile log() throws IOException {
-            try {
-                instrument(Environment.BROWSER);
-            } catch (InstrumentationSyntaxErrorException e) {
-                return makeSyntaxErrorLog();
-            }
+        public RawLogFile log() throws IOException, InstrumentationException {
+            instrument(Environment.BROWSER);
             Process server = startServer();
             try {
                 System.out.printf("Press 'p' in the browser when done interacting with the application (or wait for the timeout after %d seconds).%n", timeLimit);
                 openBrowser();
                 long before = System.currentTimeMillis();
-                server.waitFor((int) (timeLimit * 1.2 /* allow for a bit of browser-overhead */), TimeUnit.SECONDS);
+                server.waitFor(hardTimeLimit, TimeUnit.SECONDS);
                 long after = System.currentTimeMillis();
                 long duration = after - before;
-                boolean timedOut = duration > 1000 * timeLimit;
+                boolean timedOut = duration > 1000 * hardTimeLimit;
                 String status = timedOut ? "timeout" : "success";
                 Path logfile = serverDir.resolve("logfile");
                 if (!Files.exists(logfile)) {
@@ -533,12 +569,8 @@ public class Logger {
             }
         }
 
-        public RawLogFile log() throws IOException {
-            try {
-                instrument(Environment.DRIVEN_BROWSER);
-            } catch (InstrumentationSyntaxErrorException e) {
-                return makeSyntaxErrorLog();
-            }
+        public RawLogFile log() throws IOException, InstrumentationSyntaxErrorException, InstrumentationTimeoutException {
+            instrument(Environment.DRIVEN_BROWSER);
 
             try {
                 if (isDockerEnvironment()) {
@@ -562,12 +594,8 @@ public class Logger {
             this.environment = environment;
         }
 
-        public RawLogFile log() throws IOException {
-            try {
-                instrument(environment);
-            } catch (InstrumentationSyntaxErrorException e) {
-                return makeSyntaxErrorLog();
-            }
+        public RawLogFile log() throws IOException, InstrumentationException {
+            instrument(environment);
             String exitStatus = run();
             return makeRawLogFile(exitStatus, instrumentationDir.resolve("NEW_LOG_FILE.log"));
         }
@@ -635,7 +663,15 @@ public class Logger {
         }
     }
 
-    private class InstrumentationSyntaxErrorException extends Exception {
+    private class InstrumentationException extends Exception {
+
+    }
+
+    private class InstrumentationSyntaxErrorException extends InstrumentationException {
+
+    }
+
+    private class InstrumentationTimeoutException extends InstrumentationException {
 
     }
 }

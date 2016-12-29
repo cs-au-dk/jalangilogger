@@ -72,6 +72,14 @@ public class Metadata {
         jsonRep.logVersion = logVersion;
     }
 
+    public int getTimeLimit() {
+        return jsonRep.timeLimit;
+    }
+
+    public void setTimeLimit(int timeLimit) {
+        jsonRep.timeLimit = timeLimit;
+    }
+
     private class JSONRep {
 
         @SerializedName("sha")
@@ -94,5 +102,8 @@ public class Metadata {
 
         @SerializedName("logVersion")
         public String logVersion;
+
+        @SerializedName("timeLimit")
+        public int timeLimit;
     }
 }
