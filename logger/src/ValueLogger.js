@@ -97,12 +97,11 @@
             };
         }
 
-        if (isBrowser && !isProtractor) {
-            var sendEntries = true;
-            var entriesToSend = [];
-            var numberOfEntriesToSendEachTime = 10000;
-            var loggedEntriesMap = env.makeMap();
-
+        /**
+         * It is hard to determine when a browser session has ended without manual interaction.
+         * This method heuristically ends the browser session based on various timeout mechanisms.
+         */
+        function makeBrowserSessionTerminators() {
             /* XXX using the fragment part to encode the parameter! This makes browsers work on file-schemed URIs!?!?! */
             var hash = window.location.hash;
             var parameterArray = hash.split("#")[1].split("&");
@@ -111,31 +110,65 @@
                 var nameAndValue = p.split('=');
                 parameterObject[nameAndValue[0]] = nameAndValue[1];
             });
-            var softTimelimit = Number.parseInt(parameterObject.softTimeLimit) || 0;
-            var softTimelimit_ms = softTimelimit * 1000;
-            var hardTimelimit = Number.parseInt(parameterObject.hardTimeLimit) || 0;
-            var hardTimelimit_ms = hardTimelimit * 1000;
 
-            if (hardTimelimit_ms > 0) {
-                // handle infinite, synchronous executions
-                var currentTime = +(new Date());
-                var hardEndTime = currentTime + hardTimelimit_ms;
-                env.terminator = function () {
+            makeHardTerminator(parameterObject.hardTimeLimit);
+            makeSoftTerminator(parameterObject.softTimeLimit);
+            makeAutoTerminator(env.terminator);
+
+            function makeHardTerminator(limit) {
+                var hardTimelimit = Number.parseInt(limit) || 0;
+                var hardTimelimit_ms = hardTimelimit * 1000;
+                if (hardTimelimit_ms > 0) {
+                    // handle infinite, synchronous executions
                     var currentTime = +(new Date());
-                    if (currentTime > hardEndTime) {
+                    var hardEndTime = currentTime + hardTimelimit_ms;
+                    env.terminator = function () {
+                        var currentTime = +(new Date());
+                        if (currentTime > hardEndTime) {
+                            sendLoggedEntries(stopBrowserInteraction);
+                            throw new Error(); // should make the browser responsive
+                        }
+                    };
+                }
+            }
+
+            function makeSoftTerminator(limit) {
+                var softTimelimit = Number.parseInt(limit) || 0;
+                var softTimelimit_ms = softTimelimit * 1000;
+                if (softTimelimit_ms > 0) {
+                    // handle crashes or finite executions
+                    window.onload = function () {
+                        setTimeout(function () {
+                            sendLoggedEntries(stopBrowserInteraction);
+                        }, softTimelimit_ms)
+                    };
+                }
+            }
+
+
+            function makeAutoTerminator(oldTerminator) {
+                var leastNonUserEventListenerExecutionsInARow = 0;
+                env.terminator = function () {
+                    oldTerminator && oldTerminator();
+                    leastNonUserEventListenerExecutionsInARow = 0;
+                };
+                window.setInterval(function () {
+                    leastNonUserEventListenerExecutionsInARow++;
+                    if (leastNonUserEventListenerExecutionsInARow > 10) {
                         sendLoggedEntries(stopBrowserInteraction);
-                        throw new Error(); // should make the browser responsive
                     }
-                };
+                }, 500);
             }
-            if (softTimelimit_ms > 0) {
-                // handle crashes or finite executions
-                window.onload = function () {
-                    setTimeout(function () {
-                        sendLoggedEntries(stopBrowserInteraction);
-                    }, softTimelimit_ms)
-                };
-            }
+
+        }
+
+        if (isBrowser && !isProtractor) {
+            var sendEntries = true;
+            var entriesToSend = [];
+            var numberOfEntriesToSendEachTime = 10000;
+            var loggedEntriesMap = env.makeMap();
+
+            makeBrowserSessionTerminators();
 
             function stopBrowserInteraction() {
                 if (!sendEntries) //the data has already been sent
@@ -528,6 +561,9 @@
             }
             if (typeof val === "string") {
                 return makeValueForString(val, forbidStringAbstraction);
+            }
+            if(typeof val === 'undefined' && val !== undefined){
+                return makeValueForObject(val); // legacy objects like `document.all`: https://bugs.chromium.org/p/chromium/issues/detail?id=567998
             }
             return makeValueForNonStringPrimitive(val);
         }
