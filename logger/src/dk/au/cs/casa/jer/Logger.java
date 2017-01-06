@@ -16,9 +16,12 @@ import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -280,12 +283,49 @@ public class Logger {
     }
 
     public RawLogFile log() throws IOException {
+        return log(true);
+    }
+
+    public RawLogFile log(boolean emptyTempDirectoryWhenDone) throws IOException {
         RawLogFile rawLogFile = _log();
+        if (emptyTempDirectoryWhenDone) {
+            emptyRecursively(this.temp);
+        }
         Set<String> badLines = rawLogFile.getLines().stream().filter(l -> l.contains(tempDirectoryPrefix)).collect(Collectors.toSet());
         if (!badLines.isEmpty()) {
             System.err.println("Warning: Produced log that contains semi-bad entries (a likely reference to the tempDirectory):" + badLines);
         }
         return rawLogFile;
+    }
+
+    private void emptyRecursively(Path dir) {
+        try {
+            Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                        throws IOException {
+                    delete(file);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                private void delete(Path file) throws IOException {
+                    if (!dir.equals(file)) {
+                        Files.delete(file);
+                    }
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    if (exc != null) {
+                        throw exc;
+                    }
+                    delete(dir);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private RawLogFile _log() throws IOException {
