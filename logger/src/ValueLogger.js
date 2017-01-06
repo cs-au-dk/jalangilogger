@@ -152,12 +152,16 @@
                     oldTerminator && oldTerminator();
                     leastNonUserEventListenerExecutionsInARow = 0;
                 };
-                window.setInterval(function () {
-                    leastNonUserEventListenerExecutionsInARow++;
-                    if (leastNonUserEventListenerExecutionsInARow > 10) {
-                        sendLoggedEntries(stopBrowserInteraction);
-                    }
-                }, 500);
+                function register(){
+                    window.setTimeout(function () {
+                        leastNonUserEventListenerExecutionsInARow++;
+                        if (leastNonUserEventListenerExecutionsInARow > 10) {
+                            sendLoggedEntries(stopBrowserInteraction);
+                        }
+                        register(); // not using setInterval. This implementation ensures the checks are done with delay.
+                    }, 250);
+                }
+                register();
             }
 
         }
