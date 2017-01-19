@@ -375,6 +375,9 @@
             TAJS_record = function () {
 
             }
+            TAJS_restrictTo = function () {
+
+            }
         },
         print: function () {
             print = function () {
@@ -624,9 +627,6 @@
         };
 
         this.invokeFunPre = function (iid, f, base, args, isConstructor, isMethod, functionIid) {
-            if (typeof f !== "function") { //about to crash
-                return;
-            }
             var isUserConstructorCall = isConstructor && (functionIid !== undefined);
             if (isUserConstructorCall) {
                 nextConstructorCallCallSiteGIID = J$.getGlobalIID(iid);
