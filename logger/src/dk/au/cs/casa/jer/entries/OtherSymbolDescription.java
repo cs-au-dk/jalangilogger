@@ -18,6 +18,21 @@ public class OtherSymbolDescription extends ObjectDescription {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        OtherSymbolDescription that = (OtherSymbolDescription) o;
+
+        return toStringValue != null ? toStringValue.equals(that.toStringValue) : that.toStringValue == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return toStringValue != null ? toStringValue.hashCode() : 0;
+    }
+
+    @Override
     public String toString() {
         return "OtherSymbolDescription{" +
                 "toStringValue='" + toStringValue + '\'' +

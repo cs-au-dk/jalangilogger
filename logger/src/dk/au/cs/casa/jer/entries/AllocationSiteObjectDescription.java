@@ -13,6 +13,21 @@ public class AllocationSiteObjectDescription extends ObjectDescription {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AllocationSiteObjectDescription that = (AllocationSiteObjectDescription) o;
+
+        return allocationSite != null ? allocationSite.equals(that.allocationSite) : that.allocationSite == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return allocationSite != null ? allocationSite.hashCode() : 0;
+    }
+
+    @Override
     public <T> T accept(ObjectDescriptionVisitor<T> visitor) {
         return visitor.visit(this);
     }
