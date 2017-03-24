@@ -12,19 +12,33 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class HashUtil {
 
-    public static String shaDirOrFile(Path file) {
+    private static Collection<Path> getFilesFromDirOrFile(Path file) {
+        if (Files.isDirectory(file)) {
+            return FileUtils.listFiles(file.toFile(), TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE).stream().map(File::toPath).collect(Collectors.toList());
+        } else {
+            return Collections.singletonList(file);
+        }
+    }
+
+    public static String shaDirOrFile(Path fileOrDirectory) {
+        Collection<Path> files = getFilesFromDirOrFile(fileOrDirectory);
+        return shaFiles(files);
+    }
+
+    public static String shaDirOrFile(Collection<Path> filesOrDirectories) {
+        Collection<Path> files = filesOrDirectories.stream().flatMap(p -> getFilesFromDirOrFile(p).stream()).collect(Collectors.toSet());
+        return shaFiles(files);
+    }
+
+    public static String shaFiles(Collection<Path> files) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA");
-            Collection<Path> files;
-            if (Files.isDirectory(file)) {
-                files = FileUtils.listFiles(file.toFile(), TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE).stream().map(File::toPath).collect(Collectors.toList());
-            } else {
-                files = Collections.singletonList(file);
-            }
             files.stream()
                     .filter(f -> {
                         try {

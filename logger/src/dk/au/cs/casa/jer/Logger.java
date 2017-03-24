@@ -111,7 +111,7 @@ public class Logger {
     }
 
     public static Logger makeLoggerForDirectoryWithMainFile(Path root, Path rootRelativeMain, List<Path> preambles, Optional<Set<Path>> onlyInclude, int instrumentationTimeLimit, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
-        return new Logger(root, rootRelativeMain, preambles, onlyInclude, instrumentationTimeLimit, timeLimit, environment, node, jalangilogger, jjs, initMeta(root, rootRelativeMain.getFileName(), environment, getEnvironmentVersion(environment, node), timeLimit));
+        return new Logger(root, rootRelativeMain, preambles, onlyInclude, instrumentationTimeLimit, timeLimit, environment, node, jalangilogger, jjs, initMeta(root, rootRelativeMain.getFileName(), onlyInclude, environment, getEnvironmentVersion(environment, node), timeLimit));
     }
 
     private static String getEnvironmentVersion(Environment environment, Path node) {
@@ -231,12 +231,18 @@ public class Logger {
         return lines;
     }
 
-    private static Metadata initMeta(Path root, Path main, Environment environment, String environmentVersion, int timeLimit) {
+    private static Metadata initMeta(Path root, Path main, Optional<Set<Path>> onlyInclude, Environment environment, String environmentVersion, int timeLimit) {
         Metadata metadata = new Metadata();
         metadata.setTime(System.currentTimeMillis());
         metadata.setTimeLimit(timeLimit);
         metadata.setRoot(main.toString());
-        String hash = HashUtil.shaDirOrFile(root);
+        String hash;
+        if (onlyInclude.isPresent()) {
+            hash = HashUtil.shaDirOrFile(onlyInclude.get());
+        } else {
+            hash = HashUtil.shaDirOrFile(root);
+        }
+
         metadata.setSha(hash);
         metadata.setEnvironment(environment.toString());
         metadata.setEnvironmentVersion(environmentVersion);
