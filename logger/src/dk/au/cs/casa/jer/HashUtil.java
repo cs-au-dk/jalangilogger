@@ -4,15 +4,14 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -36,9 +35,15 @@ public class HashUtil {
         return shaFiles(files);
     }
 
+    /**
+     * Computes the SHA-1 sum of the given files.
+     *
+     * NB: linebreaks are normalized to \n for the sake of the computation.
+     */
     public static String shaFiles(Collection<Path> files) {
+        byte[] NEWLINE = "\n".getBytes();
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA");
+            MessageDigest digest = MessageDigest.getInstance("SHA-1");
             files.stream()
                     .filter(f -> {
                         try {
@@ -49,13 +54,11 @@ public class HashUtil {
                     })
                     .sorted()
                     .forEach(f -> {
-                        try (FileInputStream fis = new FileInputStream(f.toFile())) {
-                            byte[] byteArray = new byte[1024];
-                            int bytesCount = 0;
-                            while ((bytesCount = fis.read(byteArray)) != -1) {
-                                digest.update(byteArray, 0, bytesCount);
-                            }
-                            fis.close();
+                        try (Stream<String> lines = Files.lines(f, Charset.forName("UTF-8"))) {
+                            lines.forEach(line -> {
+                                digest.update(line.getBytes());
+                                digest.update(NEWLINE);
+                            });
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
