@@ -38,10 +38,11 @@ public class HashUtil {
     /**
      * Computes the SHA-1 sum of the given files.
      *
-     * NB: linebreaks are normalized to \n for the sake of the computation.
+     * NB: the file is read as UTF-8 and linebreaks are normalized to \n for the sake of the computation.
      */
     public static String shaFiles(Collection<Path> files) {
-        byte[] NEWLINE = "\n".getBytes();
+        Charset charset = Charset.forName("UTF-8");
+        byte[] NEWLINE = "\n".getBytes(charset);
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-1");
             files.stream()
@@ -54,7 +55,7 @@ public class HashUtil {
                     })
                     .sorted()
                     .forEach(f -> {
-                        try (Stream<String> lines = Files.lines(f, Charset.forName("UTF-8"))) {
+                        try (Stream<String> lines = Files.lines(f, charset)) {
                             lines.forEach(line -> {
                                 digest.update(line.getBytes());
                                 digest.update(NEWLINE);
