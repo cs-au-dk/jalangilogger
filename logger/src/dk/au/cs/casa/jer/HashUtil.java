@@ -57,7 +57,7 @@ public class HashUtil {
                     .forEach(f -> {
                         try (Stream<String> lines = Files.lines(f, charset)) {
                             lines.forEach(line -> {
-                                digest.update(line.getBytes());
+                                digest.update(line.getBytes(charset));
                                 digest.update(NEWLINE);
                             });
                         } catch (IOException e) {
