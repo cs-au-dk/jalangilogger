@@ -65,8 +65,12 @@ public class HashUtil {
                                 digest.update(line.getBytes(charset));
                                 digest.update(NEWLINE);
                             });
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
+                        } catch (Exception e) {
+                            try {
+                                digest.update(Files.readAllBytes(f)); // could not be read with the chosen charset: just read the raw bytes
+                            } catch (IOException e1) {
+                                throw new RuntimeException(e1);
+                            }
                         }
                     });
             final byte[] hash = digest.digest();
