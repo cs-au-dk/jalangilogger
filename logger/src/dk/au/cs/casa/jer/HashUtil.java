@@ -1,28 +1,33 @@
 package dk.au.cs.casa.jer;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.TrueFileFilter;
-
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class HashUtil {
 
     private static Collection<Path> getFilesFromDirOrFile(Path file) {
+        Collection<Path> files = new ArrayList<>();
         if (Files.isDirectory(file)) {
-            return FileUtils.listFiles(file.toFile(), TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE).stream().map(File::toPath).collect(Collectors.toList());
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(file)) {
+                stream.forEach(f -> {
+                    files.addAll(getFilesFromDirOrFile(f));
+                });
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         } else {
-            return Collections.singletonList(file);
+            files.add(file);
         }
+        return files;
     }
 
     public static String shaDirOrFile(Path fileOrDirectory) {
