@@ -1,3 +1,0 @@
-{"sha":"ae86793ff20144ee76327b17778b600308b1b85e", "time":1465383987}
-Failed to instrument if(
-{"entryKind":"dynamic-code","code":"if(","sourceLocation":{"fileName":"test/uneval/uneval05.js","lineNumber":"1","columnNumber":"6"}}

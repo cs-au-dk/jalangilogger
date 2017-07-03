@@ -1,3 +1,0 @@
-{"sha":"5855a9950d5cb7c69333cafc0851ab8abc6a4915", "time":1465383987}
-{"entryKind":"read-property","name":{"valueKind":"concrete-string","value":"Date"},"value":{"valueKind":"abstract-primitive","value":"undefined"},"sourceLocation":{"fileName":"test/v8tests/lazy-load.js","lineNumber":"29","columnNumber":"17"}}
-{"entryKind":"read-variable","name":{"valueKind":"concrete-string","value":"this"},"value":{"valueKind":"abstract-object","value":{"objectKind":"other"}},"sourceLocation":{"fileName":"test/v8tests/lazy-load.js","lineNumber":"29","columnNumber":"17"}}

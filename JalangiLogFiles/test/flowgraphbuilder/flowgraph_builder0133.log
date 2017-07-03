@@ -1,3 +1,0 @@
-{"sha":"7a42fbf1ffbd1d93dd7ed985c17a13068f56807a", "time":1465383986}
-{"entryKind":"read-variable","name":{"valueKind":"concrete-string","value":"x"},"value":{"valueKind":"abstract-primitive","value":"1"},"sourceLocation":{"fileName":"test/flowgraphbuilder/flowgraph_builder0133.js","lineNumber":"2","columnNumber":"8"}}
-{"entryKind":"write-variable","name":{"valueKind":"concrete-string","value":"x"},"value":{"valueKind":"abstract-primitive","value":"1"},"sourceLocation":{"fileName":"test/flowgraphbuilder/flowgraph_builder0133.js","lineNumber":"1","columnNumber":"5"}}

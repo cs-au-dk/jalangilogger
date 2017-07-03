@@ -1,4 +1,0 @@
-{"sha":"3891af7c90ab373bc94bd4210731aefeace54a24", "time":1465383986}
-{"entryKind":"dynamic-code","code":"x = 4","sourceLocation":{"fileName":"test/flowgraphbuilder/flowgraph_builder0152.js","lineNumber":"1","columnNumber":"10"}}
-{"entryKind":"write-variable","name":{"valueKind":"concrete-string","value":"x"},"value":{"valueKind":"abstract-primitive","value":"NUM_UINT"},"sourceLocation":{"fileName":"eval(test/flowgraphbuilder/flowgraph_builder0152.js","lineNumber":"1","columnNumber":"10"}}
-{"entryKind":"write-variable","name":{"valueKind":"concrete-string","value":"y"},"value":{"valueKind":"abstract-primitive","value":"NUM_UINT"},"sourceLocation":{"fileName":"test/flowgraphbuilder/flowgraph_builder0152.js","lineNumber":"1","columnNumber":"5"}}

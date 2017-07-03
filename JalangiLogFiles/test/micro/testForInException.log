@@ -1,2 +1,0 @@
-{"sha":"7d6363605f4f06daf566917802b2fd49e48d24bc", "time":1465383987}
-{"entryKind":"write-variable","name":{"valueKind":"concrete-string","value":"name"},"value":{"valueKind":"abstract-primitive","value":"STR_IDENTIFIER"},"sourceLocation":{"fileName":"test/micro/testForInException.js","lineNumber":"1","columnNumber":"1"}}

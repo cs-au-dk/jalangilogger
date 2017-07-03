@@ -1,2 +1,0 @@
-{"sha":"edf1df288e4da001ee000e2fb54f53da6aae8a14", "time":1465383986}
-{"entryKind":"write-variable","name":{"valueKind":"concrete-string","value":"x"},"value":{"valueKind":"abstract-primitive","value":"1"},"sourceLocation":{"fileName":"test/flowgraphbuilder/flowgraph_builder0070.js","lineNumber":"1","columnNumber":"11"}}

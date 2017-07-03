@@ -1,3 +1,0 @@
-{"sha":"c7fe2e49c7d5fa91781c6c75150055466e029af8", "time":1465383986}
-{"entryKind":"call","function":{"valueKind":"abstract-object","value":{"objectKind":"other"}},"base":{"valueKind":"abstract-object","value":{"objectKind":"builtin","canonicalName":"<the global object>"}},"arguments":[{"valueKind":"abstract-primitive","value":"STR_IDENTIFIER"}],"sourceLocation":{"fileName":"test/flowgraphbuilder/flowgraph_builder_jump_0006.js","lineNumber":"15","columnNumber":"1"}}
-{"entryKind":"read-variable","name":{"valueKind":"concrete-string","value":"TAJS_dumpValue"},"value":{"valueKind":"abstract-object","value":{"objectKind":"other"}},"sourceLocation":{"fileName":"test/flowgraphbuilder/flowgraph_builder_jump_0006.js","lineNumber":"15","columnNumber":"1"}}
