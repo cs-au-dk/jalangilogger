@@ -1,7 +1,10 @@
 package dk.au.cs.casa.jer;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -25,6 +28,8 @@ import java.util.stream.Collectors;
  */
 public class LogFileTransformer {
 
+    private static final Gson gson = new Gson(); // TODO use typed version!!! (this is from a json.org -> gson rewrite. It should be changed when then rewrite is tested.)
+
     private final Path root;
 
     private final Path instrumentationRoot;
@@ -45,8 +50,8 @@ public class LogFileTransformer {
     private List<String> transform(Map<Integer, SourcePosition> inlineJSOffsetSourceLocations, List<String> lines) {
         return lines.stream().map(line -> {
             try {
-                JSONObject untransformedJSON = new JSONObject(line);
-                JSONObject transformedJSON = iterateThroughJSONObjectAndChangeSL(untransformedJSON, inlineJSOffsetSourceLocations);
+                JsonObject untransformedJSON = gson.fromJson(line, JsonObject.class);
+                JsonObject transformedJSON = iterateThroughJsonObjectAndChangeSL(untransformedJSON, inlineJSOffsetSourceLocations);
                 String transformedLine = transformedJSON.toString();
                 return transformedLine;
             } catch (Exception e) {
@@ -55,28 +60,29 @@ public class LogFileTransformer {
         }).collect(Collectors.toList());
     }
 
-    //Takes an JSONObject and iterates through it, to find all source locations and then change these to
+    //Takes an JsonObject and iterates through it, to find all source locations and then change these to
     //fit with the sourcelocations from TAJS, and then returns the updated JSONobject, which should be written to file
-    private JSONObject iterateThroughJSONObjectAndChangeSL(JSONObject obj, Map<Integer, SourcePosition> inlineJSOffsetSourceLocations) {
-        Iterator<String> keys = obj.keys();
+    private JsonObject iterateThroughJsonObjectAndChangeSL(JsonObject obj, Map<Integer, SourcePosition> inlineJSOffsetSourceLocations) {
+        Iterator<Map.Entry<String, JsonElement>> properties = obj.entrySet().iterator(); // XXX this weird iterator style is from a json.org -> gson rewrite. It should be changed when then rewrite is tested.
 
-        while (keys.hasNext()) {
-            String key = keys.next();
-            Object next = obj.get(key);
+        while (properties.hasNext()) {
+            Map.Entry<String, JsonElement> property = properties.next();
+            String key = property.getKey();
+            Object next = property.getValue();
 
-            if (next instanceof String || next instanceof Number || next instanceof Boolean) {
+            if (next instanceof JsonPrimitive) {
                 //Do nothing.
-            } else if (next instanceof JSONObject) {
-                JSONObject nextJSON = (JSONObject) next;
+            } else if (next instanceof JsonObject) {
+                JsonObject nextJSON = (JsonObject) next;
                 if (key.equals("sourceLocation") || key.equals("allocationSite")) {
-                    obj.put(key, transformSourceLocation(nextJSON, inlineJSOffsetSourceLocations));
+                    obj.add(key, transformSourceLocation(nextJSON, inlineJSOffsetSourceLocations));
                 } else {
-                    obj.put(key, iterateThroughJSONObjectAndChangeSL(nextJSON, inlineJSOffsetSourceLocations));
+                    obj.add(key, iterateThroughJsonObjectAndChangeSL(nextJSON, inlineJSOffsetSourceLocations));
                 }
-            } else if (next instanceof JSONArray) {
-                JSONArray nextJSONArray = (JSONArray) next;
-                for (int i = 0; i < nextJSONArray.length(); i++) {
-                    nextJSONArray.put(i, iterateThroughJSONObjectAndChangeSL(nextJSONArray.getJSONObject(i), inlineJSOffsetSourceLocations));
+            } else if (next instanceof JsonArray) {
+                JsonArray nextJsonArray = (JsonArray) next;
+                for (int i = 0; i < nextJsonArray.size(); i++) {
+                    nextJsonArray.set(i, iterateThroughJsonObjectAndChangeSL(nextJsonArray.get(i).getAsJsonObject(), inlineJSOffsetSourceLocations));
                 }
             } else {
                 throw new IllegalStateException("This should not happen - Unhandled class: " + next.getClass());
@@ -87,10 +93,10 @@ public class LogFileTransformer {
 
     //This converts jalangis source locations into TAJS source locations. Jalangi handles event-handler and
     //inline js source locations different than TAJS does.
-    private JSONObject transformSourceLocation(JSONObject obj, Map<Integer, SourcePosition> inlineJSOffsetSourceLocations) {
-        String fileName = obj.getString("fileName");
-        Integer lineNumber = obj.getInt("lineNumber");
-        Integer columnNumber = obj.getInt("columnNumber");
+    private JsonObject transformSourceLocation(JsonObject obj, Map<Integer, SourcePosition> inlineJSOffsetSourceLocations) {
+        String fileName = obj.get("fileName").getAsString();
+        Integer lineNumber = obj.get("lineNumber").getAsInt();
+        Integer columnNumber = obj.get("columnNumber").getAsInt();
 //		if(lineNumber == -1 && columnNumber == -1){ //in case Jalangi has sourcelocation iid.
 //			throw new IllegalSourceLocationException();
 //		}
@@ -102,9 +108,9 @@ public class LogFileTransformer {
             SourcePosition sourcePosition = inlineJSOffsetSourceLocations.get(inlineScriptNumber);
             int newLineNumber = lineNumber + sourcePosition.line;
             int newColumnNumber = columnNumber + (lineNumber == 1 ? sourcePosition.column : 0);
-            obj.put("fileName", rootRelativeMain.getFileName().toString());
-            obj.put("lineNumber", newLineNumber);
-            obj.put("columnNumber", newColumnNumber);
+            obj.addProperty("fileName", rootRelativeMain.getFileName().toString());
+            obj.addProperty("lineNumber", newLineNumber);
+            obj.addProperty("columnNumber", newColumnNumber);
         } else if (inlineHandlerNumber != -1) {
             String eventhandlerFileName = "event-handler-" + inlineHandlerNumber + "_orig_.js";
             Path eventHandlerFile = instrumentationRoot.resolve(rootRelativeMain).getParent().resolve(eventhandlerFileName);
@@ -114,12 +120,12 @@ public class LogFileTransformer {
             Path rootRelativeFile = root.resolve(relativized);
             Path main = root.resolve(rootRelativeMain);
             final Path mainRelativeFile = main.getParent().relativize(rootRelativeFile);
-            obj.put("fileName", mainRelativeFile.toString());
+            obj.addProperty("fileName", mainRelativeFile.toString());
         }
         return obj;
     }
 
-    private JSONObject updateSourceLocationFromEventFileToSLInOriginalFile(Path eventHandlerFile, JSONObject obj) {
+    private JsonObject updateSourceLocationFromEventFileToSLInOriginalFile(Path eventHandlerFile, JsonObject obj) {
         String lineToSearchForInOriginalFile = getLineToSearchForFromEventHandlerFile(eventHandlerFile, obj);
         try (BufferedReader reader = new BufferedReader(new FileReader(root.resolve(rootRelativeMain).toFile()))) {
             int lineNumber = 1;
@@ -137,9 +143,9 @@ public class LogFileTransformer {
                 }
                 line = line.replace("&lt;", "<").replace("&gt;", ">");
                 if ((!inScript || line.indexOf(lineToSearchForInOriginalFile) < scriptStartIndex) && line.contains(lineToSearchForInOriginalFile)) {
-                    obj.put("fileName", rootRelativeMain.getFileName().toString());
-                    obj.put("lineNumber", lineNumber);
-                    obj.put("columnNumber", line.indexOf(lineToSearchForInOriginalFile) + obj.getInt("columnNumber"));
+                    obj.addProperty("fileName", rootRelativeMain.getFileName().toString());
+                    obj.addProperty("lineNumber", lineNumber);
+                    obj.addProperty("columnNumber", line.indexOf(lineToSearchForInOriginalFile) + obj.get("columnNumber").getAsInt());
                     stringFound = true;
                 }
                 lineNumber++;
@@ -153,8 +159,8 @@ public class LogFileTransformer {
         return obj;
     }
 
-    private String getLineToSearchForFromEventHandlerFile(Path eventHandlerFile, JSONObject obj) {
-        int lineNumber = obj.getInt("lineNumber");
+    private String getLineToSearchForFromEventHandlerFile(Path eventHandlerFile, JsonObject obj) {
+        int lineNumber = obj.get("lineNumber").getAsInt();
         try (BufferedReader reader = new BufferedReader(new FileReader(eventHandlerFile.toFile()))) {
             String line = reader.readLine();
             lineNumber--;

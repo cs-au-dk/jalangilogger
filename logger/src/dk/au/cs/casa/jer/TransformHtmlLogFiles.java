@@ -1,5 +1,11 @@
 package dk.au.cs.casa.jer;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -9,14 +15,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 public class TransformHtmlLogFiles {
+
+	private static final Gson gson = new Gson(); // TODO use typed version!!! (this is from a json.org -> gson rewrite. It should be changed when then rewrite is tested.)
+
 	private static final String startInstrumentedDirectory = "instrumentedHTMLFiles/";
 	private static final String unchangedLogFileDirectory = "nodeJSServer/UnchangedLogFiles/";
 	private static final String changedLogFileDirectory = "JalangiLogFiles/";
@@ -91,9 +97,9 @@ public class TransformHtmlLogFiles {
 		ArrayList<String> linesToBeWritten = new ArrayList<String>();
 		String line = reader.readLine();
 		while(line != null){
-			JSONObject readedJsonObj = new JSONObject(line);
+			JsonObject readedJsonObj = gson.fromJson(line, JsonObject.class);
 			try {
-				JSONObject JsonObjToBeWritten = iterateThroughJSONObjectAndChangeSL(readedJsonObj, originalHTMLFile, instrumentedDirectory);
+				JsonObject JsonObjToBeWritten = iterateThroughJsonObjectAndChangeSL(readedJsonObj, originalHTMLFile, instrumentedDirectory);
 				linesToBeWritten.add(JsonObjToBeWritten.toString() + "\r\n");
 			} catch (IllegalSourceLocationException exception){} //If illegal sourceLocation (i.e. iid in Jalangi) just ignore this line
 			line = reader.readLine();
@@ -105,28 +111,29 @@ public class TransformHtmlLogFiles {
 		}
 		writer.close();
 	}
-	//Takes an JSONObject and iterates through it, to find all source locations and then change these to
+	//Takes an JsonObject and iterates through it, to find all source locations and then change these to
 	//fit with the sourcelocations from TAJS, and then returns the updated JSONobject, which should be written to file
-	private static JSONObject iterateThroughJSONObjectAndChangeSL(JSONObject obj, String originalHTMLFile, String instrumentedDirectory) throws Exception{
-		Iterator<String> keys = obj.keys();
-		
-		while(keys.hasNext()){
-			String key = keys.next();
-			Object next = obj.get(key);
-			
-			if(next instanceof String){
+	private static JsonObject iterateThroughJsonObjectAndChangeSL(JsonObject obj, String originalHTMLFile, String instrumentedDirectory) throws Exception{
+		Iterator<Map.Entry<String, JsonElement>> properties = obj.entrySet().iterator(); // XXX this weird iterator style is from a json.org -> gson rewrite. It should be changed when then rewrite is tested.
+
+		while (properties.hasNext()) {
+			Map.Entry<String, JsonElement> property = properties.next();
+			String key = property.getKey();
+			Object next = property.getValue();
+
+			if(next instanceof JsonPrimitive){
 				//Do nothing.
-			} else if(next instanceof JSONObject){
-				JSONObject nextJSON = (JSONObject) next;
+			} else if(next instanceof JsonObject){
+				JsonObject nextJSON = (JsonObject) next;
 				if(key.equals("sourceLocation") || key.equals("allocationSite")){
-					obj.put(key, transformSourceLocation(nextJSON, originalHTMLFile, instrumentedDirectory));
+					obj.add(key, transformSourceLocation(nextJSON, originalHTMLFile, instrumentedDirectory));
 				} else {
-					obj.put(key, iterateThroughJSONObjectAndChangeSL(nextJSON, originalHTMLFile, instrumentedDirectory));
+					obj.add(key, iterateThroughJsonObjectAndChangeSL(nextJSON, originalHTMLFile, instrumentedDirectory));
 				}
-			} else if(next instanceof JSONArray){
-				JSONArray nextJSONArray = (JSONArray) next;
-				for(int i = 0; i < nextJSONArray.length(); i++){
-					nextJSONArray.put(i, iterateThroughJSONObjectAndChangeSL(nextJSONArray.getJSONObject(i), originalHTMLFile, instrumentedDirectory));
+			} else if(next instanceof JsonArray){
+				JsonArray nextJsonArray = (JsonArray) next;
+				for(int i = 0; i < nextJsonArray.size(); i++){
+					nextJsonArray.set(i, iterateThroughJsonObjectAndChangeSL(nextJsonArray.get(i).getAsJsonObject(), originalHTMLFile, instrumentedDirectory));
 				}
 			} else {	
 				throw new Exception("This should not happen - Unhandled class: " + next.getClass());		
@@ -137,10 +144,10 @@ public class TransformHtmlLogFiles {
 
 	//This converts jalangis source locations into TAJS source locations. Jalangi handles event-handler and
 	//inline js source locations different than TAJS does.
-	private static JSONObject transformSourceLocation(JSONObject obj, String originalHTMLFile, String instrumentedDirectory) throws Exception {
-		String fileName = obj.getString("fileName");
-		Integer lineNumber = obj.getInt("lineNumber");
-		Integer columnNumber = obj.getInt("columnNumber");
+	private static JsonObject transformSourceLocation(JsonObject obj, String originalHTMLFile, String instrumentedDirectory) throws Exception {
+		String fileName = obj.get("fileName").getAsString();
+		Integer lineNumber = obj.get("lineNumber").getAsInt();
+		Integer columnNumber = obj.get("columnNumber").getAsInt();
 //		if(lineNumber == -1 && columnNumber == -1){ //in case Jalangi has sourcelocation iid.
 //			throw new IllegalSourceLocationException();
 //		}
@@ -148,9 +155,9 @@ public class TransformHtmlLogFiles {
 			int inlineNumber = findInlineNumber("inline-(.*)_orig_.js", fileName);
 			int newLineNumber = lineNumber + inlineJSOffsetSourceLocationsLineNumbers.get(inlineNumber);
 			int newColumnNumber = columnNumber + (lineNumber == 1 ? inlineJSOffsetSourceLocationsColumnNumbers.get(inlineNumber) : 0);
-			obj.put("fileName", originalHTMLFile);
-			obj.put("lineNumber", newLineNumber);
-			obj.put("columnNumber", newColumnNumber);
+			obj.addProperty("fileName", originalHTMLFile);
+			obj.addProperty("lineNumber", newLineNumber);
+			obj.addProperty("columnNumber", newColumnNumber);
 		} else if(fileName.contains("event-handler-") && fileName.contains("_orig_.js")){
 			int inlineNumber = findInlineNumber("event-handler-(.*)_orig_.js", fileName);
 			String eventHandlerFile = instrumentedDirectory + "event-handler-" + inlineNumber + "_orig_.js";
@@ -159,7 +166,7 @@ public class TransformHtmlLogFiles {
 		return obj;
 	}
 	
-	private static JSONObject updateSourceLocationFromEventFileToSLInOriginalFile(String eventHandlerFile, String originalHTMLFile, JSONObject obj) throws Exception {
+	private static JsonObject updateSourceLocationFromEventFileToSLInOriginalFile(String eventHandlerFile, String originalHTMLFile, JsonObject obj) throws Exception {
 		String lineToSearchForInOriginalFile = getLineToSearchForFromEventHandlerFile(eventHandlerFile, obj);
 		BufferedReader reader = new BufferedReader(new FileReader(originalHTMLFile));
 		String line = reader.readLine();
@@ -177,9 +184,9 @@ public class TransformHtmlLogFiles {
 			}
 			line = line.replace("&lt;", "<").replace("&gt;", ">");
 			if((!inScript || line.indexOf(lineToSearchForInOriginalFile) < scriptStartIndex) && line.contains(lineToSearchForInOriginalFile)){
-				obj.put("fileName", originalHTMLFile);
-				obj.put("lineNumber", lineNumber);
-				obj.put("columnNumber", line.indexOf(lineToSearchForInOriginalFile) + obj.getInt("columnNumber"));
+				obj.addProperty("fileName", originalHTMLFile);
+				obj.addProperty("lineNumber", lineNumber);
+				obj.addProperty("columnNumber", line.indexOf(lineToSearchForInOriginalFile) + obj.get("columnNumber").getAsInt());
 				stringFound = true;		
 			}
 			lineNumber++;
@@ -192,9 +199,8 @@ public class TransformHtmlLogFiles {
 	}
 
 
-	private static String getLineToSearchForFromEventHandlerFile(String eventHandlerFile, JSONObject obj)
-			throws JSONException, IOException {
-		int lineNumber = obj.getInt("lineNumber");
+	private static String getLineToSearchForFromEventHandlerFile(String eventHandlerFile, JsonObject obj) throws IOException {
+		int lineNumber = obj.get("lineNumber").getAsInt();
 		BufferedReader reader = new BufferedReader(new FileReader(eventHandlerFile));
 		
 		String line = reader.readLine();
