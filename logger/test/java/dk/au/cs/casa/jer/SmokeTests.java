@@ -1,6 +1,7 @@
 package java.dk.au.cs.casa.jer;
 
 import dk.au.cs.casa.jer.LogParser;
+import dk.au.cs.casa.jer.RawLogFile;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -49,9 +50,9 @@ public class SmokeTests {
     }
 
     @Test
-    public void parse () {
+    public void parse () throws IOException {
         try {
-            new LogParser(path.toUri().toURL()).getEntries();
+            new LogParser(new RawLogFile(Files.readAllLines(path))).getEntries();
         }
         catch(MalformedURLException e) {
             throw new RuntimeException(e);
