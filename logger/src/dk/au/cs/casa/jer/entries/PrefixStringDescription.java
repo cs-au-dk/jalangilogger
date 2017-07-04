@@ -13,6 +13,6 @@ public class PrefixStringDescription extends StringDescription {
 
     @Override
     public String toString() {
-        return "PREFIX('" + getString() + "')";
+        return "PREFIX('" + escape(getString()) + "')";
     }
 }

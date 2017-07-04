@@ -8,7 +8,7 @@ public class ConcreteStringDescription extends StringDescription {
 
     @Override
     public String toString() {
-        return "'" + getString() + "'";
+        return "'" + escape(getString()) + "'";
     }
 
     @Override
