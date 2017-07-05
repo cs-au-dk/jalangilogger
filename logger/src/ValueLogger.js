@@ -104,6 +104,9 @@
         function makeBrowserSessionTerminators() {
             /* XXX using the fragment part to encode the parameter! This makes browsers work on file-schemed URIs!?!?! */
             var hash = window.location.hash;
+            if (typeof hash != 'string') {
+                console.error("window.location.hash is not a string? (%s has type %s)", hash, typeof hash);
+            }
             var parameterArray = hash.split("#")[1].split("&");
             var parameterObject = {};
             parameterArray.forEach(function (p) {
