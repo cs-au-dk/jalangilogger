@@ -38,6 +38,10 @@ import static java.lang.String.format;
  */
 public class Logger {
 
+    private static final boolean DEBUG = false;
+
+    private static final org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(Logger.class);
+
     private static String tempDirectoryPrefix = Logger.class.getCanonicalName();
 
     private final Path root;
@@ -468,71 +472,80 @@ public class Logger {
 
         private final int hardTimeLimit;
 
+        private final Path logfile;
+
         public HTMLLogger() {
             this.serverDir = temp.resolve("server");
+            this.logfile = serverDir.resolve("logfile.log");
             this.hardTimeLimit = (int) (timeLimit * 1.5);
         }
 
-        private void stopServer(Process server) {
-            server.destroy();
-        }
-
-        private void openBrowser() throws IOException {
+        private void startServer() {
             try {
-                URI uri = instrumentationDir.resolve(rootRelativeMain).toUri();
-                URI uriWithArgument = new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), null, String.format("softTimeLimit=%d&hardTimeLimit=%d", timeLimit, hardTimeLimit) /* XXX using the fragment part to encode the parameter! This makes browsers work on file-schemed URIs!?!?! */);
-                Desktop.getDesktop().browse(uriWithArgument);
-            } catch (URISyntaxException e) {
+                Files.createDirectories(serverDir);
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }
-
-        private Process startServer() throws IOException {
-            Files.createDirectories(serverDir);
-            String[] cmd = new String[]{node.toString(), jalangilogger.resolve("nodeJSServer/bin/www").toString()};
-            Process p = exec(serverDir, cmd);
+            JettyLoggerServer loggerServer = new JettyLoggerServer(instrumentationDir);
+            Thread serverThread = makeServerThreadAndOpenBrowser(loggerServer);
+            serverThread.start();
             try {
-                Thread.sleep(1000);
+                log.debug("Waiting for server-thread to terminate...");
+                serverThread.join();
+                log.debug("Server-thread has terminated.");
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            if (!p.isAlive()) {
-                throw new RuntimeException();
-            }
-            return p;
         }
 
-        public RawLogFile log() throws IOException, InstrumentationException {
-            instrument(Environment.BROWSER);
-            Process server = startServer();
-            try {
-                System.out.printf("Press 'p' in the browser when done interacting with the application (or wait for the timeout after %d seconds).%n", timeLimit);
-                openBrowser();
-                long before = System.currentTimeMillis();
-                server.waitFor(hardTimeLimit, TimeUnit.SECONDS);
-                long after = System.currentTimeMillis();
-                long duration = after - before;
-                boolean timedOut = duration > 1000 * hardTimeLimit;
-                String status = timedOut ? "timeout" : "success";
-                Path logfile = serverDir.resolve("logfile");
-                if (!Files.exists(logfile)) {
-                    if (!timedOut) {
-                        System.err.println("Log file does not exist, but we did not encounter a timeout!?!");
-                    }
-                    Files.createFile(logfile);
+        private Thread makeServerThreadAndOpenBrowser(JettyLoggerServer server) {
+            return new Thread(() -> {
+                JettyLoggerServer.RunningServer runningServer = server.startServer();
+                try {
+                    String serverLocation = String.format("localhost:%d", runningServer.getURI().getPort());
+                    String queryParameters = String.format("softTimeLimit=%d&hardTimeLimit=%d", timeLimit, hardTimeLimit);
+                    URI uri = new URI("http", serverLocation, "/" + rootRelativeMain.toString(), queryParameters, null);
+                    Desktop.getDesktop().browse(uri);
+                } catch (URISyntaxException | IOException e) {
+                    throw new RuntimeException(e);
                 }
-                return makeRawLogFile(status, logfile);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } finally {
-                stopServer(server);
-            }
+                try {
+                    Thread.sleep(1000); // wait for the browser to start properly
+                    System.out.printf("Press 'p' in the browser when done interacting with the application (or wait for the timeout after apprixmately %d seconds).%n", timeLimit);
+                    long endTime = System.currentTimeMillis() + (hardTimeLimit * 1000);
+                    while (!runningServer.isStopped()) {
+                        if (System.currentTimeMillis() > endTime) {
+                            log.debug("Stopping logger-server (timeout)");
+                            runningServer.stop();
+                        }
+                        Thread.sleep(100);
+                    }
+                    runningServer.persistEntries(logfile);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            });
         }
 
-        private void waitForEnter() throws IOException {
-            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-            System.out.printf("Press ENTER when done interacting (and pressing `p`) with the browser.%n");
-            br.readLine();
+        public RawLogFile log() throws InstrumentationSyntaxErrorException, InstrumentationTimeoutException, IOException {
+            instrument(Environment.BROWSER);
+            long before = System.currentTimeMillis();
+            startServer(); // will wait for server to terminate
+            long after = System.currentTimeMillis();
+            long duration = after - before;
+            boolean timedOut = duration > 1000 * hardTimeLimit;
+            String status = timedOut ? "timeout" : "success";
+            if (!Files.exists(logfile)) {
+                if (!timedOut) {
+                    System.err.println("Log file does not exist, but we did not encounter a timeout!?!");
+                }
+                try {
+                    Files.createFile(logfile);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            return makeRawLogFile(status, logfile);
         }
     }
 

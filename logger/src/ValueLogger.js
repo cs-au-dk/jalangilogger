@@ -20,6 +20,17 @@
     }
 
     var env = (function setupMode() {
+        function getParameterByName(name, url) {
+            if (!url) url = window.location.href;
+            name = name.replace(/[\[\]]/g, "\\$&");
+            var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                results = regex.exec(url);
+            if (!results) return null;
+            if (!results[2]) return '';
+            return decodeURIComponent(results[2].replace(/\+/g, " "));
+        }
+
+
         var env = {
             // invoked on J$:functionEnter and J$:conditional: should be enough to avoid infinite executions
             terminator: function () {
@@ -28,7 +39,7 @@
         var isNode = typeof require === 'function' && typeof require('fs') === 'object';
         var isNashorn = typeof Java === 'object' && typeof Java.type === 'function';
         var isBrowser = typeof window !== 'undefined';
-        var isProtractor = isBrowser && window.location.href.indexOf("file://") != 0
+        var isProtractor = isBrowser && getParameterByName("IS_PROTRACTOR");
 
         if (isBrowser || isNode) {
             env.makeMap = function () {
@@ -102,20 +113,8 @@
          * This method heuristically ends the browser session based on various timeout mechanisms.
          */
         function makeBrowserSessionTerminators() {
-            /* XXX using the fragment part to encode the parameter! This makes browsers work on file-schemed URIs!?!?! */
-            var hash = window.location.hash;
-            if (typeof hash != 'string') {
-                console.error("window.location.hash is not a string? (%s has type %s)", hash, typeof hash);
-            }
-            var parameterArray = hash.split("#")[1].split("&");
-            var parameterObject = {};
-            parameterArray.forEach(function (p) {
-                var nameAndValue = p.split('=');
-                parameterObject[nameAndValue[0]] = nameAndValue[1];
-            });
-
-            makeHardTerminator(parameterObject.hardTimeLimit);
-            makeSoftTerminator(parameterObject.softTimeLimit);
+            makeHardTerminator(getParameterByName("hardTimeLimit"));
+            makeSoftTerminator(getParameterByName("softTimeLimit"));
             makeAutoTerminator(env.terminator);
 
             function makeHardTerminator(limit) {
@@ -155,7 +154,7 @@
                     oldTerminator && oldTerminator();
                     leastNonUserEventListenerExecutionsInARow = 0;
                 };
-                function register(){
+                function register() {
                     window.setTimeout(function () {
                         leastNonUserEventListenerExecutionsInARow++;
                         if (leastNonUserEventListenerExecutionsInARow > 10) {
@@ -164,6 +163,7 @@
                         register(); // not using setInterval. This implementation ensures the checks are done with delay.
                     }, 250);
                 }
+
                 register();
             }
 
@@ -182,13 +182,13 @@
                     return;
 
                 var xmlhttp = new XMLHttpRequest();
-                xmlhttp.open("POST", "http://127.0.0.1:3000/done", false);
+                xmlhttp.open("POST", "/logger-server-api/done", false);
                 try {
                     xmlhttp.send();
                 } finally {
                     sendEntries = false;
                     notifyExit = false;
-                    close();
+                    // close();
                 }
             }
 
@@ -201,7 +201,7 @@
                         }
                     };
                 }
-                xmlhttp.open("POST", "http://127.0.0.1:3000/sendEntries", true);
+                xmlhttp.open("POST", "/logger-server-api/sendEntries", true);
                 xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
                 var entries = encodeURIComponent(JSON.stringify(entriesToSend));
                 try {
@@ -240,19 +240,6 @@
                 if (notifyExit) {
                     return "Are you sure you want to navigate away?";
                 }
-            }
-
-
-            function getParameterByName(name, url) {
-                if (!url) {
-                    url = window.location.href;
-                }
-                name = name.replace(/[\[\]]/g, "\\$&");
-                var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-                    results = regex.exec(url);
-                if (!results) return null;
-                if (!results[2]) return '';
-                return decodeURIComponent(results[2].replace(/\+/g, " "));
             }
 
         } else if (isNashorn || isNode) {
@@ -572,7 +559,7 @@
             if (typeof val === "string") {
                 return makeValueForString(val, forbidStringAbstraction);
             }
-            if(typeof val === 'undefined' && val !== undefined){
+            if (typeof val === 'undefined' && val !== undefined) {
                 return makeValueForObject(val); // legacy objects like `document.all`: https://bugs.chromium.org/p/chromium/issues/detail?id=567998
             }
             return makeValueForNonStringPrimitive(val);
@@ -664,6 +651,12 @@
             var isBuiltinConstructorCall = isConstructor && !allocationSites.has(f) /* ex. new String()*/;
             if (isBuiltinConstructorCall) {
                 registerAllocation(iid, result);
+            }
+        };
+
+        this.scriptEnter = function (iid, instrumentedFileName, originalFileName) {
+            if (console) {
+                console.log("Entering instrumented script: %s", instrumentedFileName);
             }
         };
 

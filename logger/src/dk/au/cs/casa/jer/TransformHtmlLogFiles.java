@@ -50,7 +50,7 @@ public class TransformHtmlLogFiles {
 					fillInlineJSOffsetSourceLocationLineNumbers(originalHTMLFile);
 					transformFile(logFileName, originalHTMLFile, instrumentedDirectory);
 				} catch (FileNotFoundException e){
-					System.out.println(e);
+					e.printStackTrace();
 					continue;
 				}
 			} else if (file.isDirectory()){
