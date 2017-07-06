@@ -17,7 +17,6 @@
   },
   "homepage": "https://github.com/cs-au-dk/jalangilogger",
   "dependencies": {
-    "jalangi2": "git+https://github.com/esbena/jalangi2.git#inline-single-file",
-
+    "jalangi2": "git+https://github.com/esbena/jalangi2.git#inline-single-file"
   }
 }
