@@ -1,5 +1,0 @@
-
-var numObj = {}
-whatnot = [ , numObj];
-
-

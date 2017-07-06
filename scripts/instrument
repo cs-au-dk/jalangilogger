@@ -1,9 +1,0 @@
-#!/bin/bash
-file=$1
-output=$2
-scriptLocationDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-node $scriptLocationDir/../node_modules/jalangi2/src/js/commands/esnstrument_cli.js --inlineIID --inlineSource "$file"
-instrumented="${file/.js/_jalangi_.js}"
-instrumentedJson="${file/.js/_jalangi_.json}"
-rm $instrumentedJson
-mv ${instrumented} ${output} 

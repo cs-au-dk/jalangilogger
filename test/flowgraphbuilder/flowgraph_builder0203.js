@@ -1,4 +1,0 @@
-while (v) {
-    continue;
-    break;
-}

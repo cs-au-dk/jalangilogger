@@ -1,7 +1,0 @@
-LOG_FILE_FOLDER=$1
-JALANGI_LOG_FILE=$2
-LOG_FILE=$3
-
-./scripts/postProcessHTMLLogs.sh
-mkdir -p $LOG_FILE_FOLDER
-cp $JALANGI_LOG_FILE $LOG_FILE

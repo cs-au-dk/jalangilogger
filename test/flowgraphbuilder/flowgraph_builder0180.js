@@ -1,2 +1,0 @@
-if (decrypted != text) ;
-
