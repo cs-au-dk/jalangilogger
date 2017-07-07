@@ -511,7 +511,23 @@ public class Logger {
                 }
                 try {
                     Thread.sleep(1000); // wait for the browser to start properly
-                    System.out.printf("Press 'p' in the browser when done interacting with the application (or wait for the timeout after apprixmately %d seconds).%n", timeLimit);
+                    Console c = new Console(); // TODO use similar command line interface for the JSLogger (although it will be non-interactive, and use the same stdout as this console)
+                    c.format("%n%s%n", String.join(String.format("%n"),
+                            Arrays.asList(
+                                    "Log recording of browser application started.",
+                                    "Interact with the browser, and stop the recording by either:",
+                                    "- pressing <p> in the browser",
+                                    "- pressing <ENTER> in this terminal",
+                                    String.format("- waiting for up to %d seconds", timeLimit)
+                            )
+                    ));
+
+                    Thread keypressThread = new Thread(() -> {
+                        c.readLine("");
+                        runningServer.stop();
+                    });
+                    keypressThread.start();
+
                     long endTime = System.currentTimeMillis() + (hardTimeLimit * 1000);
                     while (!runningServer.isStopped()) {
                         if (System.currentTimeMillis() > endTime) {
@@ -520,6 +536,7 @@ public class Logger {
                         }
                         Thread.sleep(100);
                     }
+                    keypressThread.interrupt();
                     runningServer.persistEntries(logfile);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
@@ -546,6 +563,31 @@ public class Logger {
                 }
             }
             return makeRawLogFile(status, logfile);
+        }
+
+        private class Console {
+
+            BufferedReader br;
+
+            PrintStream ps;
+
+            public Console() {
+                br = new BufferedReader(new InputStreamReader(System.in));
+                ps = System.out;
+            }
+
+            public String readLine(String out) {
+                ps.format(out);
+                try {
+                    return br.readLine();
+                } catch (IOException e) {
+                    return null;
+                }
+            }
+
+            public PrintStream format(String format, Object... objects) {
+                return ps.format(format, objects);
+            }
         }
     }
 
