@@ -120,7 +120,10 @@ function consoleLog(instrumentedFileName) {
         function makeBrowserSessionTerminators() {
             makeHardTerminator(getParameterByName("hardTimeLimit"));
             makeSoftTerminator(getParameterByName("softTimeLimit"));
-            makeAutoTerminator(env.terminator);
+            var ENABLE_AUTO_TERMINATOR = false; // TODO this is only a good idea for browser applications that does not require interaction!
+            if (ENABLE_AUTO_TERMINATOR) {
+                makeAutoTerminator(env.terminator);
+            }
 
             function makeHardTerminator(limit) {
                 var hardTimelimit = Number.parseInt(limit) || 0;
@@ -193,7 +196,7 @@ function consoleLog(instrumentedFileName) {
                 } finally {
                     sendEntries = false;
                     notifyExit = false;
-                    consoleLog("Closing window ... ");
+                    consoleLog("Closing");
                     window.close();
                 }
             }
