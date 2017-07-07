@@ -184,6 +184,7 @@ public class Logger {
     private static Path isolateInNewRoot(Path main) {
         try {
             Path newRoot = createTempDirectory();
+            deleteTempRecursivelyOnExit(newRoot);
             Path isolated = newRoot.resolve(main.getFileName());
             Files.copy(main, isolated);
             return newRoot;
@@ -297,10 +298,10 @@ public class Logger {
         return log(true);
     }
 
-    public RawLogFile log(boolean emptyTempDirectoryWhenDone) throws IOException {
+    public RawLogFile log(boolean cleanupWhenDone) throws IOException {
         RawLogFile rawLogFile = _log();
-        if (emptyTempDirectoryWhenDone) {
-            emptyRecursively(this.temp);
+        if (cleanupWhenDone) {
+            deleteTempRecursivelyOnExit(temp);
         }
         Set<String> badLines = rawLogFile.getLines().stream().filter(l -> l.contains(tempDirectoryPrefix)).collect(Collectors.toSet());
         if (!badLines.isEmpty()) {
@@ -309,7 +310,10 @@ public class Logger {
         return rawLogFile;
     }
 
-    private void emptyRecursively(Path dir) {
+    private static void deleteTempRecursivelyOnExit(Path dir) {
+        if (!dir.toString().contains(tempDirectoryPrefix)) {
+            throw new IllegalArgumentException("Trying to delete something non-temporary: '" + dir + "'?");
+        }
         try {
             Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
                 @Override
@@ -320,9 +324,7 @@ public class Logger {
                 }
 
                 private void delete(Path file) throws IOException {
-                    if (!dir.equals(file)) {
-                        Files.delete(file);
-                    }
+                    file.toFile().deleteOnExit();
                 }
 
                 @Override
