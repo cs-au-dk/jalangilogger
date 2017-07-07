@@ -1,3 +1,8 @@
+function consoleLog(instrumentedFileName) {
+    if (console) {
+        console.log("Entering instrumented script: %s", instrumentedFileName);
+    }
+}
 (function (sandbox) {
     var notifyExit = true;
     var entryIndex = 0;
@@ -188,11 +193,15 @@
                 } finally {
                     sendEntries = false;
                     notifyExit = false;
-                    // close();
+                    consoleLog("Closing window ... ");
+                    window.close();
                 }
             }
 
             function sendLoggedEntries(callback) {
+                if(entriesToSend.length === 0){
+                    return;
+                }
                 var xmlhttp = new XMLHttpRequest();
                 if (callback) {
                     xmlhttp.onreadystatechange = function () {
@@ -655,9 +664,7 @@
         };
 
         this.scriptEnter = function (iid, instrumentedFileName, originalFileName) {
-            if (console) {
-                console.log("Entering instrumented script: %s", instrumentedFileName);
-            }
+            consoleLog(instrumentedFileName);
         };
 
         this.functionEnter = function (iid, f, dis, args) {
