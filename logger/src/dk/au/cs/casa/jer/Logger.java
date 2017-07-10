@@ -488,9 +488,31 @@ public class Logger {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            JettyLoggerServer loggerServer = new JettyLoggerServer(instrumentationDir);
-            Thread serverThread = makeServerThreadAndOpenBrowser(loggerServer);
+            final JettyLoggerServer.RunningServer[] runningServer = new JettyLoggerServer.RunningServer[1]; // XXX thread-safety...
+            final JettyLoggerServer[] loggerServer = {new JettyLoggerServer(instrumentationDir)};
+            Thread serverThread = new Thread(() -> {
+                runningServer[0] = startServerAndOpenBrowser(loggerServer[0]);
+            });
             serverThread.start();
+
+            try {
+                Thread.sleep(1000); // wait for the server and browser to start properly
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            while(runningServer[0] == null) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            waitForServerToStop(runningServer[0]);
+
+            runningServer[0].persistEntries(logfile);
+
             try {
                 log.debug("Waiting for server-thread to terminate...");
                 serverThread.join();
@@ -500,50 +522,49 @@ public class Logger {
             }
         }
 
-        private Thread makeServerThreadAndOpenBrowser(JettyLoggerServer server) {
-            return new Thread(() -> {
-                JettyLoggerServer.RunningServer runningServer = server.startServer();
-                try {
-                    String serverLocation = String.format("localhost:%d", runningServer.getURI().getPort());
-                    String queryParameters = String.format("softTimeLimit=%d&hardTimeLimit=%d", timeLimit, hardTimeLimit);
-                    URI uri = new URI("http", serverLocation, "/" + rootRelativeMain.toString(), queryParameters, null);
-                    Desktop.getDesktop().browse(uri);
-                } catch (URISyntaxException | IOException e) {
-                    throw new RuntimeException(e);
-                }
-                try {
-                    Thread.sleep(1000); // wait for the browser to start properly
-                    Console c = new Console(); // TODO use similar command line interface for the JSLogger (although it will be non-interactive, and use the same stdout as this console)
-                    c.format("%n%s%n", String.join(String.format("%n"),
-                            Arrays.asList(
-                                    "Log recording of browser application started.",
-                                    "Interact with the browser, and stop the recording by either:",
-                                    "- pressing <p> in the browser",
-                                    "- pressing <ENTER> in this terminal",
-                                    String.format("- waiting for up to %d seconds", timeLimit)
-                            )
-                    ));
+        private void waitForServerToStop(JettyLoggerServer.RunningServer runningServer) {
+            try {
+                Console c = new Console(); // TODO use similar command line interface for the JSLogger (although it will be non-interactive, and use the same stdout as this console)
+                c.format("%n%s%n", String.join(String.format("%n"),
+                        Arrays.asList(
+                                "Log recording of browser application started.",
+                                "Interact with the browser, and stop the recording by either:",
+                                "- pressing <p> in the browser",
+                                "- pressing <ENTER> in this terminal",
+                                String.format("- waiting for up to %d seconds", timeLimit)
+                        )
+                ));
 
-                    Thread keypressThread = new Thread(() -> {
-                        c.readLine("");
+                Thread keypressThread = new Thread(() -> {
+                    c.readLine("");
+                    runningServer.stop();
+                });
+                keypressThread.start();
+
+                long endTime = System.currentTimeMillis() + (hardTimeLimit * 1000);
+                while (!runningServer.isStopped()) {
+                    if (System.currentTimeMillis() > endTime) {
                         runningServer.stop();
-                    });
-                    keypressThread.start();
-
-                    long endTime = System.currentTimeMillis() + (hardTimeLimit * 1000);
-                    while (!runningServer.isStopped()) {
-                        if (System.currentTimeMillis() > endTime) {
-                            log.debug("Stopping logger-server (timeout)");
-                            runningServer.stop();
-                        }
-                        Thread.sleep(100);
                     }
-                    keypressThread.interrupt();
-                    runningServer.persistEntries(logfile);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                    Thread.sleep(500);
                 }
-            });
+                keypressThread.interrupt();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private JettyLoggerServer.RunningServer startServerAndOpenBrowser(JettyLoggerServer server) {
+            JettyLoggerServer.RunningServer runningServer = server.startServer();
+            try {
+                String serverLocation = String.format("localhost:%d", runningServer.getURI().getPort());
+                String queryParameters = String.format("softTimeLimit=%d&hardTimeLimit=%d", timeLimit, hardTimeLimit);
+                URI uri = new URI("http", serverLocation, "/" + rootRelativeMain.toString(), queryParameters, null);
+                Desktop.getDesktop().browse(uri);
+            } catch (URISyntaxException | IOException e) {
+                throw new RuntimeException(e);
+            }
+            return runningServer;
         }
 
         public RawLogFile log() throws InstrumentationSyntaxErrorException, InstrumentationTimeoutException, IOException {

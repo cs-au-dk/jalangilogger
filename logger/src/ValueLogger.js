@@ -1,11 +1,29 @@
-function consoleLog(instrumentedFileName) {
+function consoleLog(text) {
     if (console) {
-        console.log("Entering instrumented script: %s", instrumentedFileName);
+        console.log(text);
     }
 }
 (function (sandbox) {
     var notifyExit = true;
     var entryIndex = 0;
+    var started = false;
+
+    function closeWindowSoon(message) {
+        consoleLog(message);
+        consoleLog("Closing window down in 5 seconds...");
+        setTimeout(function () {
+            notifyExit = false;
+            window.close()
+        }, 5 * 1000);
+    }
+
+    function xmlhttp_send(xmlhttp, string) {
+        try {
+            xmlhttp.send(string);
+        } catch (e) {
+            closeWindowSoon("Could not send http-request (" + e.message + "). Server has probably been shut down.");
+        }
+    }
 
     function getFullLocation(sid, iid) {
         var location = sandbox.iidToLocation(sid, iid);
@@ -182,6 +200,7 @@ function consoleLog(instrumentedFileName) {
             var entriesToSend = [];
             var numberOfEntriesToSendEachTime = 10000;
             var loggedEntriesMap = env.makeMap();
+            var lastLogTime = new Date().getTime();
 
             makeBrowserSessionTerminators();
 
@@ -192,17 +211,15 @@ function consoleLog(instrumentedFileName) {
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("POST", "/logger-server-api/done", false);
                 try {
-                    xmlhttp.send();
+                    xmlhttp_send(xmlhttp);
                 } finally {
                     sendEntries = false;
-                    notifyExit = false;
-                    consoleLog("Closing");
-                    window.close();
+                    closeWindowSoon("Closing window since we are stopping the analysis");
                 }
             }
 
             function sendLoggedEntries(callback) {
-                if(entriesToSend.length === 0){
+                if (entriesToSend.length === 0) {
                     return;
                 }
                 var xmlhttp = new XMLHttpRequest();
@@ -217,7 +234,7 @@ function consoleLog(instrumentedFileName) {
                 xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
                 var entries = encodeURIComponent(JSON.stringify(entriesToSend));
                 try {
-                    xmlhttp.send("entries=" + entries);
+                    xmlhttp_send(xmlhttp, "entries=" + entries);
                 } catch (e) {
                     callback();
                 }
@@ -243,9 +260,12 @@ function consoleLog(instrumentedFileName) {
                     return;
 
                 entriesToSend.push(entry);
-                if (entriesToSend.length >= numberOfEntriesToSendEachTime) {
+                var currentTime = new Date().getTime();
+                var tooMuchTimeHasPassedSinceLastLog = (currentTime - lastLogTime) > 1000;
+                if (entriesToSend.length >= numberOfEntriesToSendEachTime || tooMuchTimeHasPassedSinceLastLog) {
                     sendLoggedEntries();
                 }
+                lastLogTime = new Date().getTime();
             };
 
             window.onbeforeunload = function () {
@@ -667,7 +687,15 @@ function consoleLog(instrumentedFileName) {
         };
 
         this.scriptEnter = function (iid, instrumentedFileName, originalFileName) {
-            consoleLog(instrumentedFileName);
+            if (!started) {
+                consoleLog("Starting analysis at: " + instrumentedFileName);
+                started = true;
+                if (typeof XMLHttpRequest !== "undefined") {
+                    var xmlhttp = new XMLHttpRequest();
+                    xmlhttp.open("POST", "/logger-server-api/started", false);
+                    xmlhttp_send(xmlhttp);
+                }
+            }
         };
 
         this.functionEnter = function (iid, f, dis, args) {

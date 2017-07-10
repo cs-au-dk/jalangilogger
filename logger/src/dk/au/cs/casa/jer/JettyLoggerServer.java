@@ -48,6 +48,7 @@ public class JettyLoggerServer {
 
         handler.addServlet(new ServletHolder(new SendEntriesServlet(runningServer)), "/logger-server-api/sendEntries");
         handler.addServlet(new ServletHolder(new DoneServlet(runningServer)), "/logger-server-api/done");
+        handler.addServlet(new ServletHolder(new StartedServlet()), "/logger-server-api/started");
 
         server.setHandler(handler);
 
@@ -96,7 +97,7 @@ public class JettyLoggerServer {
             }
         }
 
-        public void persistEntries(Path file) {
+        public synchronized void persistEntries(Path file) {
             Iterable<String> lines = entries.stream().map(e -> gson.toJson(e)).distinct()::iterator;
             try {
                 Files.write(file, lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
@@ -105,7 +106,7 @@ public class JettyLoggerServer {
             }
         }
 
-        public void registerRawEntries(String rawEntries) {
+        public synchronized void registerRawEntries(String rawEntries) {
             gson.fromJson(rawEntries, JsonArray.class)
                     .forEach(entry -> entries.add(entry));
         }
@@ -122,6 +123,7 @@ public class JettyLoggerServer {
         @Override
         protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
             response.setStatus(204); // no content in response
+            log.debug("Client is sending entries");
             String rawEntries = request.getParameter("entries");
             runningServer.registerRawEntries(rawEntries);
         }
@@ -137,10 +139,20 @@ public class JettyLoggerServer {
 
         @Override
         protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-            log.debug("Stopping logger-server (post-request)");
+            response.setStatus(204); // no content in response
+            log.debug("Client is stopping the logger-server");
             new Thread(() -> { // must stop in other thread
                 runningServer.stop();
             }).start();
+        }
+    }
+
+    private class StartedServlet extends DefaultServlet {
+
+        @Override
+        protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+            response.setStatus(204); // no content in response
+            log.debug("Client is starting its analysis");
         }
     }
 }
