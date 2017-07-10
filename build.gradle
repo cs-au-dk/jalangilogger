@@ -19,17 +19,9 @@ repositories {
 sourceSets {
     main {
         java {
-            srcDir 'logger/src/'
+            srcDir 'java/src/'
         }
-        resources {
-            srcDir 'logger/res/'
-        }
-    }
-    test {
-        java {
-            srcDir 'logger/test'
-        }
-    }
+     }
 }
 
 compileJava {

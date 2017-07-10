@@ -29,7 +29,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.lang.String.format;
 
@@ -103,7 +102,7 @@ public class Logger {
             throw new RuntimeException(e);
         }
         this.instrumentationDir = temp.resolve("instrumentation");
-        this.analysis = jalangilogger.resolve("logger/src/ValueLogger.js").toAbsolutePath();
+        this.analysis = jalangilogger.resolve("analysis").resolve("ValueLogger.js").toAbsolutePath();
     }
 
     /**
@@ -361,7 +360,7 @@ public class Logger {
     }
 
     private void instrument(Environment environment) throws IOException, InstrumentationSyntaxErrorException, InstrumentationTimeoutException {
-        Path instrument_js = getJalangiDirectory().resolve("src/js/commands/instrument.js").toAbsolutePath();
+        Path instrument_js = jalangilogger.resolve("src/commands/instrument.js").toAbsolutePath();
         String script = instrument_js.toString();
         String out = instrumentationDir.toAbsolutePath().toString();
         String in = ".";
@@ -407,19 +406,6 @@ public class Logger {
         if (err.contains("SyntaxError")) {
             throw new InstrumentationSyntaxErrorException();
         }
-    }
-
-    private Path getJalangiDirectory() {
-        Set<Path> potentialLocations = Stream.of("..", "node_modules")
-                .map(dir -> jalangilogger.resolve(dir).resolve("jalangi2"))
-                .collect(Collectors.toSet());
-        Optional<Path> directory = potentialLocations.stream()
-                .filter(dir -> Files.exists(dir))
-                .findAny();
-        if (!directory.isPresent()) {
-            throw new IllegalStateException("JalangiLogger has not been installed correctly: can not find Jalangi-installantion (looked at: " + potentialLocations + ")");
-        }
-        return directory.get();
     }
 
     private List<String> postProcessLog(Path logFile) {
@@ -743,7 +729,7 @@ public class Logger {
             switch (environment) {
                 case NODE:
                 case NODE_GLOBAL:
-                    Path direct_js = getJalangiDirectory().resolve("src/js/commands/direct.js").toAbsolutePath();
+                    Path direct_js = jalangilogger.resolve("src/commands/direct.js").toAbsolutePath();
                     String script = direct_js.toString();
                     Path commandLineMain = environment == Environment.NODE ? rootRelativeMain : makeGlobalifier(rootRelativeMain);
                     cmd = new ArrayList<>(Arrays.asList(new String[]{node.toString(), script, "--analysis", analysis.toString(), commandLineMain.toString()}));

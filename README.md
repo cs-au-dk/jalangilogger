@@ -24,13 +24,13 @@ The [JalangiLogFiles](JalangiLogFiles) directory contains some example log files
 
 ## Using collected values 
  
-- The [logger](logger) directory contains implementations for reading the log files.
-- The [logger/src/dk/au/cs/casa/jer/entries](logger/src/dk/au/cs/casa/jer/entries) contains Java files that describes what an entry in a log file can look like (see JavaDoc for further information).
-- The [logger/src/](logger/src/) log-reader implementation can be thought of as the log-reader reference implementation.
+- The [logger](java) directory contains implementations for reading the log files.
+- The [logger/src/dk/au/cs/casa/jer/entries](java/src/dk/au/cs/casa/jer/entries) contains Java files that describes what an entry in a log file can look like (see JavaDoc for further information).
+- The [logger/src/](java/src/) log-reader implementation can be thought of as the log-reader reference implementation.
 
 - The log files have corresponding JavaScript and HTML source files in the [test](test/) directory
   - for space reasons, log files have *not* been generated for all files in the test directory
-  - some log file contains TAJS-specific functions, these are mocked in [logger/src/ValueLogger.js](logger/src/ValueLogger.js) in order to avoid unintended side-effects on the executed code
+  - some log file contains TAJS-specific functions, these are mocked in [logger/src/ValueLogger.js](java/src/ValueLogger.js) in order to avoid unintended side-effects on the executed code
 
 ### Using log files in Java
  
@@ -43,7 +43,7 @@ Set<IEntry> logEntries = new dk.au.cs.casa.jer.LogParser("myLog.log").getEntries
 ```
 
 - The script [scripts/make-log-reader-jar.sh](scripts/make-log-reader-jar.sh) produces a jar file at dist/jer.jar.
-- jer.jar depends on gson, it is present at [logger/lib/gson-2.3.1.jar](logger/lib/gson-2.3.1.jar)
+- jer.jar depends on gson, it is present at [logger/lib/gson-2.3.1.jar](java/lib/gson-2.3.1.jar)
 
 ### Build jar with gradle
 
