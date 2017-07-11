@@ -52,11 +52,11 @@ $ ./gradlew jar
 $ ls -l build/libs/jalangilogger-1.0.jar
 ```
 
-## Collecting more values
+## Creating log files
 
-If the example log files that have been provided with this project are not sufficient, more can be created.
+Log files can be created by instantiating [Logger](java/src/dk/au/cs/casa/jer/Logger.java) and invoking the run method. 
 
-### Prerequisites
+## Prerequisites
 
 - run `cd javascript; npm install` to install Jalangi and its dependencies
 - java (& javac) 1.8+ is required to run the produced log files for HTML files

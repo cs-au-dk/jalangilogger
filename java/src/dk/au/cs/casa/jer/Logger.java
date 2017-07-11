@@ -69,6 +69,8 @@ public class Logger {
 
     private final Environment environment;
 
+    private final Path jalangi2directory;
+
     private Metadata metadata;
 
     /**
@@ -96,6 +98,7 @@ public class Logger {
         this.root = root;
         this.node = node;
         this.jalangilogger = jalangilogger;
+        this.jalangi2directory = guessJalangiDirectory(jalangilogger);
         try {
             this.temp = createTempDirectory().toRealPath();
         } catch (IOException e) {
@@ -259,6 +262,49 @@ public class Logger {
         return metadata;
     }
 
+    private static void deleteTempRecursivelyOnExit(Path dir) {
+        if (!dir.toString().contains(tempDirectoryPrefix)) {
+            throw new IllegalArgumentException("Trying to delete something non-temporary: '" + dir + "'?");
+        }
+        try {
+            Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                        throws IOException {
+                    delete(file);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                private void delete(Path file) throws IOException {
+                    //file.toFile().deleteOnExit();
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    if (exc != null) {
+                        throw exc;
+                    }
+                    delete(dir);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Path guessJalangiDirectory(Path jalangilogger) {
+        Path jalangiloggerAsTopLevel = jalangilogger.resolve("node_modules/jalangi2");
+        Path jalangiloggerAsModule = jalangilogger.resolve("../jalangi2");
+        if (Files.exists(jalangiloggerAsTopLevel)) {
+            return jalangiloggerAsTopLevel;
+        } else if (Files.exists(jalangiloggerAsModule)) {
+            return jalangiloggerAsModule;
+        }
+        String message = String.format("Could not find Jalang2 installation, is it installed? (looked at: %s and %s)", jalangiloggerAsTopLevel.toAbsolutePath().toString(), jalangiloggerAsModule.toAbsolutePath().toString());
+        throw new RuntimeException(message);
+    }
+
     private void checkAbsolutePreambles(List<Path> preambles) {
         for (Path preamble : preambles) {
             if (!preamble.isAbsolute()) {
@@ -309,37 +355,6 @@ public class Logger {
         return rawLogFile;
     }
 
-    private static void deleteTempRecursivelyOnExit(Path dir) {
-        if (!dir.toString().contains(tempDirectoryPrefix)) {
-            throw new IllegalArgumentException("Trying to delete something non-temporary: '" + dir + "'?");
-        }
-        try {
-            Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                        throws IOException {
-                    delete(file);
-                    return FileVisitResult.CONTINUE;
-                }
-
-                private void delete(Path file) throws IOException {
-                    //file.toFile().deleteOnExit();
-                }
-
-                @Override
-                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                    if (exc != null) {
-                        throw exc;
-                    }
-                    delete(dir);
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private RawLogFile _log() throws IOException {
         try {
             if (environment == Environment.NASHORN || environment == Environment.NODE || environment == Environment.NODE_GLOBAL) {
@@ -360,7 +375,7 @@ public class Logger {
     }
 
     private void instrument(Environment environment) throws IOException, InstrumentationSyntaxErrorException, InstrumentationTimeoutException {
-        Path instrument_js = jalangilogger.resolve("node_modules/jalangi2/src/js/commands/instrument.js").toAbsolutePath();
+        Path instrument_js = jalangi2directory.resolve("src/js/commands/instrument.js").toAbsolutePath();
         String script = instrument_js.toString();
         Files.createDirectories(instrumentationDir);
         String out = instrumentationDir.toAbsolutePath().toString();
@@ -488,7 +503,7 @@ public class Logger {
                 throw new RuntimeException(e);
             }
 
-            while(runningServer[0] == null) {
+            while (runningServer[0] == null) {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
@@ -730,7 +745,7 @@ public class Logger {
             switch (environment) {
                 case NODE:
                 case NODE_GLOBAL:
-                    Path direct_js = jalangilogger.resolve("node_modules/jalangi2/src/js/commands/direct.js").toAbsolutePath();
+                    Path direct_js = jalangi2directory.resolve("src/js/commands/direct.js").toAbsolutePath();
                     String script = direct_js.toString();
                     Path commandLineMain = environment == Environment.NODE ? rootRelativeMain : makeGlobalifier();
                     cmd = new ArrayList<>(Arrays.asList(new String[]{node.toString(), script, "--analysis", analysis.toString(), commandLineMain.toString()}));
