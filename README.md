@@ -2,7 +2,7 @@
 
 JalangiLogger(subject to change) records facts about concrete executions of JavaScript programs.
 
-The collection of facts is done as a Jalangi-analysis, and the values are stored as JSON entries in a text file.
+The collection of facts is done as a Jalangi-analysis (see [README](javascript/README.md)), and the values are stored as JSON entries in a text file.
 In this readme, the text file of JSON entries is known as a "log file".
  
 Caveat: This is an unpolished prototype-tool, known limitations are listed in the bottom of this readme, and on the issue tracker of this project.
@@ -58,42 +58,8 @@ If the example log files that have been provided with this project are not suffi
 
 ### Prerequisites
 
-- run `npm install` to install Jalangi and other dependencies
-- java (& javac) 1.6+ is required to run the produced log files for HTML files
-
-### Creating log files from plain JavaScript files
-
-The file [scripts/createLogFiles](scripts/createLogFiles) can be used to create log files for all JavaScript files in the [test](test/) directory (recursively).
-It does so by essentially recording values appearing during `node test/x/y/z/file.js`.
-
-The log files will be placed in the directory [JalangiLogFiles](JalangiLogFiles) in a subdirectory corresponding to the location of the JavaScript files.
-
-Creating a log file for a single JavaScript application can be done
-using [scripts/genLogFile.sh](scripts/genLogFile.sh) 
-Example:
-```
-$ ./scripts/genLogFile.sh ./ test/anderson/anderson10.js 
-Log file is located at: JalangiLogFiles/test/anderson/anderson10.js.log
-$ wc -l JalangiLogFiles/test/anderson/anderson10.js.log
-12 JalangiLogFiles/test/anderson/anderson10.js.log
-```
-
-It is also possible to create a log file for javascript programs that have dependencies. For example nodejs requires. This is done using `./scripts/genLogFile.sh ./ path/to/dir path/to/dir/mainfile.js` 
-
-### Creating log files from HTML files
-
-Creating a log file for a HTML based test is slightly more involved.
-When invoking [scripts/genLogFile.sh](scripts/genLogFile.sh) with a HTML file as an argument a browser instance running the HTML application is spawned. The user can then interact with the application to generate values. Once the user is done, the browser application is killed by pressing 'p', and the values are saved to a log file. For example:
-
-```
-$ ./scripts/genLogFile.sh ./ test/chromeexperiments/core.html
-Press p when done interacting with the browser.
-Log file is located at: /Users/torp/development/jalangilogger/JalangiLogFiles/test/chromeexperiments/core.html.log
-$ wc -l JalangiLogFiles/test/chromeexperiments/core.html.log
-     696 JalangiLogFiles/test/chromeexperiments/core.html.log
-```
-
-Note: After pressing 'p' the script might continue running for around 10 seconds.
+- run `cd javascript; npm install` to install Jalangi and its dependencies
+- java (& javac) 1.8+ is required to run the produced log files for HTML files
 
 ## Use case: Testing unsoundness of a static analysis
 
@@ -130,10 +96,7 @@ This means that a precise and sound analysis can actually under-approximate the 
 - log files for JavaScript files is done where only a single JavaScript file is instrumented, obtaining a log file for an entire application is not currently possible
 - log files for JavaScript files will have nodejs-semantics and **not** browser-semantics, e.g. the value of `this` is not the global object.
 
-- TODO cleanup in nodeJSServer: it uses way to many node-packages
 - TODO actual JavaDoc in Java log parsing files
-- TODO use proper temp directory for temporary/generated files 
-- TODO use config file for all the different directory-dependencies in scripts
 
 ## Contributing
 

@@ -102,7 +102,7 @@ public class Logger {
             throw new RuntimeException(e);
         }
         this.instrumentationDir = temp.resolve("instrumentation");
-        this.analysis = jalangilogger.resolve("analysis").resolve("ValueLogger.js").toAbsolutePath();
+        this.analysis = jalangilogger.resolve("src/analysis/ValueLogger.js").toAbsolutePath();
     }
 
     /**
@@ -273,11 +273,11 @@ public class Logger {
         return gson.toJson(this.metadata.jsonRep);
     }
 
-    private Process exec(Path pwd, String... cmd) throws IOException {
-        return exec(pwd, false, cmd);
+    private Process exec(String description, Path pwd, String... cmd) throws IOException {
+        return exec(description, pwd, false, cmd);
     }
 
-    private Process exec(Path pwd, boolean redirectOutput, String... cmd) throws IOException {
+    private Process exec(String description, Path pwd, boolean redirectOutput, String... cmd) throws IOException {
         ProcessBuilder pb = new ProcessBuilder(cmd);
         if (redirectOutput) {
             pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
@@ -288,7 +288,7 @@ public class Logger {
         }
         //pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-        System.out.printf("Starting (at %s): %s%n", pwd, String.join(" ", Arrays.asList(cmd)));
+        System.out.printf("Starting %s (at %s): %s%n", description, pwd, String.join(" ", Arrays.asList(cmd)));
         Process p = pb.start();
         return p;
     }
@@ -323,7 +323,7 @@ public class Logger {
                 }
 
                 private void delete(Path file) throws IOException {
-                    file.toFile().deleteOnExit();
+                    //file.toFile().deleteOnExit();
                 }
 
                 @Override
@@ -360,8 +360,9 @@ public class Logger {
     }
 
     private void instrument(Environment environment) throws IOException, InstrumentationSyntaxErrorException, InstrumentationTimeoutException {
-        Path instrument_js = jalangilogger.resolve("src/commands/instrument.js").toAbsolutePath();
+        Path instrument_js = jalangilogger.resolve("node_modules/jalangi2/src/js/commands/instrument.js").toAbsolutePath();
         String script = instrument_js.toString();
+        Files.createDirectories(instrumentationDir);
         String out = instrumentationDir.toAbsolutePath().toString();
         String in = ".";
         ArrayList<String> cmd = new ArrayList<>(Arrays.asList(node.toString(), script, "--inlineIID", "--analysis", analysis.toString(), "--outputDir", out));
@@ -387,7 +388,7 @@ public class Logger {
             cmd.add(String.join(":" /* FIXME should be the system separator */, stringPaths));
         }
         cmd.add(in);
-        Process exec = exec(root, cmd.toArray(new String[]{}));
+        Process exec = exec("instrumentation process", root, cmd.toArray(new String[]{}));
         try {
             boolean timedOut = !exec.waitFor(instrumentationTimeLimit, TimeUnit.SECONDS);
             if (timedOut) {
@@ -679,7 +680,7 @@ public class Logger {
 
         private void captureLog() {
             try {
-                Process p = exec(jalangilogger.resolve("browser_driver"), true, "bash", "-c", mkCmd(jalangilogger.toAbsolutePath().toString(), instrumentationDir.toAbsolutePath().toString()));
+                Process p = exec("dynamic analysis", jalangilogger.resolve("browser_driver"), true, "bash", "-c", mkCmd(jalangilogger.toAbsolutePath().toString(), instrumentationDir.toAbsolutePath().toString()));
                 Thread.sleep(1000);
                 if (!p.isAlive()) {
                     throw new RuntimeException();
@@ -729,9 +730,9 @@ public class Logger {
             switch (environment) {
                 case NODE:
                 case NODE_GLOBAL:
-                    Path direct_js = jalangilogger.resolve("src/commands/direct.js").toAbsolutePath();
+                    Path direct_js = jalangilogger.resolve("node_modules/jalangi2/src/js/commands/direct.js").toAbsolutePath();
                     String script = direct_js.toString();
-                    Path commandLineMain = environment == Environment.NODE ? rootRelativeMain : makeGlobalifier(rootRelativeMain);
+                    Path commandLineMain = environment == Environment.NODE ? rootRelativeMain : makeGlobalifier();
                     cmd = new ArrayList<>(Arrays.asList(new String[]{node.toString(), script, "--analysis", analysis.toString(), commandLineMain.toString()}));
                     break;
                 case NASHORN:
@@ -741,7 +742,7 @@ public class Logger {
                     throw new UnsupportedOperationException("Unhandled environment kind: " + environment);
             }
             addPreambles(cmd);
-            Process p = exec(instrumentationDir, cmd.toArray(new String[cmd.size()]));
+            Process p = exec("dynamic analysis", instrumentationDir, cmd.toArray(new String[cmd.size()]));
             boolean timeout;
             try {
                 timeout = !p.waitFor(timeLimit, TimeUnit.SECONDS);
@@ -772,14 +773,16 @@ public class Logger {
         /**
          * Makes a wrapper-file that loads the main-file in a global context (instead of the node-module context)
          */
-        private Path makeGlobalifier(Path mainFile) {
+        private Path makeGlobalifier() {
             try {
-                Path globalifier = Files.createTempFile("globalifier", ".js");
+                Path dir = instrumentationDir.resolve("globalifier");
+                Files.createDirectories(dir);
+                Path globalifier = dir.resolve("main.js");
                 Files.write(globalifier, Arrays.asList(
                         "var fs = require('fs');",
                         "var globalEval = eval;",
-                        String.format("(globalEval)(fs.readFileSync('%s', 'utf-8'));", mainFile.toString())
-                ), StandardOpenOption.TRUNCATE_EXISTING);
+                        String.format("(globalEval)(fs.readFileSync('%s', 'utf-8'));", instrumentationDir.resolve(rootRelativeMain).toString())
+                ), StandardOpenOption.CREATE_NEW);
                 return globalifier;
             } catch (IOException e) {
                 throw new RuntimeException(e);
