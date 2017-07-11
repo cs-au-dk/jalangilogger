@@ -49,11 +49,6 @@ $ ls -l build/libs/jalangilogger-*.jar
 - Semantic limitations and bugs of [Jalangi](https://github.com/Samsung/jalangi2) will influence the logs
   - the most serious limitation is the improper treatment of the with-statement
 - The exact choice of source locations used in the log files can be discussed, for now it is recommended to work around surprising special cases in the tools that use the log files
-  - (an alternative to source locations matching is an id assigned to every AST-node using a deterministic tree traversal) 
-- log files for JavaScript files is done where only a single JavaScript file is instrumented, obtaining a log file for an entire application is not currently possible
-- log files for JavaScript files will have nodejs-semantics and **not** browser-semantics, e.g. the value of `this` is not the global object.
-
-- TODO actual JavaDoc in Java log parsing files
 
 ## Contributing
 
