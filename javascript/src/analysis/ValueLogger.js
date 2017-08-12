@@ -368,13 +368,24 @@ function consoleLog(text) {
             TAJS_assertEquals = function () {
             };
             TAJS_make = function (s) {
-                switch (s) {
-                    case "AnyStr":
-                        return "TAJS_make('AnyStr');"
-                    case "AnyNum":
-                        return 42;
-                    case "AnyBool":
-                        return true;
+                if(arguments.length > 1) {
+                    var min = 1;
+                    var max = arguments.length - 1;
+                    return arguments[Math.floor(Math.random() * (max - min + 1)) + min];
+                }
+                else {
+                    switch (s) {
+                        case "AnyStr":
+                            return "TAJS_make('AnyStr');"
+                        case "AnyNum":
+                            return 42;
+                        case "AnyBool":
+                            return true;
+                        case "AnyStrUInt":
+                            return '0';
+                        case "AnyStrNotUInt":
+                            return "TAJS_make('AnyStrNotUInt')";
+                    }
                 }
                 return;
             };
