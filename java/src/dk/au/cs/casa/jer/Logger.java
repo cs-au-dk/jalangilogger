@@ -793,10 +793,12 @@ public class Logger {
                 Path dir = instrumentationDir.resolve("globalifier");
                 Files.createDirectories(dir);
                 Path globalifier = dir.resolve("main.js");
+                String mainPath = instrumentationDir.resolve(rootRelativeMain).toString();
+                mainPath = mainPath.replaceAll('\\', '\\\\'); // the path will be used as a string literal, sole backslashes will act as escape characters: escape them!
                 Files.write(globalifier, Arrays.asList(
                         "var fs = require('fs');",
                         "var globalEval = eval;",
-                        String.format("(globalEval)(fs.readFileSync('%s', 'utf-8'));", instrumentationDir.resolve(rootRelativeMain).toString())
+                        String.format("(globalEval)(fs.readFileSync('%s', 'utf-8'));", mainPath)
                 ), StandardOpenOption.CREATE_NEW);
                 return globalifier;
             } catch (IOException e) {
