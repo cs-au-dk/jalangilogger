@@ -6,7 +6,6 @@ node_modules
 instrumentedHtmlFiles
 logger/dist
 logger/build
-logger/build
 .idea/workspace.xml
 .DS_Store
 *.iml
