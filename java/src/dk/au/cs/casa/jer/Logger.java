@@ -794,7 +794,7 @@ public class Logger {
                 Files.createDirectories(dir);
                 Path globalifier = dir.resolve("main.js");
                 String mainPath = instrumentationDir.resolve(rootRelativeMain).toString();
-                mainPath = mainPath.replaceAll('\\', '\\\\'); // the path will be used as a string literal, sole backslashes will act as escape characters: escape them!
+                mainPath = mainPath.replace("\\", "\\\\"); // the path will be used as a string literal, sole backslashes will act as escape characters: escape them!
                 Files.write(globalifier, Arrays.asList(
                         "var fs = require('fs');",
                         "var globalEval = eval;",
