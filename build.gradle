@@ -12,7 +12,7 @@ repositories {
     mavenCentral()
 
     flatDir {
-        dirs 'lib'
+        dirs 'java/libs'
     }
 }
 
@@ -20,6 +20,9 @@ sourceSets {
     main {
         java {
             srcDir 'java/src/'
+        }
+        resources {
+            srcDirs = ['java/resources']
         }
      }
 }
@@ -42,6 +45,9 @@ dependencies {
     compile group: 'net.htmlparser.jericho', name: 'jericho-html', version: '3.3'
     compile group: 'log4j', name: 'log4j', version: '1.2.17'
     compile group: 'org.eclipse.jetty', name: 'jetty-webapp', version: '9.4.5.v20170502'
+    compile group: 'org.seleniumhq.selenium', name: 'selenium-chrome-driver', version: '3.4.0'
+    compile group: 'org.seleniumhq.selenium', name: 'selenium-server', version: '3.4.0'
+
 
 
     // Docker logger dependencies
