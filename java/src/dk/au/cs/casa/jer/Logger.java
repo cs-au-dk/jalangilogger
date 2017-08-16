@@ -81,7 +81,7 @@ public class Logger {
             throw new IllegalArgumentException("rootRelativeMain must be relative");
         }
 
-        if (environment == Environment.BROWSER && isJsFile(rootRelativeMain)) {
+        if ((environment == Environment.BROWSER || environment == Environment.HEADLESS_BROWSER) && isJsFile(rootRelativeMain)) {
             this.rootRelativeMain = createHTMLWrapper(root, rootRelativeMain, preambles);
         } else {
             this.rootRelativeMain = rootRelativeMain;
@@ -359,8 +359,8 @@ public class Logger {
         try {
             if (environment == Environment.NASHORN || environment == Environment.NODE || environment == Environment.NODE_GLOBAL) {
                 return new JSLogger(environment).log();
-            } else if (environment == Environment.BROWSER) {
-                return new HTMLLogger().log();
+            } else if (environment == Environment.BROWSER || environment == Environment.HEADLESS_BROWSER) {
+                return new HTMLLogger(environment == Environment.HEADLESS_BROWSER).log();
             } else if (environment == Environment.DRIVEN_BROWSER) {
                 return new DrivenHTMLLogger().log();
             }
@@ -384,6 +384,10 @@ public class Logger {
         switch (environment) {
             case DRIVEN_BROWSER:
             case BROWSER:
+                cmd.add("--instrumentInline");
+                cmd.add("--inlineJalangi");
+                break;
+            case HEADLESS_BROWSER:
                 cmd.add("--instrumentInline");
                 cmd.add("--inlineJalangi");
                 break;
@@ -467,6 +471,7 @@ public class Logger {
         NODE_GLOBAL,
         NASHORN,
         BROWSER,
+        HEADLESS_BROWSER,
         DRIVEN_BROWSER
     }
 
@@ -478,10 +483,13 @@ public class Logger {
 
         private final Path logfile;
 
-        public HTMLLogger() {
+        private final boolean headless;
+
+        public HTMLLogger(boolean headless) {
             this.serverDir = temp.resolve("server");
             this.logfile = serverDir.resolve("logfile.log");
             this.hardTimeLimit = (int) (timeLimit * 1.5);
+            this.headless = headless;
         }
 
         private void startServer() {
@@ -526,31 +534,34 @@ public class Logger {
 
         private void waitForServerToStop(JettyLoggerServer.RunningServer runningServer) {
             try {
-                Console c = new Console(); // TODO use similar command line interface for the JSLogger (although it will be non-interactive, and use the same stdout as this console)
-                c.format("%n%s%n", String.join(String.format("%n"),
-                        Arrays.asList(
-                                "Log recording of browser application started.",
-                                "Interact with the browser, and stop the recording by either:",
-                                "- pressing <p> in the browser",
-                                "- pressing <ENTER> in this terminal",
-                                String.format("- waiting for up to %d seconds", timeLimit)
-                        )
-                ));
-
-                Thread keypressThread = new Thread(() -> {
-                    c.readLine("");
+                if(headless) {
                     runningServer.stop();
-                });
-                keypressThread.start();
-
-                long endTime = System.currentTimeMillis() + (hardTimeLimit * 1000);
-                while (!runningServer.isStopped()) {
-                    if (System.currentTimeMillis() > endTime) {
-                        runningServer.stop();
-                    }
-                    Thread.sleep(500);
                 }
-                keypressThread.interrupt();
+                else {
+                    Console c = new Console(); // TODO use similar command line interface for the JSLogger (although it will be non-interactive, and use the same stdout as this console)
+                    c.format("%n%s%n", String.join(String.format("%n"),
+                            Arrays.asList(
+                                    "Log recording of browser application started.",
+                                    "Interact with the browser, and stop the recording by either:",
+                                    "- pressing <p> in the browser",
+                                    "- pressing <ENTER> in this terminal",
+                                    String.format("- waiting for up to %d seconds", timeLimit)
+                            )
+                    ));
+                    Thread keypressThread = new Thread(() -> {
+                        c.readLine("");
+                        runningServer.stop();
+                    });
+                    keypressThread.start();
+                    long endTime = System.currentTimeMillis() + (hardTimeLimit * 1000);
+                    while (!runningServer.isStopped()) {
+                        if (System.currentTimeMillis() > endTime) {
+                            runningServer.stop();
+                        }
+                        Thread.sleep(500);
+                    }
+                    keypressThread.interrupt();
+                }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -562,7 +573,12 @@ public class Logger {
                 String serverLocation = String.format("localhost:%d", runningServer.getURI().getPort());
                 String queryParameters = String.format("softTimeLimit=%d&hardTimeLimit=%d", timeLimit, hardTimeLimit);
                 URI uri = new URI("http", serverLocation, "/" + rootRelativeMain.toString(), queryParameters, null);
-                Desktop.getDesktop().browse(uri);
+                if(!headless) {
+                    Desktop.getDesktop().browse(uri);
+                }
+                else {
+                    new BrowserDriver().browse(uri, (int)(0.8 * hardTimeLimit), hardTimeLimit);
+                }
             } catch (URISyntaxException | IOException e) {
                 throw new RuntimeException(e);
             }
@@ -570,7 +586,7 @@ public class Logger {
         }
 
         public RawLogFile log() throws InstrumentationSyntaxErrorException, InstrumentationTimeoutException, IOException {
-            instrument(Environment.BROWSER);
+            instrument(headless ? Environment.HEADLESS_BROWSER : Environment.BROWSER);
             long before = System.currentTimeMillis();
             startServer(); // will wait for server to terminate
             long after = System.currentTimeMillis();
