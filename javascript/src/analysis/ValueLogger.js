@@ -257,12 +257,12 @@ function consoleLog(text) {
                 try {
                     xmlhttp_send(xmlhttp, "entries=" + entries);
                 } catch (e) {
+                    if(callback === stopBrowserInteraction) {
+                        window.J$.stopBrowserInteraction = true;
+                    }
                     callback();
                 }
                 entriesToSend = [];
-                if(callback === stopBrowserInteraction) {
-                    window.J$.stopBrowserInteraction = true;
-                }
             }
 
             window.onkeyup = function (event) {
