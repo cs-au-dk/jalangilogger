@@ -69,7 +69,7 @@ public class JettyLoggerServer {
 
         private final Gson gson = new Gson();
 
-        private Set<JsonElement> entries;
+        private final Set<JsonElement> entries;
 
         private boolean stopped = false;
 
@@ -125,7 +125,8 @@ public class JettyLoggerServer {
             response.setStatus(204); // no content in response
             log.debug("Client is sending entries");
             String rawEntries = request.getParameter("entries");
-            runningServer.registerRawEntries(rawEntries);
+            if(rawEntries != null)
+                runningServer.registerRawEntries(rawEntries);
         }
     }
 
