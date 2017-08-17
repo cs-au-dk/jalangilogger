@@ -44,8 +44,10 @@ public class BrowserDriver {
 
             driver.get(uri.toURL().toString());
 
-            new WebDriverWait(driver, pageLoadTimeout).until((ExpectedCondition<Boolean>) wd ->
-                    ((JavascriptExecutor) wd).executeScript("return window.J$.stopBrowserInteraction").equals("true"));
+            new WebDriverWait(driver, pageLoadTimeout).until((ExpectedCondition<Boolean>) wd -> {
+                    Object result = ((JavascriptExecutor) wd).executeScript("return typeof window.J$ != 'undefined' && window.J$.stopBrowserInteraction");
+                    return result != null && result.equals(true);
+            });
 
             List<LogEntry> errors = driver.manage().logs().get(LogType.BROWSER).filter(Level.SEVERE);
             if(!errors.isEmpty()) {
