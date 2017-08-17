@@ -58,7 +58,12 @@ public class BrowserDriver {
         } catch (Exception e) {
             throw new RuntimeException("Unable to drive the browser", e);
         } finally {
-            if (driver != null) driver.quit();
+            if (driver != null) {
+                try {
+                    driver.quit();
+                }
+                catch(Throwable e) {}
+            }
         }
     }
 
