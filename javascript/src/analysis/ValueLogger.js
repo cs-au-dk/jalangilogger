@@ -256,10 +256,10 @@ function consoleLog(text) {
                 var entries = encodeURIComponent(JSON.stringify(entriesToSend));
                 try {
                     xmlhttp_send(xmlhttp, "entries=" + entries);
-                } catch (e) {
                     if(callback === stopBrowserInteraction) {
                         window.J$.stopBrowserInteraction = true;
                     }
+                } catch (e) {
                     callback();
                 }
                 entriesToSend = [];
