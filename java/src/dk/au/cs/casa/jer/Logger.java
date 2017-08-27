@@ -520,12 +520,19 @@ public class Logger {
                 throw new RuntimeException(e);
             }
 
-            while (runningServer[0] == null) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+            if(!headless) {
+                // active wait for server to start
+                while (runningServer[0] == null) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
+            }
+            else {
+                try { serverThread.join(); }
+                catch(InterruptedException e ){}
             }
 
             waitForServerToStop(runningServer[0]);
