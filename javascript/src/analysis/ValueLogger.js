@@ -414,6 +414,12 @@ function consoleLog(text) {
             };
             TAJS_assert = function (a) {
             };
+            TAJS_invariant = function () {
+                return true;
+            };
+            TAJS_restrictToType = function (exp) {
+                return exp;
+            };
             TAJS_newObject = function () {
                 return {};
             };
