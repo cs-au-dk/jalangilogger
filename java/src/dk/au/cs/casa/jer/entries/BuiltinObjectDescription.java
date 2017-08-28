@@ -37,6 +37,10 @@ public class BuiltinObjectDescription extends ObjectDescription {
         return canonicalName;
     }
 
+    public boolean isTheGlobalObject() {
+        return "<the global object>".equals(canonicalName);
+    }
+
     @Override
     public <T> T accept(ObjectDescriptionVisitor<T> visitor) {
         return visitor.visit(this);
