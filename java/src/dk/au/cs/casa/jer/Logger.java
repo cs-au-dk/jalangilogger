@@ -1,11 +1,14 @@
 package dk.au.cs.casa.jer;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.HostConfig;
+import org.openqa.selenium.logging.LogEntry;
 
 import java.awt.*;
 import java.io.BufferedReader;
@@ -24,6 +27,8 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -81,7 +86,7 @@ public class Logger {
             throw new IllegalArgumentException("rootRelativeMain must be relative");
         }
 
-        if ((environment == Environment.BROWSER || environment == Environment.HEADLESS_BROWSER) && isJsFile(rootRelativeMain)) {
+        if ((environment == Environment.BROWSER || environment == Environment.NEW_BROWSER) && isJsFile(rootRelativeMain)) {
             this.rootRelativeMain = createHTMLWrapper(root, rootRelativeMain, preambles);
         } else {
             this.rootRelativeMain = rootRelativeMain;
@@ -359,9 +364,13 @@ public class Logger {
         try {
             if (environment == Environment.NASHORN || environment == Environment.NODE || environment == Environment.NODE_GLOBAL) {
                 return new JSLogger(environment).log();
-            } else if (environment == Environment.BROWSER || environment == Environment.HEADLESS_BROWSER) {
-                return new HTMLLogger(environment == Environment.HEADLESS_BROWSER).log();
-            } else if (environment == Environment.DRIVEN_BROWSER) {
+            } else if (environment == Environment.BROWSER) {
+                return new HTMLLogger().log();
+            } else if (environment == Environment.NEW_BROWSER) {
+                return new NewHtmlLogger(false).log();
+            } else if (environment == Environment.NEW_BROWSER_HEADLESS) {
+                return new NewHtmlLogger(true).log();
+            } else if (environment == Environment.DOCKER_BROWSER) {
                 return new DrivenHTMLLogger().log();
             }
         } catch (InstrumentationTimeoutException e) {
@@ -382,12 +391,13 @@ public class Logger {
         String in = ".";
         ArrayList<String> cmd = new ArrayList<>(Arrays.asList(node.toString(), script, "--inlineIID", "--analysis", analysis.toString(), "--outputDir", out));
         switch (environment) {
-            case DRIVEN_BROWSER:
+            case DOCKER_BROWSER:
             case BROWSER:
                 cmd.add("--instrumentInline");
                 cmd.add("--inlineJalangi");
                 break;
-            case HEADLESS_BROWSER:
+            case NEW_BROWSER:
+            case NEW_BROWSER_HEADLESS:
                 cmd.add("--instrumentInline");
                 cmd.add("--inlineJalangi");
                 break;
@@ -471,8 +481,9 @@ public class Logger {
         NODE_GLOBAL,
         NASHORN,
         BROWSER,
-        HEADLESS_BROWSER,
-        DRIVEN_BROWSER
+        NEW_BROWSER,
+        NEW_BROWSER_HEADLESS,
+        DOCKER_BROWSER
     }
 
     private class HTMLLogger {
@@ -483,13 +494,10 @@ public class Logger {
 
         private final Path logfile;
 
-        private final boolean headless;
-
-        public HTMLLogger(boolean headless) {
+        public HTMLLogger() {
             this.serverDir = temp.resolve("server");
             this.logfile = serverDir.resolve("logfile.log");
             this.hardTimeLimit = (int) (timeLimit * 1.5);
-            this.headless = headless;
         }
 
         private void startServer() {
@@ -511,7 +519,7 @@ public class Logger {
                 throw new RuntimeException(e);
             }
 
-            while (runningServer[0] == null && serverThread.isAlive()) {
+            while (runningServer[0] == null) {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
@@ -519,13 +527,7 @@ public class Logger {
                 }
             }
 
-            if(!headless) {
-                waitForServerToStop(runningServer[0]);
-            }
-            else {
-                // in headless mode startServerAndOpenBrowser is blocking until the page has loaded
-                runningServer[0].stop();
-            }
+            waitForServerToStop(runningServer[0]);
 
             runningServer[0].persistEntries(logfile);
 
@@ -580,12 +582,7 @@ public class Logger {
                 String serverLocation = String.format("localhost:%d", runningServer.getURI().getPort());
                 String queryParameters = String.format("softTimeLimit=%d&hardTimeLimit=%d", timeLimit, hardTimeLimit);
                 URI uri = new URI("http", serverLocation, "/" + rootRelativeMain.toString(), queryParameters, null);
-                if(!headless) {
-                    Desktop.getDesktop().browse(uri);
-                }
-                else {
-                    new BrowserDriver().browse(uri, hardTimeLimit);
-                }
+                Desktop.getDesktop().browse(uri);
             } catch (URISyntaxException | IOException e) {
                 throw new RuntimeException(e);
             }
@@ -593,7 +590,7 @@ public class Logger {
         }
 
         public RawLogFile log() throws InstrumentationSyntaxErrorException, InstrumentationTimeoutException, IOException {
-            instrument(headless ? Environment.HEADLESS_BROWSER : Environment.BROWSER);
+            instrument(Environment.BROWSER);
             long before = System.currentTimeMillis();
             startServer(); // will wait for server to terminate
             long after = System.currentTimeMillis();
@@ -638,6 +635,140 @@ public class Logger {
             }
         }
     }
+
+
+    private class NewHtmlLogger {
+
+        private final Path serverDir;
+
+        private final int hardTimeLimit;
+
+        private final Path logfile;
+
+        private final boolean headless;
+
+        private Thread serverThread;
+
+        private final JettyWebServer.RunningServer[] runningServer = new JettyWebServer.RunningServer[1]; // XXX thread-safety...
+
+        public NewHtmlLogger(boolean headless) {
+            this.serverDir = temp.resolve("server");
+            this.logfile = serverDir.resolve("logfile.log");
+            this.hardTimeLimit = (int) (timeLimit * 1.5);
+            this.headless = headless;
+        }
+
+        private String browse() {
+            try {
+                String serverLocation = String.format("localhost:%d", runningServer[0].getURI().getPort());
+                String queryParameters = String.format("softTimeLimit=%d&hardTimeLimit=%d", timeLimit, hardTimeLimit);
+                URI uri = new URI("http", serverLocation, "/" + rootRelativeMain.toString(), queryParameters, null);
+
+                return (new BrowserDriver()).browse(uri, hardTimeLimit, headless);
+
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private void startServer() {
+            try {
+                Files.createDirectories(serverDir);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            serverThread = new Thread(() -> {
+                JettyWebServer jws = new JettyWebServer(instrumentationDir);
+                runningServer[0] = jws.startServer();
+            });
+            serverThread.start();
+
+            while(runningServer[0] == null && serverThread.isAlive()) {
+                try {
+                    Thread.sleep(500); // wait for the server to start
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            if(!serverThread.isAlive() && runningServer[0] == null)
+                throw new RuntimeException("Failed to start the web server");
+
+            try {
+                Thread.sleep(1000); // give it an additional second
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
+
+        private void stopServer() {
+            try {
+                if(runningServer[0] != null) {
+                    runningServer[0].stop();
+                }
+            } catch (Exception e) { }
+
+            try {
+                serverThread.join(); // additionally wait the thread to die
+            } catch (Exception e) { }
+        }
+
+        public RawLogFile log() throws InstrumentationSyntaxErrorException, InstrumentationTimeoutException, IOException {
+            instrument(environment);
+
+            try {
+                startServer(); // will wait for server to terminate
+                String entries = browse();
+
+                Gson gson = new Gson();
+                JsonArray elements = gson.fromJson(entries, JsonArray.class);
+                LinkedHashSet<String> uniqueElements = new LinkedHashSet<>();
+                elements.forEach(el -> {
+                    uniqueElements.add(gson.toJson(el));
+                });
+
+                try {
+                    Files.write(logfile, uniqueElements, StandardOpenOption.CREATE_NEW);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            catch(Exception e) {
+                throw e;
+            }
+            finally {
+                stopServer();
+            }
+            return makeRawLogFile("success", logfile);
+        }
+
+        private class Console {
+
+            BufferedReader br;
+
+            PrintStream ps;
+
+            public Console() {
+                br = new BufferedReader(new InputStreamReader(System.in));
+                ps = System.out;
+            }
+
+            public String readLine(String out) {
+                ps.format(out);
+                try {
+                    return br.readLine();
+                } catch (IOException e) {
+                    return null;
+                }
+            }
+
+            public PrintStream format(String format, Object... objects) {
+                return ps.format(format, objects);
+            }
+        }
+    }
+
 
     private class DrivenHTMLLogger {
 
@@ -733,7 +864,7 @@ public class Logger {
         }
 
         public RawLogFile log() throws IOException, InstrumentationSyntaxErrorException, InstrumentationTimeoutException {
-            instrument(Environment.DRIVEN_BROWSER);
+            instrument(Environment.DOCKER_BROWSER);
 
             try {
                 if (isDockerEnvironment()) {

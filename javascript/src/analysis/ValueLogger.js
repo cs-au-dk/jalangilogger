@@ -46,6 +46,16 @@ function consoleLog(text) {
         }
     };
 
+    function getParameterByName(name, url) {
+        if (!url) url = window.location.href;
+        name = name.replace(/[\[\]]/g, "\\$&");
+        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+            results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
+    };
+
     function getFullLocation(sid, iid) {
         var location = sandbox.iidToLocation(sid, iid);
         if (location === undefined || location === "undefined" || location.startsWith("(eval")) {
@@ -64,17 +74,6 @@ function consoleLog(text) {
     }
 
     var env = (function setupMode() {
-        function getParameterByName(name, url) {
-            if (!url) url = window.location.href;
-            name = name.replace(/[\[\]]/g, "\\$&");
-            var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-                results = regex.exec(url);
-            if (!results) return null;
-            if (!results[2]) return '';
-            return decodeURIComponent(results[2].replace(/\+/g, " "));
-        }
-
-
         var env = {
             // invoked on J$:functionEnter and J$:conditional: should be enough to avoid infinite executions
             terminator: function () {
@@ -84,6 +83,7 @@ function consoleLog(text) {
         var isNashorn = typeof Java === 'object' && typeof Java.type === 'function';
         var isBrowser = typeof window !== 'undefined';
         var isProtractor = isBrowser && getParameterByName("IS_PROTRACTOR");
+        env.isNewDriver = isBrowser && getParameterByName("new") === "yes";
 
         if (isBrowser || isNode) {
             env.makeMap = function () {
@@ -144,6 +144,14 @@ function consoleLog(text) {
                 }
         }
 
+        if (env.isNewDriver) {
+            var loggedEntriesMap = env.makeMap();
+            window.J$.logEntries = [];
+            env.log = function (entry) {
+                natives.Array.push.call(window.J$.logEntries, entry);
+            };
+            window.alert = function (x){consoleLog("ALERT(" + x + ")")};
+        }
         if (isBrowser && isProtractor) {
             var loggedEntriesMap = env.makeMap();
             window.logEntries = [];
@@ -175,7 +183,14 @@ function consoleLog(text) {
                         var currentTime = +(new Date());
                         if (currentTime > hardEndTime) {
                             sendLoggedEntries(stopBrowserInteraction);
-                            throw new Error(); // should make the browser responsive
+                            if(!env.isNewDriver)
+                                throw new Error("hard terminator"); // should make the browser responsive
+                            else {
+                                if(!this.emitted) {
+                                    this.emitted = true;
+                                    consoleLog("Hard terminator will terminate the logging, consider reviewing the termination policy to speed-up the termination of this logging sesssion");
+                                }
+                            }
                         }
                     };
                 }
@@ -229,40 +244,56 @@ function consoleLog(text) {
                 if (!sendEntries) //the data has already been sent
                     return;
 
-                var xmlhttp = new XMLHttpRequest();
-                xmlhttp.open("POST", "/logger-server-api/done", false);
-                try {
-                    xmlhttp_send(xmlhttp);
-                } finally {
-                    sendEntries = false;
-                    closeWindowSoon("Closing window since we are stopping the analysis");
+                if(!env.isNewDriver) {
+                    var xmlhttp = new XMLHttpRequest();
+                    xmlhttp.open("POST", "/logger-server-api/done", false);
+                    try {
+                        xmlhttp_send(xmlhttp);
+                    } finally {
+                        sendEntries = false;
+                        closeWindowSoon("Closing window since we are stopping the analysis");
+                    }
                 }
             }
 
             function sendLoggedEntries(callback) {
-                if (entriesToSend.length === 0) {
-                    return;
-                }
-                var xmlhttp = new XMLHttpRequest();
-                if (callback) {
-                    xmlhttp.onreadystatechange = function () {
-                        if (xmlhttp.readyState == 4) {
-                            callback();
-                        }
-                    };
-                }
-                xmlhttp.open("POST", "/logger-server-api/sendEntries", true);
-                xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                var entries = encodeURIComponent(JSON.stringify(entriesToSend));
-                try {
-                    xmlhttp_send(xmlhttp, "entries=" + entries);
-                    if(callback === stopBrowserInteraction) {
+                if(!env.isNewDriver) {
+                    if (entriesToSend.length === 0) {
+                        return;
+                    }
+                    var xmlhttp = new XMLHttpRequest();
+                    if (callback) {
+                        xmlhttp.onreadystatechange = function () {
+                            if (xmlhttp.readyState == 4) {
+                                callback();
+                            }
+                        };
+                    }
+                    xmlhttp.open("POST", "/logger-server-api/sendEntries", true);
+                    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                    var entries = encodeURIComponent(JSON.stringify(entriesToSend));
+                    try {
+                        xmlhttp_send(xmlhttp, "entries=" + entries);
+                    } catch (e) {
+                        callback();
+                    }
+                    entriesToSend = [];
+                } else {
+
+                    if(typeof window.J$.logEntries === 'undefined') {
+                        window.J$.logEntries = [];
+                    }
+
+                    for(var i in entriesToSend) {
+                        window.J$.logEntries.push(entriesToSend[i]);
+                    }
+
+                    entriesToSend = [];
+
+                    if (callback === stopBrowserInteraction) {
                         window.J$.stopBrowserInteraction = true;
                     }
-                } catch (e) {
-                    callback();
                 }
-                entriesToSend = [];
             }
 
             window.onkeyup = function (event) {
@@ -741,7 +772,7 @@ function consoleLog(text) {
             if (!started) {
                 consoleLog("Starting analysis at: " + instrumentedFileName);
                 started = true;
-                if (typeof XMLHttpRequest !== "undefined") {
+                if (typeof XMLHttpRequest !== "undefined" && !env.isNewDriver) {
                     var xmlhttp = new XMLHttpRequest();
                     xmlhttp.open("POST", "/logger-server-api/started", false);
                     xmlhttp_send(xmlhttp);
