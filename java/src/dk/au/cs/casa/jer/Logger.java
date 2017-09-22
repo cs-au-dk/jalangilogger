@@ -511,7 +511,7 @@ public class Logger {
                 throw new RuntimeException(e);
             }
 
-            while (runningServer[0] == null) {
+            while (runningServer[0] == null && serverThread.isAlive()) {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {

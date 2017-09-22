@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 public class BrowserDriver {
 
@@ -30,7 +31,7 @@ public class BrowserDriver {
         setDriverPath();
         ChromeOptions options = new ChromeOptions();
         options.addArguments("window-size=800,600");
-        options.addArguments("headless");
+        //options.addArguments("headless");
         options.addArguments("disable-gpu");
         DesiredCapabilities capabilities = DesiredCapabilities.chrome();
         capabilities.setCapability(ChromeOptions.CAPABILITY, options);
@@ -38,9 +39,9 @@ public class BrowserDriver {
         ChromeDriver driver = null;
         try {
             driver = new ChromeDriver(capabilities);
-            driver.manage().timeouts().pageLoadTimeout(pageLoadTimeout, TimeUnit.SECONDS);
-            driver.manage().timeouts().implicitlyWait(pageLoadTimeout, TimeUnit.SECONDS);
-            driver.manage().timeouts().setScriptTimeout(pageLoadTimeout, TimeUnit.SECONDS);
+            driver.manage().timeouts().pageLoadTimeout(pageLoadTimeout + 10, TimeUnit.SECONDS);
+            driver.manage().timeouts().implicitlyWait(pageLoadTimeout + 10, TimeUnit.SECONDS);
+            driver.manage().timeouts().setScriptTimeout(pageLoadTimeout + 10, TimeUnit.SECONDS);
 
             driver.get(uri.toURL().toString());
 
@@ -50,6 +51,7 @@ public class BrowserDriver {
             });
 
             List<LogEntry> errors = driver.manage().logs().get(LogType.BROWSER).filter(Level.SEVERE);
+            errors = errors.stream().filter(error -> !error.toString().contains("favicon.ico ")).collect(Collectors.toList());
             if(!errors.isEmpty()) {
                 throw new RuntimeException("An error occurred in the browser:\n" + errors);
             }
