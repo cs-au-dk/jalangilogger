@@ -481,6 +481,7 @@ public class Logger {
         NODE_GLOBAL,
         NASHORN,
         BROWSER,
+        DRIVEN_BROWSER, //FIXME: Remove 
         NEW_BROWSER,
         NEW_BROWSER_HEADLESS,
         DOCKER_BROWSER
