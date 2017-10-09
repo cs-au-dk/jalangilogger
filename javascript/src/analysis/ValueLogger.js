@@ -167,7 +167,7 @@ function consoleLog(text) {
         function makeBrowserSessionTerminators() {
             makeHardTerminator(getParameterByName("hardTimeLimit"));
             makeSoftTerminator(getParameterByName("softTimeLimit"));
-            var ENABLE_AUTO_TERMINATOR = false; // TODO this is only a good idea for browser applications that does not require interaction!
+            var ENABLE_AUTO_TERMINATOR = env.isNewDriver; // TODO this is only a good idea for browser applications that does not require interaction!
             if (ENABLE_AUTO_TERMINATOR) {
                 makeAutoTerminator(env.terminator);
             }

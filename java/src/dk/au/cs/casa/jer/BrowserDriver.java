@@ -58,7 +58,7 @@ public class BrowserDriver {
                     List<LogEntry> newLogs = wd.manage().logs().get(LogType.BROWSER).getAll();
                     for(LogEntry l : newLogs) {
                         if(!l.toString().contains("favicon.ico")) {
-                            System.out.println("BROSWER LOG: " + l);
+                            System.out.println("BROWSER LOG: " + l);
                             allLogEntries.add(l);
                         }
                     }
@@ -66,7 +66,10 @@ public class BrowserDriver {
             });
 
             List<LogEntry> errors = allLogEntries.stream().filter(entry -> entry.getLevel() == Level.SEVERE).collect(Collectors.toList());
-            errors = errors.stream().filter(error -> !error.toString().contains("favicon.ico ")).collect(Collectors.toList());
+            errors = errors.stream().filter(error ->
+                    !error.toString().contains("favicon.ico ") &&
+                    !error.toString().contains(".jpg - Failed to load resource") &&
+                    !error.toString().contains(".png - Failed to load resource")).collect(Collectors.toList());
             if(!errors.isEmpty()) {
                 throw new RuntimeException("An error occurred in the browser:\n" + errors);
             }

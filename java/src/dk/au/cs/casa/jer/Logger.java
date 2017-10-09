@@ -8,6 +8,9 @@ import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.HostConfig;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.IOFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.openqa.selenium.logging.LogEntry;
 
 import java.awt.*;
@@ -117,7 +120,13 @@ public class Logger {
      * Produces a log file for the run of a single main file
      */
     public static Logger makeLoggerForIndependentMainFile(Path main, List<Path> preambles, Optional<Set<Path>> onlyInclude, int instrumentationTimeLimit, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
-        Path root = isolateInNewRoot(main);
+        Path root = isolateInNewRoot(main, false);
+        Path rootRelativeMain = root.relativize(root.resolve(main.getFileName()));
+        return makeLoggerForDirectoryWithMainFile(root, rootRelativeMain, preambles, onlyInclude, instrumentationTimeLimit, timeLimit, environment, node, jalangilogger, jjs);
+    }
+
+    public static Logger makeLoggerForDirectoryWithMainFiles(Path main, List<Path> preambles, Optional<Set<Path>> onlyInclude, int instrumentationTimeLimit, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
+        Path root = isolateInNewRoot(main, true);
         Path rootRelativeMain = root.relativize(root.resolve(main.getFileName()));
         return makeLoggerForDirectoryWithMainFile(root, rootRelativeMain, preambles, onlyInclude, instrumentationTimeLimit, timeLimit, environment, node, jalangilogger, jjs);
     }
@@ -188,12 +197,39 @@ public class Logger {
      *
      * @return the new root directory
      */
-    private static Path isolateInNewRoot(Path main) {
+    private static Path isolateInNewRoot(Path main, boolean includeResources) {
         try {
             Path newRoot = createTempDirectory();
             deleteTempRecursivelyOnExit(newRoot);
             Path isolated = newRoot.resolve(main.getFileName());
             Files.copy(main, isolated);
+
+            if (includeResources) {
+                FileUtils.listFiles(
+                        main.getParent().toFile(),
+                        /*filter_filter=*/new IOFileFilter() {
+                            @Override
+                            public boolean accept(File file) {
+                                // Only include the main HTML file.
+                                return !file.toPath().getFileName().toString().endsWith(".html");
+                            }
+
+                            @Override
+                            public boolean accept(File dir, String name) {
+                                return true;
+                            }
+                        },
+                        /*dir_filter=*/TrueFileFilter.INSTANCE
+                ).forEach(file -> {
+                    try {
+                        Path relativeFromRoot = main.getParent().relativize(file.toPath());
+                        Files.copy(file.toPath().toAbsolutePath(), newRoot.resolve(relativeFromRoot).toAbsolutePath());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+
             return newRoot;
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -520,19 +556,12 @@ public class Logger {
                 throw new RuntimeException(e);
             }
 
-            if(!headless) {
-                // active wait for server to start
-                while (runningServer[0] == null) {
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
+            while (runningServer[0] == null) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
                 }
-            }
-            else {
-                try { serverThread.join(); }
-                catch(InterruptedException e ){}
             }
 
             waitForServerToStop(runningServer[0]);
