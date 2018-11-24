@@ -451,8 +451,8 @@ function consoleLog(text) {
             };
             TAJS_split = function () {
             };
-            TAJS_makeComplementaryString = function () {
-                return "TAJS_makeComplementaryString(" + Array.prototype.join.call(arguments, ", ") + ")";
+            TAJS_makeExcludedStrings = function () {
+                return "TAJS_makeExcludedStrings(" + Array.prototype.join.call(arguments, ", ") + ")";
             };
             TAJS_newArray = function () {
                 return [];
