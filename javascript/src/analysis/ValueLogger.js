@@ -466,6 +466,9 @@ function consoleLog(text) {
             TAJS_restrictTo = function () {
 
             };
+            TAJS_addTaint = function (v) {
+                return v;
+            };
         },
         print: function () {
             print = function () {
