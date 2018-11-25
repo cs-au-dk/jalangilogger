@@ -58,6 +58,7 @@ public class HashUtil {
                             throw new RuntimeException(e);
                         }
                     })
+                    .filter(f -> f.toString().endsWith(".js") || f. toString().endsWith(".html") || f.toString().endsWith(".htm"))
                     .sorted()
                     .forEach(f -> {
                         try (Stream<String> lines = Files.lines(f, charset)) {
