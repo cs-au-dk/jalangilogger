@@ -440,6 +440,8 @@ function consoleLog(text) {
                             return '0';
                         case "AnyStrNotUInt":
                             return "TAJS_make('AnyStrNotUInt')";
+                        case "AnyStrIdent":
+                            return "AnyStrIdent";
                     }
                 }
                 return;
