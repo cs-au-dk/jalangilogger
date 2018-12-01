@@ -442,6 +442,8 @@ function consoleLog(text) {
                             return "TAJS_make('AnyStrNotUInt')";
                         case "AnyStrIdent":
                             return "AnyStrIdent";
+                        case "AnyNumUInt":
+                            return 42;
                     }
                 }
                 return;
@@ -471,6 +473,12 @@ function consoleLog(text) {
             TAJS_addTaint = function (v) {
                 return v;
             };
+            TAJS_checkSink = function(v) {
+                return v;
+            };
+            TAJS_assertTaintObj = function () {
+
+            }
         },
         print: function () {
             print = function () {
