@@ -9,6 +9,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -59,7 +60,7 @@ public class HashUtil {
                         }
                     })
                     .filter(f -> f.toString().endsWith(".js") || f. toString().endsWith(".html") || f.toString().endsWith(".htm"))
-                    .sorted()
+                    .sorted(Comparator.comparing(Path::toString))
                     .forEach(f -> {
                         try (Stream<String> lines = Files.lines(f, charset)) {
                             lines.forEach(line -> {
