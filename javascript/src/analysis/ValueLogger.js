@@ -681,6 +681,8 @@ function consoleLog(text) {
             if (t == "undefined" || t == "boolean" || val === null)
                 return val + '';
             if (t == "number") {
+                if (val === -0 && 1 / val === -Infinity)
+                    return "-0";
                 if (-100 < val && val < 100 && (val % 1) == 0)
                     return val + ''; // small integers
                 if (isNaN(val))
