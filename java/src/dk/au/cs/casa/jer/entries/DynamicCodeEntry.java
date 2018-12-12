@@ -1,11 +1,11 @@
 package dk.au.cs.casa.jer.entries;
 
 public class DynamicCodeEntry extends Entry {
-    private final String source;
+    private final String code;
 
-    DynamicCodeEntry (int index, SourceLocation sourceLocation, String source) {
+    DynamicCodeEntry (int index, SourceLocation sourceLocation, String code) {
         super(index, sourceLocation);
-        this.source = source;
+        this.code = code;
     }
 
     @Override
@@ -13,7 +13,7 @@ public class DynamicCodeEntry extends Entry {
         return visitor.visit(this);
     }
 
-    public String getSource () {
-        return source;
+    public String getCode () {
+        return code;
     }
 }
