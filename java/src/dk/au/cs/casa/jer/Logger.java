@@ -414,7 +414,7 @@ public class Logger {
                     .map(p -> root.relativize(p.toAbsolutePath()))
                     .map(p -> p.toString())
                     .collect(Collectors.toList());
-            cmd.add(String.join(":" /* FIXME should be the system separator */, stringPaths));
+            cmd.add(String.join(System.getProperty("path.separator"), stringPaths));
         }
         cmd.add(in);
         Process exec = exec("instrumentation process", root, cmd.toArray(new String[]{}));
