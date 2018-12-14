@@ -479,6 +479,12 @@ function consoleLog(text) {
             TAJS_assertTaintObj = function () {
 
             }
+            TAJS_isBlended = function() {
+                return true;
+            }
+            TAJS_isNotBlended = function() {
+                return true;
+            }
         },
         print: function () {
             print = function () {
@@ -502,6 +508,17 @@ function consoleLog(text) {
     preambles.asserts();
     preambles.TAJS();
     preambles.print();
+
+    /**
+     * The return values of the following list of functions are useless to
+     * soundness testing, besides, they will interfere soundness tester and
+     * blended analysis, thus these return values will be ignored (not logged).
+     */
+    var ignoredRetValFunctions = [
+        TAJS_isBlended,
+        TAJS_isNotBlended
+    ];
+    var nextIgnoredRetValCallSiteGIID = undefined;
 
     function logEntry(iid, entry) {
         entry.sourceLocation = getFullLocation(sandbox.sid, iid);
@@ -802,6 +819,9 @@ function consoleLog(text) {
                 registerAllocation(sid_iid[1], dis, sid_iid[0]);
                 nextConstructorCallCallSiteGIID = undefined;
             }
+            if (f in ignoredRetValFunctions) {
+                nextIgnoredRetValCallSiteGIID = iid;
+            }
             logEntry(iid, {entryKind: "function-entry", base: makeValue(dis), arguments: makeArrayValue(args)});
         };
 
@@ -810,6 +830,10 @@ function consoleLog(text) {
         };
 
         this.functionExit = function (iid, returnVal, wrappedExceptionVal) {
+            if (nextIgnoredRetValCallSiteGIID && nextIgnoredRetValCallSiteGIID === iid) {
+                nextIgnoredRetValCallSiteGIID = undefined;
+                return;
+            }
             var entry = {entryKind: "function-exit"};
             if (wrappedExceptionVal) {
                 entry.exceptionValue = makeValue(wrappedExceptionVal.exception);
