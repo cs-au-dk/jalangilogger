@@ -57,7 +57,9 @@ function consoleLog(text) {
     };
 
     function getFullLocation(sid, iid) {
-        var location = sandbox.iidToLocation(sid, iid);
+        var location = env.isNodeProf ?
+            sandbox.iidToLocation(iid) :
+            sandbox.iidToLocation(sid, iid);
         if (location === undefined || location === "undefined" || location.startsWith("(eval")) {
             return undefined;
         }
@@ -81,6 +83,8 @@ function consoleLog(text) {
         };
         var isNode = typeof require === 'function' && typeof require('fs') === 'object';
         var isNashorn = typeof Java === 'object' && typeof Java.type === 'function';
+        var isNodeProf = !!process.config.variables.graalvm; // only run on GraalVM when using NodeProf.js
+        env.isNodeProf = isNodeProf;
         var isBrowser = typeof window !== 'undefined';
         var isProtractor = isBrowser && getParameterByName("IS_PROTRACTOR");
         env.isNewDriver = isBrowser && getParameterByName("new") === "yes";
@@ -100,7 +104,7 @@ function consoleLog(text) {
             };
             env.arguments = process.argv;
         }
-        if (isNashorn) {
+        if (isNashorn && !isNodeProf) {
             env.appendStringToFile = function (file, string) {
                 var FileWriter = Java.type("java.io.FileWriter");
                 var fw = new FileWriter(file, true);
@@ -815,8 +819,12 @@ function consoleLog(text) {
         this.functionEnter = function (iid, f, dis, args) {
             env.terminator();
             if (nextConstructorCallCallSiteGIID) {
-                var sid_iid = nextConstructorCallCallSiteGIID.split(":");
-                registerAllocation(sid_iid[1], dis, sid_iid[0]);
+                if (env.isNodeProf) {
+                    registerAllocation(nextConstructorCallCallSiteGIID, dis);
+                } else {
+                    var sid_iid = nextConstructorCallCallSiteGIID.split(":");
+                    registerAllocation(sid_iid[1], dis, sid_iid[0]);
+                }
                 nextConstructorCallCallSiteGIID = undefined;
             }
             if (f in ignoredRetValFunctions) {
