@@ -205,11 +205,11 @@ function consoleLog(text) {
                 var softTimelimit_ms = softTimelimit * 1000;
                 if (softTimelimit_ms > 0) {
                     // handle crashes or finite executions
-                    window.onload = function () {
+                    window.addEventListener('load', function() {
                         setTimeout(function () {
                             sendLoggedEntries(stopBrowserInteraction);
                         }, softTimelimit_ms)
-                    };
+                    });
                 }
             }
 
