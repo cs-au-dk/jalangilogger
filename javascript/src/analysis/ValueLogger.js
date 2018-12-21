@@ -60,7 +60,8 @@ function consoleLog(text) {
         var location = env.isNodeProf ?
             sandbox.iidToLocation(iid) :
             sandbox.iidToLocation(sid, iid);
-        if (location === undefined || location === "undefined" || location.startsWith("(eval")) {
+            if (location === undefined || location === "undefined"
+                || location.startsWith("(eval") || location.startsWith("(*eval")) {
             return undefined;
         }
         location = natives.String.slice.call(location, 1, location.length - 1);
