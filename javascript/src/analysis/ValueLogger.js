@@ -84,7 +84,7 @@ function consoleLog(text) {
         };
         var isNode = typeof require === 'function' && typeof require('fs') === 'object';
         var isNashorn = typeof Java === 'object' && typeof Java.type === 'function';
-        var isNodeProf = !!process.config.variables.graalvm; // only run on GraalVM when using NodeProf.js
+        var isNodeProf = isNode && !!process.config.variables.graalvm; // only run on GraalVM when using NodeProf.js
         env.isNodeProf = isNodeProf;
         var isBrowser = typeof window !== 'undefined';
         var isProtractor = isBrowser && getParameterByName("IS_PROTRACTOR");
