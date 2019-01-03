@@ -860,6 +860,12 @@ function consoleLog(text) {
             logEntry(iid, {entryKind: 'dynamic-code', code: code + ''});
         };
 
+        if (env.isNodeProf) {
+            this.evalPre = function (iid, code) {
+                logEntry(iid, {entryKind: 'dynamic-code', code: code + ''});
+            };
+        }
+
         /* called when loaded using the jalangi2 version that is used by tracifier  */
         this.onText = function () {};
 
