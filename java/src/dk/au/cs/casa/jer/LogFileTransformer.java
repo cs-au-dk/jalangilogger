@@ -119,7 +119,7 @@ public class LogFileTransformer {
             obj.addProperty("columnNumber", newColumnNumber);
         } else if (inlineHandlerNumber != -1) {
             String eventhandlerFileName = "event-handler-" + inlineHandlerNumber + "_orig_.js";
-            Path eventHandlerFile = instrumentationRoot.resolve(rootRelativeMain).getParent().resolve(eventhandlerFileName);
+            Path eventHandlerFile = instrumentationRoot.resolve(eventhandlerFileName);
             obj = updateSourceLocationFromEventFileToSLInOriginalFile(eventHandlerFile, obj);
         } else if (fileNamePath.isAbsolute()) {
             final Path relativized = instrumentationRoot.relativize(fileNamePath.getParent()).resolve(correctedFileName);
