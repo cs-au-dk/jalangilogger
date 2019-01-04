@@ -118,7 +118,7 @@ public class LogParser {
 
     private static SourceLocation makeSourceLocationFromJson(JsonElement json, JsonDeserializationContext context) {
         JsonObject obj = json.getAsJsonObject();
-        return new SourceLocation(obj.get("lineNumber").getAsInt(), obj.get("columnNumber").getAsInt(), getFileName(obj));
+        return new SourceLocation(obj.get("lineNumber").getAsInt(), obj.get("columnNumber").getAsInt(), getFileName(obj).replace("\\", "/"));
     }
 
     @SuppressWarnings("unchecked")
