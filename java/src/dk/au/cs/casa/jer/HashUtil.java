@@ -51,6 +51,7 @@ public class HashUtil {
         byte[] NEWLINE = "\n".getBytes(charset);
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-1");
+            byte[] hash = new byte[digest.getDigestLength()];
             files.stream()
                     .filter(f -> {
                         try {
@@ -74,8 +75,10 @@ public class HashUtil {
                                 throw new RuntimeException(e1);
                             }
                         }
+                        byte[] filehash = digest.digest();
+                        for (int i = 0; i < hash.length; i++)
+                            hash[i] ^= filehash[i];
                     });
-            final byte[] hash = digest.digest();
             String hexString = "";
             for (int i = 0; i < hash.length; i++) {
                 if ((0xff & hash[i]) < 0x10) {
