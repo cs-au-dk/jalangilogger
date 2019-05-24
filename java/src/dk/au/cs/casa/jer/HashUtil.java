@@ -61,7 +61,6 @@ public class HashUtil {
                         }
                     })
                     .filter(f -> f.toString().endsWith(".js") || f. toString().endsWith(".html") || f.toString().endsWith(".htm"))
-                    .sorted(Comparator.comparing(Path::toString))
                     .forEach(f -> {
                         try (Stream<String> lines = Files.lines(f, charset)) {
                             lines.forEach(line -> {
@@ -79,15 +78,14 @@ public class HashUtil {
                         for (int i = 0; i < hash.length; i++)
                             hash[i] ^= filehash[i];
                     });
-            String hexString = "";
-            for (int i = 0; i < hash.length; i++) {
-                if ((0xff & hash[i]) < 0x10) {
-                    hexString += "0" + Integer.toHexString((0xFF & hash[i]));
-                } else {
-                    hexString += Integer.toHexString(0xFF & hash[i]);
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                if ((0xff & b) < 0x10) {
+                    hexString.append("0");
                 }
+                hexString.append(Integer.toHexString(0xFF & b));
             }
-            return hexString;
+            return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
