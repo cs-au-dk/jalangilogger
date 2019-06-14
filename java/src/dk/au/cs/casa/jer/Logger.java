@@ -34,6 +34,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
 
@@ -76,12 +77,16 @@ public class Logger {
 
     private final Path jalangi2directory;
 
+    private final Path graalVmNode;
+
+    private final Path nodeprofWorkspace;
+
     private Metadata metadata;
 
     /**
      * Produces a log file for the run of a main file in a directory
      */
-    public Logger(Path root, Path rootRelativeMain, List<Path> preambles, Optional<Set<Path>> onlyInclude, int instrumentationTimeLimit, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs, Metadata metadata) {
+    public Logger(Path root, Path rootRelativeMain, List<Path> preambles, Optional<Set<Path>> onlyInclude, int instrumentationTimeLimit, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs, Path graalVmNode, Path nodeprofWorkspace, Metadata metadata) {
         if (rootRelativeMain.isAbsolute()) {
             throw new IllegalArgumentException("rootRelativeMain must be relative");
         }
@@ -102,6 +107,8 @@ public class Logger {
         this.onlyInclude = onlyInclude;
         this.root = root;
         this.node = node;
+        this.graalVmNode = graalVmNode;
+        this.nodeprofWorkspace = nodeprofWorkspace;
         this.jalangilogger = jalangilogger;
         this.jalangi2directory = guessJalangiDirectory(jalangilogger);
         try {
@@ -116,14 +123,14 @@ public class Logger {
     /**
      * Produces a log file for the run of a single main file
      */
-    public static Logger makeLoggerForIndependentMainFile(Path main, List<Path> preambles, Optional<Set<Path>> onlyInclude, int instrumentationTimeLimit, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
+    public static Logger makeLoggerForIndependentMainFile(Path main, List<Path> preambles, Optional<Set<Path>> onlyInclude, int instrumentationTimeLimit, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs, Path graalVmNode, Path nodeprofWorkspace) {
         Path root = isolateInNewRoot(main);
         Path rootRelativeMain = root.relativize(root.resolve(main.getFileName()));
-        return makeLoggerForDirectoryWithMainFile(root, rootRelativeMain, preambles, onlyInclude, instrumentationTimeLimit, timeLimit, environment, node, jalangilogger, jjs);
+        return makeLoggerForDirectoryWithMainFile(root, rootRelativeMain, preambles, onlyInclude, instrumentationTimeLimit, timeLimit, environment, node, jalangilogger, jjs, graalVmNode, nodeprofWorkspace);
     }
 
-    public static Logger makeLoggerForDirectoryWithMainFile(Path root, Path rootRelativeMain, List<Path> preambles, Optional<Set<Path>> onlyInclude, int instrumentationTimeLimit, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs) {
-        return new Logger(root, rootRelativeMain, preambles, onlyInclude, instrumentationTimeLimit, timeLimit, environment, node, jalangilogger, jjs, initMeta(root, rootRelativeMain.getFileName(), onlyInclude, environment, getEnvironmentVersion(environment, node), timeLimit));
+    public static Logger makeLoggerForDirectoryWithMainFile(Path root, Path rootRelativeMain, List<Path> preambles, Optional<Set<Path>> onlyInclude, int instrumentationTimeLimit, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs, Path graalVmNode, Path nodeprofWorkspace) {
+        return new Logger(root, rootRelativeMain, preambles, onlyInclude, instrumentationTimeLimit, timeLimit, environment, node, jalangilogger, jjs, graalVmNode, nodeprofWorkspace, initMeta(root, rootRelativeMain.getFileName(), onlyInclude, environment, getEnvironmentVersion(environment, node), timeLimit));
     }
 
     private static String getEnvironmentVersion(Environment environment, Path node) {
@@ -238,6 +245,7 @@ public class Logger {
                 // TODO find the source of these special-cases!
                 .map(String::trim)
                 .filter(l -> !l.isEmpty())
+                .filter(l -> !l.contains("ValueLogger.js"))
                 .map(l -> l.startsWith(",") ? l.substring(1) : l)
                 .distinct()
                 .collect(Collectors.toList());
@@ -362,7 +370,7 @@ public class Logger {
 
     private RawLogFile _log() throws IOException {
         try {
-            if (environment == Environment.NASHORN || environment == Environment.NODE || environment == Environment.NODE_GLOBAL) {
+            if (environment == Environment.NASHORN || environment == Environment.NODE || environment == Environment.NODE_GLOBAL || environment == Environment.NODE_PROF) {
                 return new JSLogger(environment).log();
             } else if (environment == Environment.BROWSER) {
                 return new HTMLLogger().log();
@@ -484,7 +492,8 @@ public class Logger {
         DRIVEN_BROWSER, //FIXME: Remove 
         NEW_BROWSER,
         NEW_BROWSER_HEADLESS,
-        DOCKER_BROWSER
+        DOCKER_BROWSER,
+        NODE_PROF
     }
 
     private class HTMLLogger {
@@ -890,7 +899,11 @@ public class Logger {
         }
 
         public RawLogFile log() throws IOException, InstrumentationException {
-            instrument(environment);
+            if (environment != Environment.NODE_PROF) {
+                instrument(environment);
+            } else { // do not instrument, when using NodeProf, but just copy the files.
+                copyDirectory(root, instrumentationDir);
+            }
             String exitStatus = run();
             return makeRawLogFile(exitStatus, instrumentationDir.resolve("NEW_LOG_FILE.log"));
         }
@@ -907,6 +920,17 @@ public class Logger {
                     break;
                 case NASHORN:
                     cmd = new ArrayList<>(Arrays.asList(new String[]{jjs.toString(), rootRelativeMain.toString(), "--"}));
+                    break;
+                case NODE_PROF:
+                    cmd = new ArrayList<>(Arrays.asList(new String[]{
+                            graalVmNode.toString(),
+                            "--jvm",
+                            "--vm.Dtruffle.class.path.append=" + nodeprofWorkspace.resolve("nodeprof.js/build/nodeprof.jar"),
+                            "--experimental-options",
+                            "--nodeprof",
+                            nodeprofWorkspace.resolve("nodeprof.js/src/ch.usi.inf.nodeprof/js/jalangi.js").toString(),
+                            "--analysis", analysis.toString(),
+                            rootRelativeMain.toString()}));
                     break;
                 default:
                     throw new UnsupportedOperationException("Unhandled environment kind: " + environment);
@@ -972,5 +996,53 @@ public class Logger {
 
     private class InstrumentationTimeoutException extends InstrumentationException {
 
+    }
+
+    /**
+     * Copies all contents (recursively) from srcDir into targetDir, but the
+     * first line has been removed from the copied files if they start with
+     * a shebang line
+     */
+    public void copyDirectory(Path srcDir, Path targetDir) throws IOException {
+        Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult preVisitDirectory(final Path dir,
+                                                     final BasicFileAttributes attrs) throws IOException {
+                Files.createDirectories(targetDir.resolve(srcDir
+                        .relativize(dir)));
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(final Path file,
+                                             final BasicFileAttributes attrs) throws IOException {
+                Path targetFilePath = targetDir.resolve(srcDir.relativize(file));
+                boolean removeFirstLine = shouldRemoveFirstLine(file);
+                if (!removeFirstLine) {
+                    Files.copy(file, targetFilePath);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                List<String> lines = Files.readAllLines(file);
+                lines.remove(0);
+
+                Files.write(targetFilePath, String.join(System.getProperty("line.separator"), lines).getBytes());
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
+
+    /**
+     * Returns true if the first line is a shebang line
+     */
+    public boolean shouldRemoveFirstLine(Path file) {
+        try (Stream<String> lines = Files.lines(file)) {
+            if (lines.findFirst().orElse("").startsWith("#!")) {
+                return true;
+            }
+        } catch (Exception e) {
+            // not a proper text file
+        }
+        return false;
     }
 }
