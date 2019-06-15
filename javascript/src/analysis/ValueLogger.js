@@ -104,6 +104,7 @@ function consoleLog(text) {
                 return require('fs').readFileSync(file, 'utf-8');
             };
             env.arguments = process.argv;
+            env.initialWorkingDirectory = require('path').resolve('.');
         }
         if (isNashorn && !isNodeProf) {
             env.appendStringToFile = function (file, string) {
@@ -883,6 +884,9 @@ function consoleLog(text) {
 
         function makeValueForString(val, forbidAbstraction) {
             var limit = 50;
+            if (env.initialWorkingDirectory && val.includes(env.initialWorkingDirectory)) {
+                return {valueKind: "abstract-primitive", value: "STR_ANY"};
+            }
             if (!forbidAbstraction && val.length > limit) {
                 return {valueKind: "prefix-string", value: val.substring(0, limit)};
             }
