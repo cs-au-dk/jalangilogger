@@ -57,6 +57,9 @@ function consoleLog(text) {
     };
 
     function getFullLocation(sid, iid) {
+        if (iid === null) {
+            return "null";
+        }
         var location = env.isNodeProf ?
             sandbox.iidToLocation(iid) :
             sandbox.iidToLocation(sid, iid);
@@ -83,6 +86,7 @@ function consoleLog(text) {
             } // default: usually the process is terminated externally.
         };
         var isNode = typeof require === 'function' && typeof require('fs') === 'object';
+        env.isNode = isNode;
         var isNashorn = typeof Java === 'object' && typeof Java.type === 'function';
         var isNodeProf = isNode && typeof Graal === 'object' // only run on GraalVM when using NodeProf.js
         env.isNodeProf = isNodeProf;
@@ -105,6 +109,7 @@ function consoleLog(text) {
             };
             env.arguments = process.argv;
             env.initialWorkingDirectory = require('path').resolve('.');
+            env.relativePath = require('path').relative;
         }
         if (isNashorn && !isNodeProf) {
             env.appendStringToFile = function (file, string) {
@@ -804,7 +809,26 @@ function consoleLog(text) {
             if (isBuiltinConstructorCall) {
                 registerAllocation(iid, result);
             }
+            if (env.isNode && isRequire(f)) {
+                var path = f.resolve(args[0]);
+                Object.getOwnPropertyNames(result).forEach(function(key) {
+                    logEntry(null, {
+                        entryKind: "module-init",
+                        fileName: getFileName(path),
+                        name: makeValueForPropertyName(key),
+                        value: makeValue(result[key])
+                    });
+                });
+            }
         };
+
+        function isRequire(f) {
+            return f.name === 'require' && typeof f.resolve === 'function';
+        }
+
+        function getFileName(path) {
+            return env.relativePath(env.initialWorkingDirectory, path);
+        }
 
         this.scriptEnter = function (iid, instrumentedFileName, originalFileName) {
             if (!started) {
