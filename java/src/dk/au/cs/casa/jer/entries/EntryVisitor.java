@@ -10,4 +10,6 @@ public interface EntryVisitor<T> {
 	T visit(FunctionEntry functionEntry);
 
     T visit (DynamicCodeEntry dynamicCodeEntry);
+
+    T visit(ModuleInitEntry moduleInitEntry);
 }

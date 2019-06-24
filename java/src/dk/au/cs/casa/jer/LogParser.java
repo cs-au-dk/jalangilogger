@@ -57,6 +57,8 @@ public class LogParser {
         GsonBuilder builder = new GsonBuilder();
         builder.registerTypeAdapter(VariableOrPropertyEntry.class, (JsonDeserializer<VariableOrPropertyEntry>) (json, typeOfT, context) ->
                 parseJsonWithCache(json, context, LogParser::makeVariableOrPropertyFromJson, cache));
+        builder.registerTypeAdapter(ModuleInitEntry.class, (JsonDeserializer<ModuleInitEntry>) (json, typeOfT, context) ->
+                parseJsonWithCache(json, context, LogParser::makeModuleInitEntryFromJson, cache));
         builder.registerTypeAdapter(SourceLocation.class, (JsonDeserializer<SourceLocation>) (json, typeOfT, context) ->
                 parseJsonWithCache(json, context, LogParser::makeSourceLocationFromJson, cache));
         builder.registerTypeAdapter(ValueDescription.class, (JsonDeserializer<ValueDescription>) (json, typeOfT, context) ->
@@ -78,6 +80,8 @@ public class LogParser {
             case "read-property":
             case "write-property":
                 return ctx.deserialize(json, VariableOrPropertyEntry.class);
+            case "module-init":
+                return ctx.deserialize(json, ModuleInitEntry.class);
             case "function-exit":
                 return ctx.deserialize(json, FunctionExitEntry.class);
             case "function-entry":
@@ -114,6 +118,15 @@ public class LogParser {
         ValueDescription base = context.deserialize(obj.get("base"), ValueDescription.class);
         ValueDescription value = context.deserialize(obj.get("value"), ValueDescription.class);
         return new VariableOrPropertyEntry(index, sourceLocation, name, base, value);
+    }
+
+    private static ModuleInitEntry makeModuleInitEntryFromJson(JsonElement json, JsonDeserializationContext context) {
+        JsonObject obj = json.getAsJsonObject();
+        int index = obj.has("index") ? context.deserialize(obj.get("index"), Integer.class) : -1;
+        String fileName = obj.get("fileName").getAsString(); // TODO - change to full path?
+        ValueDescription name = context.deserialize(obj.get("name"), ValueDescription.class);
+        ValueDescription value = context.deserialize(obj.get("value"), ValueDescription.class);
+        return new ModuleInitEntry(index, fileName, name, value);
     }
 
     private static SourceLocation makeSourceLocationFromJson(JsonElement json, JsonDeserializationContext context) {
