@@ -811,14 +811,17 @@ function consoleLog(text) {
             }
             if (env.isNode && isRequire(f)) {
                 var path = f.resolve(args[0]);
-                Object.getOwnPropertyNames(result).forEach(function(key) {
-                    logEntry(null, {
-                        entryKind: "module-init",
-                        fileName: getFileName(path),
-                        name: makeValueForPropertyName(key),
-                        value: makeValue(result[key])
+                if (fileExists(path)) {
+                    var fileName = getFileName(path);
+                    Object.getOwnPropertyNames(result).forEach(function(key) {
+                        logEntry(null, {
+                            entryKind: "module-exports",
+                            fileName: fileName,
+                            name: makeValueForPropertyName(key),
+                            value: makeValue(result[key])
+                        });
                     });
-                });
+                }
             }
         };
 
@@ -828,6 +831,10 @@ function consoleLog(text) {
 
         function getFileName(path) {
             return env.relativePath(env.initialWorkingDirectory, path);
+        }
+
+        function fileExists(path) {
+            return require('fs').existsSync(path);
         }
 
         this.scriptEnter = function (iid, instrumentedFileName, originalFileName) {

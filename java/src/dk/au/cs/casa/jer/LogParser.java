@@ -24,17 +24,10 @@ import dk.au.cs.casa.jer.entries.SourceLocation;
 import dk.au.cs.casa.jer.entries.ValueDescription;
 import dk.au.cs.casa.jer.entries.VariableOrPropertyEntry;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
 import java.util.LinkedHashSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BiFunction;
 
 /**
@@ -57,7 +50,7 @@ public class LogParser {
         GsonBuilder builder = new GsonBuilder();
         builder.registerTypeAdapter(VariableOrPropertyEntry.class, (JsonDeserializer<VariableOrPropertyEntry>) (json, typeOfT, context) ->
                 parseJsonWithCache(json, context, LogParser::makeVariableOrPropertyFromJson, cache));
-        builder.registerTypeAdapter(ModuleInitEntry.class, (JsonDeserializer<ModuleInitEntry>) (json, typeOfT, context) ->
+        builder.registerTypeAdapter(ModuleExportsEntry.class, (JsonDeserializer<ModuleExportsEntry>) (json, typeOfT, context) ->
                 parseJsonWithCache(json, context, LogParser::makeModuleInitEntryFromJson, cache));
         builder.registerTypeAdapter(SourceLocation.class, (JsonDeserializer<SourceLocation>) (json, typeOfT, context) ->
                 parseJsonWithCache(json, context, LogParser::makeSourceLocationFromJson, cache));
@@ -80,8 +73,8 @@ public class LogParser {
             case "read-property":
             case "write-property":
                 return ctx.deserialize(json, VariableOrPropertyEntry.class);
-            case "module-init":
-                return ctx.deserialize(json, ModuleInitEntry.class);
+            case "module-exports":
+                return ctx.deserialize(json, ModuleExportsEntry.class);
             case "function-exit":
                 return ctx.deserialize(json, FunctionExitEntry.class);
             case "function-entry":
@@ -120,13 +113,13 @@ public class LogParser {
         return new VariableOrPropertyEntry(index, sourceLocation, name, base, value);
     }
 
-    private static ModuleInitEntry makeModuleInitEntryFromJson(JsonElement json, JsonDeserializationContext context) {
+    private static ModuleExportsEntry makeModuleInitEntryFromJson(JsonElement json, JsonDeserializationContext context) {
         JsonObject obj = json.getAsJsonObject();
         int index = obj.has("index") ? context.deserialize(obj.get("index"), Integer.class) : -1;
         String fileName = obj.get("fileName").getAsString(); // TODO - change to full path?
         ValueDescription name = context.deserialize(obj.get("name"), ValueDescription.class);
         ValueDescription value = context.deserialize(obj.get("value"), ValueDescription.class);
-        return new ModuleInitEntry(index, fileName, name, value);
+        return new ModuleExportsEntry(index, fileName, name, value);
     }
 
     private static SourceLocation makeSourceLocationFromJson(JsonElement json, JsonDeserializationContext context) {

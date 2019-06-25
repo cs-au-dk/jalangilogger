@@ -1,6 +1,6 @@
 package dk.au.cs.casa.jer.entries;
 
-public class ModuleInitEntry extends Entry {
+public class ModuleExportsEntry extends Entry {
 
     /**
      * File name of the module.
@@ -17,8 +17,8 @@ public class ModuleInitEntry extends Entry {
      */
     private final ValueDescription value;
 
-    public ModuleInitEntry(int index, String fileName,
-                           ValueDescription name, ValueDescription value) {
+    public ModuleExportsEntry(int index, String fileName,
+                              ValueDescription name, ValueDescription value) {
         super(index, null);
         this.fileName = fileName;
         this.name = name;
@@ -44,7 +44,7 @@ public class ModuleInitEntry extends Entry {
 
     @Override
     public String toString() {
-        return "ModuleInitEntry{" +
+        return "ModuleExportsEntry{" +
                 "fileName='" + fileName + '\'' +
                 ", name=" + name +
                 ", value=" + value +

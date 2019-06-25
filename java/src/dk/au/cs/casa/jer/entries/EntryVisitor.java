@@ -11,5 +11,5 @@ public interface EntryVisitor<T> {
 
     T visit (DynamicCodeEntry dynamicCodeEntry);
 
-    T visit(ModuleInitEntry moduleInitEntry);
+    T visit(ModuleExportsEntry moduleExportsEntry);
 }
