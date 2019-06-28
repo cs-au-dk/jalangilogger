@@ -536,9 +536,19 @@ function consoleLog(text) {
         if (entry.sourceLocation == undefined) {
             return;
         }
+        entry.sourceLocation = patchLocation(entry.sourceLocation);
+        if (entry.sourceLocation.columnNumber < 1) // Do not log call to require-wrapper functions inserted by node
+            return;
         entry.index = entryIndex++;
         entry.index = -1; // TODO support indexes on entries
         env.log(entry);
+    }
+
+    function patchLocation(location) {
+        if (env.isNodeProf && location.lineNumber == 1) {
+            location.columnNumber = location.columnNumber - 62; // node inserts a require wrapper, which takes up 62 characters
+        }
+        return location;
     }
 
     function MyAnalysis() {
@@ -546,6 +556,7 @@ function consoleLog(text) {
         var allocationSites = env.makeMap/*<Object, {sid: SID, iid: IID}>*/();
         var builtins = makeBuiltinsMap();
         var nextConstructorCallCallSiteGIID = false;
+        var nextConstructorFunction = false;
         var nativeCall = Function.prototype.call;
         var nativeApply = Function.prototype.apply;
         var nativeSetTimeout = typeof setTimeout === 'undefined' ? undefined : setTimeout;
@@ -669,6 +680,7 @@ function consoleLog(text) {
                 var allocationSite = allocationSites.get(val);
                 var fullLocation = getFullLocation(allocationSite.sid, allocationSite.iid);
                 if (fullLocation !== undefined) {
+                    fullLocation = patchLocation(fullLocation);
                     return {objectKind: "allocation-site", allocationSite: fullLocation};
                 }
             }
@@ -774,9 +786,9 @@ function consoleLog(text) {
         };
 
         this.invokeFunPre = function (iid, f, base, args, isConstructor, isMethod, functionIid) {
-            var isUserConstructorCall = isConstructor && (functionIid !== undefined);
-            if (isUserConstructorCall) {
+            if (isConstructor) {
                 nextConstructorCallCallSiteGIID = J$.getGlobalIID(iid);
+                nextConstructorFunction = f;
             }
             logEntry(iid, {
                 entryKind: "call",
@@ -852,11 +864,13 @@ function consoleLog(text) {
         this.functionEnter = function (iid, f, dis, args) {
             env.terminator();
             if (nextConstructorCallCallSiteGIID) {
-                if (env.isNodeProf) {
-                    registerAllocation(nextConstructorCallCallSiteGIID, dis);
-                } else {
-                    var sid_iid = nextConstructorCallCallSiteGIID.split(":");
-                    registerAllocation(sid_iid[1], dis, sid_iid[0]);
+                if (nextConstructorFunction === f) {
+                    if (env.isNodeProf) {
+                        registerAllocation(nextConstructorCallCallSiteGIID, dis);
+                    } else {
+                        var sid_iid = nextConstructorCallCallSiteGIID.split(":");
+                        registerAllocation(sid_iid[1], dis, sid_iid[0]);
+                    }
                 }
                 nextConstructorCallCallSiteGIID = undefined;
             }
