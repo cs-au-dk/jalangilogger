@@ -2,13 +2,11 @@ package dk.au.cs.casa.jer;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.HostConfig;
-import org.openqa.selenium.logging.LogEntry;
 
 import java.awt.*;
 import java.io.BufferedReader;
@@ -28,7 +26,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -79,14 +76,12 @@ public class Logger {
 
     private final Path graalVmNode;
 
-    private final Path nodeprofWorkspace;
-
     private Metadata metadata;
 
     /**
      * Produces a log file for the run of a main file in a directory
      */
-    public Logger(Path root, Path rootRelativeMain, List<Path> preambles, Optional<Set<Path>> onlyInclude, int instrumentationTimeLimit, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs, Path graalVmNode, Path nodeprofWorkspace, Metadata metadata) {
+    public Logger(Path root, Path rootRelativeMain, List<Path> preambles, Optional<Set<Path>> onlyInclude, int instrumentationTimeLimit, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs, Path graalVmNode, Metadata metadata) {
         if (rootRelativeMain.isAbsolute()) {
             throw new IllegalArgumentException("rootRelativeMain must be relative");
         }
@@ -108,7 +103,6 @@ public class Logger {
         this.root = root;
         this.node = node;
         this.graalVmNode = graalVmNode;
-        this.nodeprofWorkspace = nodeprofWorkspace;
         this.jalangilogger = jalangilogger;
         this.jalangi2directory = guessJalangiDirectory(jalangilogger);
         try {
@@ -123,14 +117,14 @@ public class Logger {
     /**
      * Produces a log file for the run of a single main file
      */
-    public static Logger makeLoggerForIndependentMainFile(Path main, List<Path> preambles, Optional<Set<Path>> onlyInclude, int instrumentationTimeLimit, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs, Path graalVmNode, Path nodeprofWorkspace) {
+    public static Logger makeLoggerForIndependentMainFile(Path main, List<Path> preambles, Optional<Set<Path>> onlyInclude, int instrumentationTimeLimit, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs, Path graalVmNode) {
         Path root = isolateInNewRoot(main);
         Path rootRelativeMain = root.relativize(root.resolve(main.getFileName()));
-        return makeLoggerForDirectoryWithMainFile(root, rootRelativeMain, preambles, onlyInclude, instrumentationTimeLimit, timeLimit, environment, node, jalangilogger, jjs, graalVmNode, nodeprofWorkspace);
+        return makeLoggerForDirectoryWithMainFile(root, rootRelativeMain, preambles, onlyInclude, instrumentationTimeLimit, timeLimit, environment, node, jalangilogger, jjs, graalVmNode);
     }
 
-    public static Logger makeLoggerForDirectoryWithMainFile(Path root, Path rootRelativeMain, List<Path> preambles, Optional<Set<Path>> onlyInclude, int instrumentationTimeLimit, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs, Path graalVmNode, Path nodeprofWorkspace) {
-        return new Logger(root, rootRelativeMain, preambles, onlyInclude, instrumentationTimeLimit, timeLimit, environment, node, jalangilogger, jjs, graalVmNode, nodeprofWorkspace, initMeta(root, rootRelativeMain.getFileName(), onlyInclude, environment, getEnvironmentVersion(environment, node), timeLimit));
+    public static Logger makeLoggerForDirectoryWithMainFile(Path root, Path rootRelativeMain, List<Path> preambles, Optional<Set<Path>> onlyInclude, int instrumentationTimeLimit, int timeLimit, Environment environment, Path node, Path jalangilogger, Path jjs, Path graalVmNode) {
+        return new Logger(root, rootRelativeMain, preambles, onlyInclude, instrumentationTimeLimit, timeLimit, environment, node, jalangilogger, jjs, graalVmNode, initMeta(root, rootRelativeMain.getFileName(), onlyInclude, environment, getEnvironmentVersion(environment, node), timeLimit));
     }
 
     private static String getEnvironmentVersion(Environment environment, Path node) {
@@ -922,13 +916,17 @@ public class Logger {
                     cmd = new ArrayList<>(Arrays.asList(new String[]{jjs.toString(), rootRelativeMain.toString(), "--"}));
                     break;
                 case NODE_PROF:
+                    Path nodeprofJar = jalangilogger.resolve("../nodeprof/nodeprof.jar").normalize();
+                    Path nodeprofJalangi = jalangilogger.resolve("../nodeprof/jalangi.js").normalize();
                     cmd = new ArrayList<>(Arrays.asList(new String[]{
                             graalVmNode.toString(),
                             "--jvm",
-                            "--vm.Dtruffle.class.path.append=" + nodeprofWorkspace.resolve("nodeprof.js/build/nodeprof.jar"),
+                            "--vm.Dtruffle.class.path.append=" + nodeprofJar,
                             "--experimental-options",
                             "--nodeprof",
-                            nodeprofWorkspace.resolve("nodeprof.js/src/ch.usi.inf.nodeprof/js/jalangi.js").toString(),
+                            "--nodeprof.Scope=module",
+                            "--nodeprof.ExcludeSource=" + analysis,
+                            nodeprofJalangi.toString(),
                             "--analysis", analysis.toString(),
                             rootRelativeMain.toString()}));
                     break;

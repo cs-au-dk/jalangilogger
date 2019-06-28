@@ -22,13 +22,13 @@ public class Main {
             Path mainFile = Paths.get(args[0]);
             Path node = Paths.get(args[1]);
             Path loggerDir = Paths.get(args[2]);
-            logger = Logger.makeLoggerForIndependentMainFile(mainFile, preambles, onlyInclude, defaultTimeLimit, defaultTimeLimit, getEnvironment(mainFile), node, loggerDir, null, null, null);
+            logger = Logger.makeLoggerForIndependentMainFile(mainFile, preambles, onlyInclude, defaultTimeLimit, defaultTimeLimit, getEnvironment(mainFile), node, loggerDir, null, null);
         } else {
             Path root = Paths.get(args[0]);
             Path mainFile = Paths.get(args[1]);
             Path node = Paths.get(args[2]);
             Path loggerDir = Paths.get(args[3]);
-            logger = Logger.makeLoggerForDirectoryWithMainFile(root, mainFile, preambles, onlyInclude, defaultTimeLimit, defaultTimeLimit, getEnvironment(mainFile), node, loggerDir, null, null, null);
+            logger = Logger.makeLoggerForDirectoryWithMainFile(root, mainFile, preambles, onlyInclude, defaultTimeLimit, defaultTimeLimit, getEnvironment(mainFile), node, loggerDir, null, null);
         }
         final List<String> lines = logger.log().getLines();
 
