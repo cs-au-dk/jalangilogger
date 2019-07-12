@@ -364,7 +364,7 @@ public class Logger {
 
     private RawLogFile _log() throws IOException {
         try {
-            if (environment == Environment.NASHORN || environment == Environment.NODE || environment == Environment.NODE_GLOBAL || environment == Environment.NODE_PROF) {
+            if (environment == Environment.NASHORN || environment == Environment.NODE || environment == Environment.NODE_GLOBAL || environment == Environment.NODE_PROF || environment == Environment.NODE_PROF_GLOBAL) {
                 return new JSLogger(environment).log();
             } else if (environment == Environment.BROWSER) {
                 return new HTMLLogger().log();
@@ -487,7 +487,8 @@ public class Logger {
         NEW_BROWSER,
         NEW_BROWSER_HEADLESS,
         DOCKER_BROWSER,
-        NODE_PROF
+        NODE_PROF,
+        NODE_PROF_GLOBAL
     }
 
     private class HTMLLogger {
@@ -893,7 +894,7 @@ public class Logger {
         }
 
         public RawLogFile log() throws IOException, InstrumentationException {
-            if (environment != Environment.NODE_PROF) {
+            if (environment != Environment.NODE_PROF && environment != Environment.NODE_PROF_GLOBAL) {
                 instrument(environment);
             } else { // do not instrument, when using NodeProf, but just copy the files.
                 copyDirectory(root, instrumentationDir);
@@ -916,6 +917,7 @@ public class Logger {
                     cmd = new ArrayList<>(Arrays.asList(new String[]{jjs.toString(), rootRelativeMain.toString(), "--"}));
                     break;
                 case NODE_PROF:
+                case NODE_PROF_GLOBAL:
                     Path nodeprofJar = jalangilogger.resolve("../nodeprof/nodeprof.jar").normalize();
                     Path nodeprofJalangi = jalangilogger.resolve("../nodeprof/jalangi.js").normalize();
                     cmd = new ArrayList<>(Arrays.asList(new String[]{
@@ -925,10 +927,11 @@ public class Logger {
                             "--experimental-options",
                             "--nodeprof",
                             "--nodeprof.Scope=module",
-                            "--nodeprof.ExcludeSource=" + analysis,
+                            "--nodeprof.ExcludeSource=" + analysis + ",globalifier/main.js",
                             nodeprofJalangi.toString(),
                             "--analysis", analysis.toString(),
-                            rootRelativeMain.toString()}));
+                            (environment == Environment.NODE_PROF ? rootRelativeMain : makeGlobalifier()).toString(),
+                            "environment=" + environment}));
                     break;
                 default:
                     throw new UnsupportedOperationException("Unhandled environment kind: " + environment);
@@ -974,8 +977,8 @@ public class Logger {
                 mainPath = mainPath.replace("\\", "\\\\"); // the path will be used as a string literal, sole backslashes will act as escape characters: escape them!
                 Files.write(globalifier, Arrays.asList(
                         "var fs = require('fs');",
-                        "var globalEval = eval;",
-                        String.format("(globalEval)(fs.readFileSync('%s', 'utf-8'));", mainPath)
+                        "var code = " + String.format("fs.readFileSync('%s', 'utf-8');", mainPath),
+                        String.format("require('vm').runInThisContext(code, '%s')", mainPath)
                 ), StandardOpenOption.CREATE_NEW);
                 return globalifier;
             } catch (IOException e) {
