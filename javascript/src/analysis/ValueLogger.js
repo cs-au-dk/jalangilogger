@@ -90,6 +90,7 @@ function consoleLog(text) {
         var isNashorn = typeof Java === 'object' && typeof Java.type === 'function';
         var isNodeProf = isNode && typeof Graal === 'object' // only run on GraalVM when using NodeProf.js
         env.isNodeProf = isNodeProf;
+        env.isNodeProfGlobal = isNode && process.argv.includes("environment=NODE_PROF_GLOBAL");
         var isBrowser = typeof window !== 'undefined';
         var isProtractor = isBrowser && getParameterByName("IS_PROTRACTOR");
         env.isNewDriver = isBrowser && getParameterByName("new") === "yes";
@@ -545,7 +546,7 @@ function consoleLog(text) {
     }
 
     function patchLocation(location) {
-        if (env.isNodeProf && location.lineNumber == 1) {
+        if (env.isNodeProf && !env.isNodeProfGlobal && location.lineNumber == 1) {
             location.columnNumber = location.columnNumber - 62; // node inserts a require wrapper, which takes up 62 characters
         }
         return location;
@@ -559,8 +560,11 @@ function consoleLog(text) {
         var nextConstructorFunction = false;
         var nativeCall = Function.prototype.call;
         var nativeApply = Function.prototype.apply;
+        var nativeFunction = Function;
+        var nativeEval = eval;
         var nativeSetTimeout = typeof setTimeout === 'undefined' ? undefined : setTimeout;
         var nativeSetInterval = typeof setInterval === 'undefined' ? undefined : setInterval;
+        var enteredFiles = env.makeMap();
 
         /**
          * Builds a map from some builtin objects to their canonical path
@@ -794,7 +798,7 @@ function consoleLog(text) {
                 entryKind: "call",
                 function: makeValue(f),
                 base: makeValue(base),
-                arguments: makeArrayValue(args, f === eval || f === Function /* forbid abstraction of strings to the dynamic code functions: Function & eval */)
+                arguments: makeArrayValue(args, f === nativeEval || f === nativeFunction /* forbid abstraction of strings to the dynamic code functions: Function & eval */)
             });
 
             if ((f === nativeCall || f === nativeApply) && f) {
@@ -860,9 +864,17 @@ function consoleLog(text) {
                 }
             }
         };
-
+        var functionEnteredInFiles = env.makeMap();
         this.functionEnter = function (iid, f, dis, args) {
             env.terminator();
+            var location = getFullLocation(sandbox.sid, iid);
+            if (location) {
+                var fileName = location.fileName;
+                if (fileName && env.isNodeProf && !functionEnteredInFiles.has(fileName)) {
+                    functionEnteredInFiles.set(fileName, true);
+                    return; // The first function entered in nodeprof is an artificial function wrapping file contents.
+                }
+            }
             if (nextConstructorCallCallSiteGIID) {
                 if (nextConstructorFunction === f) {
                     if (env.isNodeProf) {
