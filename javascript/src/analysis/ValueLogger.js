@@ -29,7 +29,8 @@ function consoleLog(text) {
         Array: {
             forEach: Array.prototype.forEach,
             push: Array.prototype.push,
-            slice: Array.prototype.slice
+            slice: Array.prototype.slice,
+            includes: Array.prototype.includes
         },
         JSON: {
             ref: JSON,
@@ -886,7 +887,7 @@ function consoleLog(text) {
                 }
                 nextConstructorCallCallSiteGIID = undefined;
             }
-            if (f in ignoredRetValFunctions) {
+            if (natives.Array.includes.call(ignoredRetValFunctions, f)) {
                 nextIgnoredRetValCallSiteGIID = iid;
             }
             logEntry(iid, {entryKind: "function-entry", base: makeValue(dis), arguments: makeArrayValue(args)});
