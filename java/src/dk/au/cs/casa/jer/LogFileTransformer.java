@@ -40,10 +40,13 @@ public class LogFileTransformer {
 
     private final Path rootRelativeMain;
 
-    public LogFileTransformer(Path root, Path instrumentationRoot, Path rootRelativeMain) {
+    private final Logger.Environment environment;
+
+    public LogFileTransformer(Path root, Path instrumentationRoot, Path rootRelativeMain, Logger.Environment environment) {
         this.root = root;
         this.instrumentationRoot = instrumentationRoot;
         this.rootRelativeMain = rootRelativeMain;
+        this.environment = environment;
     }
 
     public List<String> transform(List<String> inputLog) throws IOException {
@@ -127,6 +130,9 @@ public class LogFileTransformer {
             Path main = root.resolve(rootRelativeMain);
             final Path mainRelativeFile = main.getParent().relativize(rootRelativeFile);
             obj.addProperty("fileName", mainRelativeFile.toString());
+        } else if (environment == Logger.Environment.NODE_PROF || environment == Logger.Environment.NODE_GLOBAL) {
+            // Nodeprof uses location relative to root, so we should relativize according to main
+            obj.addProperty("fileName", rootRelativeMain.toAbsolutePath().getParent().relativize(fileNamePath.toAbsolutePath()).toString());
         }
         return obj;
     }

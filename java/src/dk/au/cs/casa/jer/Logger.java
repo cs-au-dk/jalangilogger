@@ -443,7 +443,7 @@ public class Logger {
     private List<String> postProcessLog(Path logFile) {
         try {
             List<String> filtered = filterLogFile(logFile);
-            List<String> transformed = new LogFileTransformer(root, instrumentationDir, rootRelativeMain).transform(filtered);
+            List<String> transformed = new LogFileTransformer(root, instrumentationDir, rootRelativeMain, environment).transform(filtered);
             return transformed;
         } catch (IOException e) {
             throw new RuntimeException("Could not post-process the log file", e);
