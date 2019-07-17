@@ -826,17 +826,20 @@ function consoleLog(text) {
             if (isBuiltinConstructorCall) {
                 registerAllocation(iid, result);
             }
-            if (env.isNode && isRequire(f)) {
+            if (env.isNode && isRequire(f) && (typeof result === "object" || typeof result === "function")) {
                 var path = f.resolve(args[0]);
                 if (fileExists(path)) {
                     var fileName = getFileName(path);
                     Object.getOwnPropertyNames(result).forEach(function(key) {
-                        logEntry(null, {
-                            entryKind: "module-exports",
-                            fileName: fileName,
-                            name: makeValueForPropertyName(key),
-                            value: makeValue(result[key])
-                        });
+                        const propDescriptor = Object.getOwnPropertyDescriptor(result, key);
+                        if (propDescriptor.value) {
+                            logEntry(null, {
+                                entryKind: "module-exports",
+                                fileName: fileName,
+                                name: makeValueForPropertyName(key),
+                                value: makeValue(propDescriptor.value)
+                            });
+                        }
                     });
                 }
             }
