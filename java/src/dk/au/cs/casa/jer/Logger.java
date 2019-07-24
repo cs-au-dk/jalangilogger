@@ -930,8 +930,7 @@ public class Logger {
                             "--nodeprof.ExcludeSource=" + analysis + ",globalifier/main.js",
                             nodeprofJalangi.toString(),
                             "--analysis", analysis.toString(),
-                            (environment == Environment.NODE_PROF ? rootRelativeMain : makeGlobalifier()).toString(),
-                            "environment=" + environment}));
+                            (environment == Environment.NODE_PROF ? rootRelativeMain : makeGlobalifier()).toString()}));
                     break;
                 default:
                     throw new UnsupportedOperationException("Unhandled environment kind: " + environment);

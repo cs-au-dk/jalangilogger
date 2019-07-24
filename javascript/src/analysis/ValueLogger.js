@@ -43,7 +43,11 @@ function consoleLog(text) {
             set: Map.prototype.set
         },
         String: {
-            slice: String.prototype.slice
+            slice: String.prototype.slice,
+            startsWith: String.prototype.startsWith
+        },
+        Function: {
+            toString: Function.prototype.toString
         }
     };
 
@@ -91,7 +95,6 @@ function consoleLog(text) {
         var isNashorn = typeof Java === 'object' && typeof Java.type === 'function';
         var isNodeProf = isNode && typeof Graal === 'object' // only run on GraalVM when using NodeProf.js
         env.isNodeProf = isNodeProf;
-        env.isNodeProfGlobal = isNode && process.argv.includes("environment=NODE_PROF_GLOBAL");
         var isBrowser = typeof window !== 'undefined';
         var isProtractor = isBrowser && getParameterByName("IS_PROTRACTOR");
         env.isNewDriver = isBrowser && getParameterByName("new") === "yes";
@@ -387,7 +390,7 @@ function consoleLog(text) {
         }
         return env;
     })();
-
+    var functionsWithRequireWrapper = env.makeMap();
 
     var preambles = {
         TAJS: function () {
@@ -547,7 +550,7 @@ function consoleLog(text) {
     }
 
     function patchLocation(location) {
-        if (env.isNodeProf && !env.isNodeProfGlobal && location.lineNumber == 1) {
+        if (functionsWithRequireWrapper.has(location.fileName) && location.lineNumber == 1) {
             location.columnNumber = location.columnNumber - 62; // node inserts a require wrapper, which takes up 62 characters
         }
         return location;
@@ -874,6 +877,12 @@ function consoleLog(text) {
             var location = getFullLocation(sandbox.sid, iid);
             if (location) {
                 var fileName = location.fileName;
+                if (env.isNodeProf && location.lineNumber == 1) {
+                    var functionCode = natives.Function.toString.call(f);
+                    if (natives.String.startsWith.call(functionCode, "(function (exports, require, module, __filename, __dirname) {")) {
+                        functionsWithRequireWrapper.set(fileName, true);
+                    }
+                }
                 if (fileName && env.isNodeProf && !functionEnteredInFiles.has(fileName)) {
                     functionEnteredInFiles.set(fileName, true);
                     return; // The first function entered in nodeprof is an artificial function wrapping file contents.
