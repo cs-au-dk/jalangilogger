@@ -412,20 +412,6 @@ function consoleLog(text) {
             };
             TAJS_conversionToPrimitive = function () {
             };
-            TAJS_getUIEvent = function () {
-            };
-            TAJS_getDocumentEvent = function () {
-            };
-            TAJS_getMouseEvent = function () {
-            };
-            TAJS_getKeyboardEvent = function () {
-            };
-            TAJS_getEventListener = function () {
-            };
-            TAJS_getWheelEvent = function () {
-            };
-            TAJS_getAjaxEvent = function () {
-            };
             TAJS_addContextSensitivity = function () {
             };
             TAJS_assert = function (a) {
@@ -469,22 +455,11 @@ function consoleLog(text) {
             };
             TAJS_makeContextSensitive = function () {
             };
-            TAJS_split = function () {
-            };
             TAJS_makeExcludedStrings = function () {
                 return "TAJS_makeExcludedStrings(" + Array.prototype.join.call(arguments, ", ") + ")";
             };
             TAJS_newArray = function () {
                 return [];
-            };
-            TAJS_load = function () {
-
-            };
-            TAJS_record = function () {
-
-            };
-            TAJS_restrictTo = function () {
-
             };
             TAJS_addTaint = function (v) {
                 return v;
@@ -493,14 +468,7 @@ function consoleLog(text) {
                 return v;
             };
             TAJS_assertTaintObj = function () {
-
-            }
-            TAJS_isBlended = function() {
-                return true;
-            }
-            TAJS_isNotBlended = function() {
-                return true;
-            }
+            };
         },
         print: function () {
             print = function () {
