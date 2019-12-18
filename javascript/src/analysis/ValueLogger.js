@@ -469,6 +469,9 @@ function consoleLog(text) {
             };
             TAJS_assertTaintObj = function () {
             };
+            TAJS_isBlended = function() {
+                return true;
+            };
         },
         print: function () {
             print = function () {
