@@ -502,8 +502,7 @@ function consoleLog(text) {
      * blended analysis, thus these return values will be ignored (not logged).
      */
     var ignoredRetValFunctions = [
-        TAJS_isBlended,
-        TAJS_isNotBlended
+        TAJS_isBlended
     ];
     var nextIgnoredRetValCallSiteGIID = undefined;
 
