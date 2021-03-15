@@ -424,6 +424,8 @@ function consoleLog(text) {
             };
             TAJS_assertEquals = function () {
             };
+            TAJS_assertNumberIterations = function () {
+            };
             TAJS_make = function (s) {
                 if(arguments.length > 1) {
                     var min = 1;
